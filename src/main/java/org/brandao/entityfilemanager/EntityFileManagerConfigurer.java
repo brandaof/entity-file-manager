@@ -2,14 +2,14 @@ package org.brandao.entityfilemanager;
 
 import java.io.File;
 
-import org.brandao.entityfilemanager.tx.EntityFileTransactionFactory;
+import org.brandao.entityfilemanager.tx.EntityFileTransactionManager;
 
 public interface EntityFileManagerConfigurer 
 	extends EntityFileManager{
 
-	void setTransactionFactory(EntityFileTransactionFactory factory);
+	void setEntityFileTransactionManager(EntityFileTransactionManager factory);
 
-	EntityFileTransactionFactory getTransactionFactory();
+	EntityFileTransactionManager getEntityFileTransactionManager();
 	
 	void setPathName(String pathName);
 
@@ -21,7 +21,7 @@ public interface EntityFileManagerConfigurer
 
 	File getDataPath();
 	
-	void create(String name, EntityFile<?> entityFile, boolean override) throws EntityFileManagerException;
+	void create(String name, EntityFileAccess<?> entityFile) throws EntityFileManagerException;
 	
 	void remove(String name) throws EntityFileManagerException;
 	

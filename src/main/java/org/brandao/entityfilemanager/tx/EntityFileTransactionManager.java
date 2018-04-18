@@ -1,6 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
-public interface EntityFileTransactionFactory {
+public interface EntityFileTransactionManager {
 
 	EntityFileTransactionHandler getCurrent();
 	
