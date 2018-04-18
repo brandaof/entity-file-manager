@@ -1,44 +1,15 @@
 package org.brandao.entityfilemanager;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.locks.ReadWriteLock;
 
 public interface EntityFile<T> {
 
-	void setBatchLength(int value);
-
-	int getBatchLength();
+	long insert(T entity) throws IOException;
 	
-	ReadWriteLock getLock();
+	void update(long id, T entity) throws IOException;
 	
-	File getAbsoluteFile();
+	void delete(long id) throws IOException;
 	
-	String getAbsolutePath();
-	
-	String getName();
-	
-	void createNewFile() throws IOException;
-	
-	void open() throws IOException;
-	
-	void seek(long value) throws IOException;
-	
-	long getOffset() throws IOException;
-	
-	void batchWrite(List<T> entities) throws IOException;
-	
-	void write(T value) throws IOException;
-	
-	T read() throws IOException;
-	
-	long length() throws IOException;
-	
-	void setLength(long value) throws IOException;
-	
-	boolean exists();
-	
-	void close() throws IOException;
+	T select(long id) throws IOException;
 	
 }
