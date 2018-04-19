@@ -1,7 +1,5 @@
 package org.brandao.entityfilemanager.tx;
 
-import java.io.File;
-
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileAccess;
 
@@ -22,9 +20,8 @@ public class EntityFileAccessTransaction<T>
 	
 	private EntityFileTransactionDataHandler<T> entityFileTransactionDataHandler;
 	
-	public EntityFileAccessTransaction(File file,
-			EntityFileAccess<T> e, long transactionID){
-		super(file, new EntityFileTransactionDataHandler<T>(e.getEntityFileDataHandler()));
+	public EntityFileAccessTransaction(EntityFileAccess<T> e, long transactionID){
+		super(e.getAbsoluteFile(), new EntityFileTransactionDataHandler<T>(e.getEntityFileDataHandler()));
 
 		this.entityFileAccess = e;
 		this.firstRecord = this.entityFileAccess.getFirstRecord() + 9;
