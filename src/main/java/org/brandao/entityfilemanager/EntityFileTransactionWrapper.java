@@ -19,16 +19,16 @@ public class EntityFileTransactionWrapper<T>
 		this.entityFileTransactionManager = entityFileTransactionManager;
 	}
 	
-	public long insert(T entity) throws IOException {
+	public Entity<T> insert(T entity) throws IOException {
 		EntityFileTransactionHandler handler = 
 				this.entityFileTransactionManager.getCurrent();
 		return handler.insert(entity, this.entityFileAccess);
 	}
 
-	public void update(long id, T entity) throws IOException {
+	public Entity<T> update(long id, T entity) throws IOException {
 		EntityFileTransactionHandler handler = 
 				this.entityFileTransactionManager.getCurrent();
-		handler.update(id, entity, this.entityFileAccess);
+		return handler.update(id, entity, this.entityFileAccess);
 	}
 
 	public void delete(long id) throws IOException {
