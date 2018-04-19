@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public abstract class AbstractEntityFileAccess<T> 
+public class AbstractEntityFileAccess<T> 
 	implements EntityFileAccess<T>{
 
 	protected int recordLength;
@@ -27,11 +27,26 @@ public abstract class AbstractEntityFileAccess<T>
 	
 	protected int batchLength;
 	
-	public AbstractEntityFileAccess(File file){
+	protected EntityFileDataHandler<T> dataHandler;
+	
+	public AbstractEntityFileAccess(File file, EntityFileDataHandler<T> dataHandler){
 		this.file        = file;
 		this.offset      = 0;
 		this.lock        = new ReentrantReadWriteLock();
 		this.batchLength = 1000;
+		this.dataHandler = dataHandler;
+	}
+	
+	public int getRecordLength() {
+		return this.recordLength;
+	}
+
+	public int getFirstRecord() {
+		return this.firstRecord;
+	}
+	
+	public EntityFileDataHandler<T> getEntityFileDataHandler() {
+		return this.dataHandler;
 	}
 	
 	public long getOffset() throws IOException {
@@ -71,7 +86,7 @@ public abstract class AbstractEntityFileAccess<T>
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.firstRecord);
 		DataOutputStream dStream = new DataOutputStream(stream);
 		
-		this.writeMetaData(dStream);
+		this.dataHandler.writeMetaData(dStream);
 		
 		if(stream.size() != this.firstRecord)
 			throw new IOException(this.file.getName() + ": " + stream.size() + " <> " + this.firstRecord);
@@ -82,8 +97,6 @@ public abstract class AbstractEntityFileAccess<T>
 		this.fileAccess.write(data, 0, data.length);
 	}
 
-	protected abstract void writeMetaData(DataOutputStream stream) throws IOException;
-	
 	public void open() throws IOException {
 		
 		if(!file.exists())
@@ -103,11 +116,9 @@ public abstract class AbstractEntityFileAccess<T>
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
 		DataInputStream dStream = new DataInputStream(stream);
 		
-		this.readMetaData(dStream);
+		this.dataHandler.readMetaData(dStream);
 	}
 
-	protected abstract void readMetaData(DataInputStream srteam) throws IOException;
-	
 	public void seek(long value) throws IOException {
 		long length = this.length();
 		
@@ -141,7 +152,7 @@ public abstract class AbstractEntityFileAccess<T>
 			}
 			
 			int startOffset = stream.size();
-			this.write(dStream, entity);
+			this.dataHandler.write(dStream, entity);
 			int endOffset = stream.size();
 			int writeLength = endOffset - startOffset;
 			
@@ -154,7 +165,7 @@ public abstract class AbstractEntityFileAccess<T>
 		if(stream.size() != 0){
 
 			if(pointerOffset + stream.size() >= this.fileAccess.length())
-				this.writeEOF(dStream);
+				this.dataHandler.writeEOF(dStream);
 			
 			byte[] data = stream.toByteArray();
 			this.fileAccess.seek(pointerOffset);
@@ -165,7 +176,7 @@ public abstract class AbstractEntityFileAccess<T>
 		else{
 			
 			if(pointerOffset + stream.size() >= this.fileAccess.length())
-				this.writeEOF(dStream);
+				this.dataHandler.writeEOF(dStream);
 			
 			byte[] data = stream.toByteArray();
 			this.fileAccess.seek(pointerOffset);
@@ -184,14 +195,14 @@ public abstract class AbstractEntityFileAccess<T>
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.recordLength);
 		DataOutputStream dStream = new DataOutputStream(stream);
 		
-		this.write(dStream, entity);
+		this.dataHandler.write(dStream, entity);
 		
 		if(stream.size() != this.recordLength)
 			throw new IOException(this.file.getName() + ": " + stream.size() + " <> " + this.recordLength);
 		
 		
 		if(pointerOffset + this.recordLength == this.fileAccess.length())
-			this.writeEOF(dStream);
+			this.dataHandler.writeEOF(dStream);
 		
 		byte[] data = stream.toByteArray();
 		this.fileAccess.seek(pointerOffset);
@@ -200,10 +211,6 @@ public abstract class AbstractEntityFileAccess<T>
 		this.offset++;
 	}
 
-	protected abstract void writeEOF(DataOutputStream stream) throws IOException;
-	
-	protected abstract void write(DataOutputStream stream, T entity) throws IOException;
-	
 	public T read() throws IOException {
 		long pointerOffset = this.firstRecord;
 		pointerOffset += this.recordLength*this.offset;
@@ -216,14 +223,12 @@ public abstract class AbstractEntityFileAccess<T>
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
 		DataInputStream dStream = new DataInputStream(stream);
 		
-		T entity = this.read(dStream);
+		T entity = this.dataHandler.read(dStream);
 		
 		this.offset++;
 		
 		return entity;
 	}
-	
-	protected abstract T read(DataInputStream stream) throws IOException;
 	
 	public long length() throws IOException {
 		return 
@@ -237,7 +242,7 @@ public abstract class AbstractEntityFileAccess<T>
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.recordLength);
 		DataOutputStream dStream = new DataOutputStream(stream);
 		
-		this.writeEOF(dStream);
+		this.dataHandler.writeEOF(dStream);
 		
 		byte[] data = stream.toByteArray();
 		

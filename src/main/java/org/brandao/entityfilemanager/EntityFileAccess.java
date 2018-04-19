@@ -7,6 +7,12 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 public interface EntityFileAccess<T> {
 
+	int getRecordLength();
+	
+	int getFirstRecord();
+	
+	EntityFileDataHandler<T> getEntityFileDataHandler();
+	
 	void setBatchLength(int value);
 
 	int getBatchLength();
