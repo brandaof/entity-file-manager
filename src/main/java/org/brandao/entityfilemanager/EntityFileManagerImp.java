@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManager;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionHandler;
+import org.brandao.entityfilemanager.tx.EntityFileTransactionWrapper;
 import org.brandao.entityfilemanager.tx.TransactionException;
 
 public class EntityFileManagerImp 

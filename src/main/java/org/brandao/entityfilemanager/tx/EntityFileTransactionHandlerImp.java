@@ -1,8 +1,9 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
-import org.brandao.entityfilemanager.EntityFile.Entity;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.PersistenceException;
@@ -14,7 +15,7 @@ public class EntityFileTransactionHandlerImp
 	
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
-	protected Map<String, EntityFileAccessTransaction<?>> transactionFiles;
+	protected Map<EntityFileAccess<?>, EntityFileAccessTransaction<?>> transactionFiles;
 	
 	private EntityFileManagerConfigurer manager;
 	
@@ -45,14 +46,52 @@ public class EntityFileTransactionHandlerImp
 	public void begin() throws TransactionException {
 	}
 
-	public <T> Entity<T> insert(T entity, EntityFileAccess<T> entityFileaccess)
+	public <T> long insert(T entity, EntityFileAccess<T> entityFileaccess)
 			throws PersistenceException {
-		return null;
+		
+		EntityFileAccess<Long> freePointerEntityFileaccess = null;
+		EntityFileAccessTransaction<T> txEntityFileAccess  = this.getManagedEntityFile(entityFileaccess);
+		
+		ReadWriteLock readWritelock = entityFileaccess.getLock();
+		
+		Lock lock = readWritelock.writeLock();
+		lock.lock();
+		
+		long id = -1;
+		
+		try{
+			
+			if(freePointerEntityFileaccess.length() == 0){
+				id = entityFileaccess.length();
+				
+				txEntityFileAccess.seek(txEntityFileAccess.length());
+				txEntityFileAccess.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, entity));
+				
+				entityFileaccess.seek(entityFileaccess.length());
+				entityFileaccess.write(null);
+			}
+			else{
+				freePointerEntityFileaccess.seek(freePointerEntityFileaccess.length());
+				id = freePointerEntityFileaccess.read();
+				
+				txEntityFileAccess.seek(txEntityFileAccess.length());
+				txEntityFileAccess.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, entity));
+				
+				freePointerEntityFileaccess.setLength(freePointerEntityFileaccess.length() - 1);
+			}
+			
+			return id;
+		}
+		catch(Throwable e){
+			throw new PersistenceException(e);
+		}
+		finally{
+			lock.unlock();
+		}
 	}
 
-	public <T> Entity<T> update(long id, T entity,
+	public <T> void update(long id, T entity,
 			EntityFileAccess<T> entityFileaccess) throws PersistenceException {
-		return null;
 	}
 
 	public <T> void delete(long id, EntityFileAccess<T> entityFileaccess)
@@ -66,19 +105,22 @@ public class EntityFileTransactionHandlerImp
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	private EntityFileAccessTransaction<?> getManagedEntityFile(String name, 
-			EntityFileAccess<?> entityFile) throws PersistenceException{
+	private <T> EntityFileAccessTransaction<T> getManagedEntityFile( 
+			EntityFileAccess<T> entityFile) throws PersistenceException{
 		try{
 			
-			EntityFileAccessTransaction<?> tx = this.transactionFiles.get(name);
+			EntityFileAccessTransaction<T> tx = 
+					(EntityFileAccessTransaction<T>)this.transactionFiles.get(entityFile);
 			
 			if(tx != null){
 				return tx;
 			}
 			
-			tx = new EntityFileAccessTransaction(entityFile, this.transactionID);
+			tx = new EntityFileAccessTransaction<T>(entityFile, this.transactionID);
+			tx.createNewFile();
+			tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_NOT_STARTED);
 			
-			this.transactionFiles.put(name, tx);
+			this.transactionFiles.put(entityFile, tx);
 			return tx;
 		}
 		catch(Throwable e){

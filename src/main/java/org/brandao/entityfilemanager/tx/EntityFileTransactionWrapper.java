@@ -1,9 +1,10 @@
-package org.brandao.entityfilemanager;
+package org.brandao.entityfilemanager.tx;
 
 import java.io.IOException;
 
-import org.brandao.entityfilemanager.tx.EntityFileTransactionManager;
-import org.brandao.entityfilemanager.tx.EntityFileTransactionHandler;
+import org.brandao.entityfilemanager.EntityFile;
+import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.EntityFile.Entity;
 
 public class EntityFileTransactionWrapper<T>
 	implements EntityFile<T>{
