@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class AbstractEntityFileAccess<T> 
-	implements EntityFileAccess<T>{
+public class AbstractEntityFileAccess<T, R> 
+	implements EntityFileAccess<T, R>{
 
 	protected int recordLength;
 	
@@ -211,6 +211,16 @@ public class AbstractEntityFileAccess<T>
 		this.offset++;
 	}
 
+	public void batchWriteRawEntity(List<R> entities) throws IOException {
+	}
+	
+	public void writeRawEntity(R value) throws IOException {
+	}
+
+	public List<T> batchRead(long value) throws IOException {
+		return null;
+	}
+	
 	public T read() throws IOException {
 		long pointerOffset = this.firstRecord;
 		pointerOffset += this.recordLength*this.offset;
@@ -228,6 +238,14 @@ public class AbstractEntityFileAccess<T>
 		this.offset++;
 		
 		return entity;
+	}
+
+	public List<R> batchReadRawEntity(long value) throws IOException {
+		return null;
+	}
+	
+	public R readRawEntity() throws IOException {
+		return null;
 	}
 	
 	public long length() throws IOException {

@@ -2,9 +2,11 @@ package org.brandao.entityfilemanager.tx;
 
 public class TransactionalEntity<T> {
 
-	public static final byte UPDATE_RECORD 					= Byte.valueOf("00000001", 2);
+	public static final byte UPDATE_RECORD	= Byte.valueOf("00000001", 2);
 	
-	public static final byte NEW_RECORD    					= Byte.valueOf("00000010", 2);
+	public static final byte NEW_RECORD		= Byte.valueOf("00000010", 2);
+	
+	public static final byte DELETE_RECORD	= Byte.valueOf("00000100", 2);
 	
 	private long recordID;
 	

@@ -15,7 +15,7 @@ public class EntityFileTransactionHandlerImp
 	
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
-	protected Map<EntityFileAccess<?>, EntityFileAccessTransaction<?>> transactionFiles;
+	protected Map<EntityFileAccess<?,?>, EntityFileAccessTransaction<?,?>> transactionFiles;
 	
 	private EntityFileManagerConfigurer manager;
 	
@@ -46,11 +46,11 @@ public class EntityFileTransactionHandlerImp
 	public void begin() throws TransactionException {
 	}
 
-	public <T> long insert(T entity, EntityFileAccess<T> entityFileaccess)
+	public <T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess)
 			throws PersistenceException {
 		
-		EntityFileAccess<Long> freePointerEntityFileaccess = null;
-		EntityFileAccessTransaction<T> txEntityFileAccess  = this.getManagedEntityFile(entityFileaccess);
+		EntityFileAccess<Long,byte[]> freePointerEntityFileaccess = null;
+		EntityFileAccessTransaction<T,R> txEntityFileAccess  = this.getManagedEntityFile(entityFileaccess);
 		
 		ReadWriteLock readWritelock = entityFileaccess.getLock();
 		
@@ -105,18 +105,18 @@ public class EntityFileTransactionHandlerImp
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	private <T> EntityFileAccessTransaction<T> getManagedEntityFile( 
-			EntityFileAccess<T> entityFile) throws PersistenceException{
+	private <T,R> EntityFileAccessTransaction<T,R> getManagedEntityFile( 
+			EntityFileAccess<T,R> entityFile) throws PersistenceException{
 		try{
 			
-			EntityFileAccessTransaction<T> tx = 
-					(EntityFileAccessTransaction<T>)this.transactionFiles.get(entityFile);
+			EntityFileAccessTransaction<T,R> tx = 
+					(EntityFileAccessTransaction<T,R>)this.transactionFiles.get(entityFile);
 			
 			if(tx != null){
 				return tx;
 			}
 			
-			tx = new EntityFileAccessTransaction<T>(entityFile, this.transactionID);
+			tx = new EntityFileAccessTransaction<T,R>(entityFile, this.transactionID);
 			tx.createNewFile();
 			tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_NOT_STARTED);
 			

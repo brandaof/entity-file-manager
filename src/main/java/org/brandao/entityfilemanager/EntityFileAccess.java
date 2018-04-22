@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
-public interface EntityFileAccess<T> {
+public interface EntityFileAccess<T, R> {
 
 	int getRecordLength();
 	
@@ -37,7 +37,17 @@ public interface EntityFileAccess<T> {
 	
 	void write(T value) throws IOException;
 	
+	void writeRawEntity(R value) throws IOException;
+
+	void batchWriteRawEntity(List<R> entities) throws IOException;
+	
+	List<T> batchRead(long value) throws IOException;
+	
 	T read() throws IOException;
+	
+	R readRawEntity() throws IOException;
+	
+	List<R> batchReadRawEntity(long value) throws IOException;
 	
 	long length() throws IOException;
 	
