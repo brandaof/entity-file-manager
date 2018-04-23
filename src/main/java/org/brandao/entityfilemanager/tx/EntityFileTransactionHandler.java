@@ -8,12 +8,12 @@ public interface EntityFileTransactionHandler
 
 	void begin() throws TransactionException;
 	
-	<T> long insert(T entity, EntityFileAccess<T> entityFileaccess) throws PersistenceException;
+	<T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
 	
-	<T> void update(long id, T entity, EntityFileAccess<T> entityFileaccess) throws PersistenceException;
+	<T,R> void update(long id, T entity, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
 	
-	<T> void delete(long id, EntityFileAccess<T> entityFileaccess) throws PersistenceException;
+	<T,R> void delete(long id, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
 	
-	<T> T select(long id, EntityFileAccess<T> entityFileaccess);
+	<T,R> T select(long id, EntityFileAccess<T,R> entityFileaccess);
 	
 }

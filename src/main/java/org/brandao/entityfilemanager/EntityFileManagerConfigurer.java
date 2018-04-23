@@ -21,7 +21,7 @@ public interface EntityFileManagerConfigurer
 
 	File getDataPath();
 	
-	void create(String name, EntityFileAccess<?> entityFile) throws EntityFileManagerException;
+	void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException;
 	
 	void remove(String name) throws EntityFileManagerException;
 	

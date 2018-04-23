@@ -13,7 +13,7 @@ public class TransactionEntityFileAccess<T, R>
 	
 	public static final byte TRANSACTION_STARTED_ROLLBACK 	= Byte.valueOf("00000010", 2);
 	
-	public static final byte TRANSACTION_ROLLBACK			= Byte.valueOf("00000100", 2);
+	public static final byte TRANSACTION_ROLLEDBACK			= Byte.valueOf("00000100", 2);
 
 	public static final byte TRANSACTION_STARTED_COMMIT 	= Byte.valueOf("00001000", 2);
 	
@@ -49,7 +49,7 @@ public class TransactionEntityFileAccess<T, R>
 		String[] parts = name.split("\\.");
 		return new File(
 			file.getParentFile(), 
-			parts[0] + "-" + Long.toString(transactionID, Character.MAX_RADIX) + ".tra"
+			parts[0] + "-" + Long.toString(transactionID, Character.MAX_RADIX) + ".txa"
 		);
 	}
 	

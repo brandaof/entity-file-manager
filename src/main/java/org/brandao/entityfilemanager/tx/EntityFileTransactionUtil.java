@@ -11,13 +11,30 @@ public class EntityFileTransactionUtil {
 	public static <R> RawTransactionEntity<R>[][] mapOperations(
 			RawTransactionEntity<R>[] ops){
 		
-		RawTransactionEntity<R>[][] result	= new RawTransactionEntity[OP_TYPE_FILTER][ops.length];
+		int startSize = (int)(ops.length*0.5);
+		
+		startSize = startSize < 10?	10 : startSize;
+		
+		RawTransactionEntity<R>[][] result	= new RawTransactionEntity[OP_TYPE_FILTER][startSize];
 		int[] count 						= new int[OP_TYPE_FILTER];
 		
 		for(RawTransactionEntity<R> op: ops){
-			int opType = op.getFlags() & OP_TYPE_FILTER;
-			result[opType][count[opType]] = op;
-			count[opType]++;
+			
+			int opType 					= op.getFlags() & OP_TYPE_FILTER;
+			int c 						= count[opType];
+			RawTransactionEntity<R>[] a = result[opType]; 
+			
+			if(c == a.length){
+				RawTransactionEntity<R>[] tmp = new RawTransactionEntity[a.length + startSize];
+				
+				System.arraycopy(a, 0, tmp, 0, a.length);
+				
+				a 				= tmp;
+				result[opType]	= tmp;
+			}
+			
+			result[opType][c] = op;
+			count[opType]     = c++;
 		}
 		
 		result[TransactionalEntity.NEW_RECORD] = 

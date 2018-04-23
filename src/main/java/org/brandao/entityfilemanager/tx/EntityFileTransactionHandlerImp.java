@@ -19,8 +19,6 @@ public class EntityFileTransactionHandlerImp
 	
 	private long transactionID;
 	
-	private boolean commitInProgress;
-	
 	private boolean started;
 
 	private boolean rolledBack;
@@ -28,11 +26,11 @@ public class EntityFileTransactionHandlerImp
 	private boolean commited;
 	
 	public boolean isRolledBack() {
-		return false;
+		return this.rolledBack;
 	}
 
 	public boolean isCommited() {
-		return false;
+		return this.commited;
 	}
 
 	public void rollback() throws TransactionException {
@@ -59,7 +57,7 @@ public class EntityFileTransactionHandlerImp
 			}
 			
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_ROLLBACK);
+				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK);
 			}
 		}
 		catch(Throwable e){
@@ -98,12 +96,11 @@ public class EntityFileTransactionHandlerImp
 	}
 
 	public void begin() throws TransactionException {
-		if(this.started)
-			throw new TransactionException("transaction has been started");
-
-		if(this.commitInProgress)
-			throw new TransactionException("commit in progress");
 		
+		if(this.started){
+			throw new TransactionException("transaction has been started");
+		}
+
 		this.started = true;
 	}
 
