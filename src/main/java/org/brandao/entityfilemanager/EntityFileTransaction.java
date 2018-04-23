@@ -1,22 +1,21 @@
 package org.brandao.entityfilemanager;
 
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import org.brandao.entityfilemanager.tx.EntityFileAccessTransaction;
+import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
 import org.brandao.entityfilemanager.tx.RawTransactionEntity;
+import org.brandao.entityfilemanager.tx.RollbackOperations;
 import org.brandao.entityfilemanager.tx.TransactionException;
 import org.brandao.entityfilemanager.tx.TransactionalEntity;
 
-public class EntityFileTransaction<T> 
+public class EntityFileTransaction<T, R> 
 	implements EntityFile<T> {
 
-	private EntityFileAccess<T,byte[]> data;
+	private EntityFileAccess<T,R> data;
 	
-	private EntityFileAccess<Long,byte[]> freeSpace;
-	
-	private EntityFileAccessTransaction<T,byte[]> tx;
+	private EntityFileAccessTransaction<T,R> tx;
 	
 	private int batchOperationLength;
 	
@@ -26,10 +25,10 @@ public class EntityFileTransaction<T>
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
-		long id = -1;
+		long id = this.getNextFreePointer();
 		
 		try{
-			if(freeSpace.length() == 0){
+			if(id == -1){
 				id = data.length();
 				
 				tx.seek(tx.length());
@@ -39,13 +38,8 @@ public class EntityFileTransaction<T>
 				data.write(entity);
 			}
 			else{
-				freeSpace.seek(freeSpace.length());
-				id = freeSpace.read();
-				
 				tx.seek(tx.length());
 				tx.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, null));
-				
-				freeSpace.setLength(freeSpace.length() - 1);
 				
 				data.seek(data.length());
 				data.write(entity);
@@ -70,10 +64,10 @@ public class EntityFileTransaction<T>
 		
 		try{
 			this.data.seek(id);
-			byte[] rawData = this.data.readRawEntity();
+			R rawData = this.data.readRawEntity();
 			
 			tx.seek(tx.length());
-			tx.writeRawEntity(new RawTransactionEntity<byte[]>(id, TransactionalEntity.UPDATE_RECORD, rawData));
+			tx.writeRawEntity(new RawTransactionEntity<R>(id, TransactionalEntity.UPDATE_RECORD, rawData));
 			
 			this.data.seek(id);
 			this.data.write(entity);
@@ -94,17 +88,14 @@ public class EntityFileTransaction<T>
 		
 		try{
 			this.data.seek(id);
-			byte[] rawData = this.data.readRawEntity();
+			R rawData = this.data.readRawEntity();
 
 			if(rawData == null){
 				return;
 			}
 			
 			tx.seek(tx.length());
-			tx.writeRawEntity(new RawTransactionEntity<byte[]>(id, TransactionalEntity.DELETE_RECORD, rawData));
-			
-			freeSpace.seek(freeSpace.length());
-			freeSpace.write(id);
+			tx.writeRawEntity(new RawTransactionEntity<R>(id, TransactionalEntity.DELETE_RECORD, rawData));
 			
 			this.data.seek(id);
 			this.data.write(null);
@@ -153,13 +144,46 @@ public class EntityFileTransaction<T>
 	}
 	
 	public void commit() throws TransactionException{
-		
+		try{
+			if(!this.tx.isStarted()){
+				return;
+			}
+			
+			this.tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_STARTED_COMMIT);
+			
+			this.tx.seek(0);
+			
+			long current = 0;
+			long max     = this.tx.length();
+			
+			while(current < max){
+				
+				RawTransactionEntity<R>[] ops = 
+					this.tx.batchReadRawEntity(this.batchOperationLength);
+				
+				RawTransactionEntity<R>[][] map = 
+					EntityFileTransactionUtil.mapOperations(ops);
+				
+				ops = map[TransactionalEntity.NEW_RECORD];
+				RollbackOperations.insert(ops, data);
+				
+				ops = map[TransactionalEntity.UPDATE_RECORD];
+				RollbackOperations.insert(ops, data);
+				
+				ops = map[TransactionalEntity.DELETE_RECORD];
+				RollbackOperations.insert(ops, data);
+
+				current += ops.length;
+			}
+			
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}		
 	}
 	
 	public void rollback() throws TransactionException{
 		try{
-			byte status = this.tx.getTransactionStatus();
-
 			if(!this.tx.isStarted()){
 				return;
 			}
@@ -167,21 +191,38 @@ public class EntityFileTransaction<T>
 			this.tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_STARTED_ROLLBACK);
 			
 			this.tx.seek(0);
+			
 			long current = 0;
 			long max     = this.tx.length();
+			
 			while(current < max){
-				List<RawTransactionEntity<byte[]>> ops = 
-						this.tx.batchReadRawEntity(this.batchOperationLength);
 				
+				RawTransactionEntity<R>[] ops = 
+					this.tx.batchReadRawEntity(this.batchOperationLength);
+				
+				RawTransactionEntity<R>[][] map = 
+					EntityFileTransactionUtil.mapOperations(ops);
+				
+				ops = map[TransactionalEntity.NEW_RECORD];
+				RollbackOperations.insert(ops, data);
+				
+				ops = map[TransactionalEntity.UPDATE_RECORD];
+				RollbackOperations.insert(ops, data);
+				
+				ops = map[TransactionalEntity.DELETE_RECORD];
+				RollbackOperations.insert(ops, data);
+
+				current += ops.length;
 			}
 			
-		}
-		catch(TransactionException e){
-			throw e;
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
 		}
 	}
 
+	private long getNextFreePointer(){
+		return -1;
+	}
+	
 }

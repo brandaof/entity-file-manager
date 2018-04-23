@@ -2,7 +2,6 @@ package org.brandao.entityfilemanager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 public interface EntityFileAccess<T, R> {
@@ -33,21 +32,21 @@ public interface EntityFileAccess<T, R> {
 	
 	long getOffset() throws IOException;
 	
-	void batchWrite(List<T> entities) throws IOException;
+	void batchWrite(T[] entities) throws IOException;
 	
 	void write(T value) throws IOException;
 	
 	void writeRawEntity(R value) throws IOException;
 
-	void batchWriteRawEntity(List<R> entities) throws IOException;
+	void batchWriteRawEntity(R[] entities) throws IOException;
 	
-	List<T> batchRead(long value) throws IOException;
+	T[] batchRead(long value) throws IOException;
 	
 	T read() throws IOException;
 	
 	R readRawEntity() throws IOException;
 	
-	List<R> batchReadRawEntity(long value) throws IOException;
+	R[] batchReadRawEntity(long value) throws IOException;
 	
 	long length() throws IOException;
 	

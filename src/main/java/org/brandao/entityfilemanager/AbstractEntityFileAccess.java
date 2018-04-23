@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -128,14 +127,14 @@ public class AbstractEntityFileAccess<T, R>
 		this.offset = value;
 	}
 	
-	public void batchWrite(List<T> entities) throws IOException{
+	public void batchWrite(T[] entities) throws IOException{
 		long pointerOffset = this.firstRecord;
 		pointerOffset += this.recordLength*this.offset;
 		
 		int maxlength = 
-				entities.size() > this.batchLength?
+				entities.length > this.batchLength?
 						this.recordLength*this.batchLength :
-						this.recordLength*entities.size();
+						this.recordLength*entities.length;
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(maxlength);
 		DataOutputStream dStream = new DataOutputStream(stream);
@@ -211,13 +210,13 @@ public class AbstractEntityFileAccess<T, R>
 		this.offset++;
 	}
 
-	public void batchWriteRawEntity(List<R> entities) throws IOException {
+	public void batchWriteRawEntity(R[] entities) throws IOException {
 	}
 	
 	public void writeRawEntity(R value) throws IOException {
 	}
 
-	public List<T> batchRead(long value) throws IOException {
+	public T[] batchRead(long value) throws IOException {
 		return null;
 	}
 	
@@ -240,7 +239,7 @@ public class AbstractEntityFileAccess<T, R>
 		return entity;
 	}
 
-	public List<R> batchReadRawEntity(long value) throws IOException {
+	public R[] batchReadRawEntity(long value) throws IOException {
 		return null;
 	}
 	

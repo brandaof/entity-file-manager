@@ -22,7 +22,7 @@ public class EntityFileManagerImp
 	
 	private File path;
 	
-	private Map<String, EntityFileAccess<?>> entities;
+	private Map<String, EntityFileAccess<?,?>> entities;
 
 	private File transactionPath;
 	
@@ -33,7 +33,7 @@ public class EntityFileManagerImp
 	private boolean started;
 	
 	public EntityFileManagerImp(){
-		this.entities = new HashMap<String, EntityFileAccess<?>>();
+		this.entities = new HashMap<String, EntityFileAccess<?,?>>();
 		this.started  = false;
 	}
 	
@@ -85,7 +85,7 @@ public class EntityFileManagerImp
 		try{
 			this.clearTransactions();
 			
-			for(EntityFileAccess<?> entityFile: this.entities.values()){
+			for(EntityFileAccess<?,?> entityFile: this.entities.values()){
 				entityFile.close();
 			}
 			
@@ -98,7 +98,9 @@ public class EntityFileManagerImp
 	}
 	
 	private void clearTransactions() throws EntityFileManagerException{
+		
 		File[] txList = this.transactionPath.listFiles();
+		
 		for(File txFile: txList){
 			try{
 				EntityFileTransactionHandler tx = null;
@@ -116,7 +118,7 @@ public class EntityFileManagerImp
 		}
 	}
 	
-	public void create(String name, EntityFileAccess<?> entityFile) throws EntityFileManagerException{
+	public void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException{
 		
 		try{
 			if(entityFile.exists())

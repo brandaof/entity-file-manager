@@ -1,27 +1,39 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.io.IOException;
-import java.util.Set;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 
 public class RollbackOperations {
 
-	public <T,R> void insert(
-			RawTransactionEntity<R> op, EntityFileAccess<T,R> data, 
-			EntityFileAccess<Long,byte[]> freeSpace, Set<Long> mappedFreeSpace) throws IOException{
+	public static <T,R> void insert(RawTransactionEntity<R>[] ops, 
+			EntityFileAccess<T,R> data) throws IOException{
 		
-		if(!mappedFreeSpace.contains(op.getRecordID())){
-			freeSpace.seek(freeSpace.length());
-			freeSpace.write(op.getRecordID());
+		for(RawTransactionEntity<R> op: ops){
+			data.seek(op.getRecordID());
+			data.writeRawEntity(op.getEntity());
 		}
 		
 	}
 
-	public <T,R> void update(
-			RawTransactionEntity<R> op, EntityFileAccess<T,R> data) throws IOException{
-		data.seek(op.getRecordID());
-		data.writeRawEntity(op.getEntity());
+	public static <T,R> void update(RawTransactionEntity<R>[] ops, 
+			EntityFileAccess<T,R> data) throws IOException{
+		
+		for(RawTransactionEntity<R> op: ops){
+			data.seek(op.getRecordID());
+			data.writeRawEntity(op.getEntity());
+		}
+		
+	}
+
+	public static <T,R> void delete(RawTransactionEntity<R>[] ops, 
+			EntityFileAccess<T,R> data) throws IOException{
+		
+		for(RawTransactionEntity<R> op: ops){
+			data.seek(op.getRecordID());
+			data.write(null);
+		}
+		
 	}
 	
 }
