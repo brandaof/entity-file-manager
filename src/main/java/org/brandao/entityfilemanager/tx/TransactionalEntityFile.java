@@ -1,14 +1,11 @@
-package org.brandao.entityfilemanager;
+package org.brandao.entityfilemanager.tx;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
-import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
-import org.brandao.entityfilemanager.tx.RawTransactionEntity;
-import org.brandao.entityfilemanager.tx.RollbackOperations;
-import org.brandao.entityfilemanager.tx.TransactionException;
-import org.brandao.entityfilemanager.tx.TransactionalEntity;
+import org.brandao.entityfilemanager.EntityFile;
+import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.PersistenceException;
 
 public class TransactionalEntityFile<T, R> 
 	implements EntityFile<T> {

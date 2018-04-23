@@ -15,7 +15,7 @@ public class EntityFileTransactionHandlerImp
 	
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
-	protected Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> transactionFiles;
+	protected Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles;
 	
 	private EntityFileManagerConfigurer manager;
 	
@@ -48,47 +48,43 @@ public class EntityFileTransactionHandlerImp
 
 	public <T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess)
 			throws PersistenceException {
-		
-		TransactionEntityFileAccess<T,R> txEntityFileAccess  = this.getManagedEntityFile(entityFileaccess);
-		ReadWriteLock readWritelock = entityFileaccess.getLock();
-		
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
-		try{
-			
-		}
-		finally{
-			lock.unlock();
-		}
+		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+		return txEntityFileAccess.insert(entity);
 	}
 
-	public <T> void update(long id, T entity,
-			EntityFileAccess<T> entityFileaccess) throws PersistenceException {
+	public <T,R> void update(long id, T entity,
+			EntityFileAccess<T,R> entityFileaccess) throws PersistenceException {
+		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+		txEntityFileAccess.update(id, entity);
 	}
 
-	public <T> void delete(long id, EntityFileAccess<T> entityFileaccess)
+	public <T,R> void delete(long id, EntityFileAccess<T,R> entityFileaccess)
 			throws PersistenceException {
+		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+		txEntityFileAccess.delete(id);
 	}
 
-	public <T> T select(long id, EntityFileAccess<T> entityFileaccess) {
-		return null;
+	public <T,R> T select(long id, EntityFileAccess<T,R> entityFileaccess) {
+		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+		return txEntityFileAccess.select(id);
 	}
 
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	private <T,R> TransactionEntityFileAccess<T,R> getManagedEntityFile( 
+	private <T,R> TransactionalEntityFile<T,R> getManagedEntityFile( 
 			EntityFileAccess<T,R> entityFile) throws PersistenceException{
 		try{
 			
-			TransactionEntityFileAccess<T,R> tx = 
-					(TransactionEntityFileAccess<T,R>)this.transactionFiles.get(entityFile);
+			TransactionalEntityFile<T,R> tx = 
+					(TransactionalEntityFile<T,R>)this.transactionFiles.get(entityFile);
 			
 			if(tx != null){
 				return tx;
 			}
 			
-			tx = new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID);
+			TransactionEntityFileAccess<T,R> txFile = 
+				new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID);
 			tx.createNewFile();
 			tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_NOT_STARTED);
 			
