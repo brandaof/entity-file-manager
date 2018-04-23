@@ -1,14 +1,13 @@
 package org.brandao.entityfilemanager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManager;
-import org.brandao.entityfilemanager.tx.EntityFileTransactionHandler;
-import org.brandao.entityfilemanager.tx.EntityFileTransactionWrapper;
 import org.brandao.entityfilemanager.tx.TransactionException;
 
 public class EntityFileManagerImp 
@@ -98,24 +97,8 @@ public class EntityFileManagerImp
 	}
 	
 	private void clearTransactions() throws EntityFileManagerException{
-		
 		File[] txList = this.transactionPath.listFiles();
-		
-		for(File txFile: txList){
-			try{
-				EntityFileTransactionHandler tx = null;
-				try{
-					tx = this.transactioManager.open(txFile.getName());
-					tx.rollback();
-				}
-				finally{
-					this.transactioManager.close(tx);
-				}
-			}
-			catch(Throwable e){
-				throw new EntityFileManagerException(e);
-			}
-		}
+		//load started transactions
 	}
 	
 	public void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException{
@@ -146,13 +129,13 @@ public class EntityFileManagerImp
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> EntityFile<T> getEntityFile(String name, Class<T> type){
+	public <T> EntityFile<T> getEntityFile(String name, EntityFileTransaction tx, Class<T> type){
 		
 		if(!this.started)
 			throw new EntityFileManagerException("manager not started");
 		
 		EntityFileAccess<T,?> fileAccess = (EntityFileAccess<T,?>) this.entities.get(name); 
-		return new EntityFileTransactionWrapper<T>(fileAccess, this.transactioManager);
+		return new EntityFileTX<T>(fileAccess, tx);
 	}
 
 	public File getPath() {
@@ -176,7 +159,6 @@ public class EntityFileManagerImp
 	}
 	
 	public void truncate(String name) throws EntityFileManagerException {
-		
 		try{
 			EntityFileAccess<?,?> entity = this.entities.get(name);
 			entity.createNewFile();
@@ -184,20 +166,38 @@ public class EntityFileManagerImp
 		catch(Throwable e){
 			throw new EntityFileManagerException(e);
 		}
-		
 	}
 
 	public EntityFileTransaction beginTransaction() throws TransactionException{
-		
-		EntityFileTransactionHandler tx = this.transactioManager.getCurrent();
-		
-		if(tx != null){
-			throw new TransactionException("transaction has been strated!");
-		}
-		
-		tx = this.transactioManager.open(UUID.randomUUID().toString());
-		
-		return tx;
+		return this.transactioManager.create();
 	}
 
+	public static class EntityFileTX<T> implements EntityFile<T>{
+
+		private EntityFileTransaction tx;
+		
+		private EntityFileAccess<T,?> entityFile;
+		
+		public EntityFileTX(EntityFileAccess<T,?> entityFile, EntityFileTransaction tx) {
+			this.tx = tx;
+			this.entityFile = entityFile;
+		}
+
+		public long insert(T entity) throws IOException {
+			return this.tx.insert(entity, entityFile);
+		}
+
+		public void update(long id, T entity) throws IOException {
+			this.tx.update(id, entity, entityFile);
+		}
+
+		public void delete(long id) throws IOException {
+			this.tx.delete(id, entityFile);
+		}
+
+		public T select(long id) throws IOException {
+			return this.tx.select(id, entityFile);		
+		}
+		
+	}
 }

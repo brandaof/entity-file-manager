@@ -2,12 +2,8 @@ package org.brandao.entityfilemanager.tx;
 
 public interface EntityFileTransactionManager {
 
-	long getNextTransactionID();
+	EntityFileTransaction create();
 	
-	EntityFileTransactionHandler getCurrent();
-	
-	EntityFileTransactionHandler open(String id);
-	
-	void close(EntityFileTransactionHandler transaction);
+	void close(EntityFileTransaction tx);
 	
 }

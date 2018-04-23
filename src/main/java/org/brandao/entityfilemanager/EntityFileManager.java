@@ -7,6 +7,7 @@ public interface EntityFileManager {
 
 	EntityFileTransaction beginTransaction() throws TransactionException;
 	
-	<T> EntityFile<T> getEntityFile(String name, Class<T> type);
+	<T> EntityFile<T> getEntityFile(String name, 
+			EntityFileTransaction entityFileTransaction, Class<T> type);
 	
 }

@@ -6,8 +6,8 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.PersistenceException;
 
-public class EntityFileTransactionHandlerImp 
-	implements EntityFileTransactionHandler{
+public class EntityFileTransactionImp 
+	implements EntityFileTransaction{
 
 	private static final long TIME_OUT = 5*60*1000;
 	
