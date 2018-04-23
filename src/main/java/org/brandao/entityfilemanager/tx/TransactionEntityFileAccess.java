@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileAccess;
 
-public class EntityFileAccessTransaction<T, R> 
+public class TransactionEntityFileAccess<T, R> 
 	extends AbstractEntityFileAccess<TransactionalEntity<T>, RawTransactionEntity<R>> {
 
 	public static final byte TRANSACTION_NOT_STARTED 		= Byte.valueOf("00000001", 2);
@@ -28,7 +28,7 @@ public class EntityFileAccessTransaction<T, R>
 	
 	private byte transactionStatus;
 	
-	public EntityFileAccessTransaction(EntityFileAccess<T, R> e, long transactionID){
+	public TransactionEntityFileAccess(EntityFileAccess<T, R> e, long transactionID){
 		super(e.getAbsoluteFile(), new EntityFileTransactionDataHandler<T>(e.getEntityFileDataHandler()));
 
 		this.entityFileAccess                 = e;

@@ -3,19 +3,19 @@ package org.brandao.entityfilemanager;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import org.brandao.entityfilemanager.tx.EntityFileAccessTransaction;
+import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
 import org.brandao.entityfilemanager.tx.RawTransactionEntity;
 import org.brandao.entityfilemanager.tx.RollbackOperations;
 import org.brandao.entityfilemanager.tx.TransactionException;
 import org.brandao.entityfilemanager.tx.TransactionalEntity;
 
-public class EntityFileTransaction<T, R> 
+public class TransactionalEntityFile<T, R> 
 	implements EntityFile<T> {
 
 	private EntityFileAccess<T,R> data;
 	
-	private EntityFileAccessTransaction<T,R> tx;
+	private TransactionEntityFileAccess<T,R> tx;
 	
 	private int batchOperationLength;
 	
@@ -129,11 +129,11 @@ public class EntityFileTransaction<T, R>
 		try{
 			byte status = this.tx.getTransactionStatus();
 			
-			if(status != EntityFileAccessTransaction.TRANSACTION_NOT_STARTED){
+			if(status != TransactionEntityFileAccess.TRANSACTION_NOT_STARTED){
 				throw new TransactionException("transaction has been started");
 			}
 			
-			this.tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_STARTED);
+			this.tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED);
 		}
 		catch(TransactionException e){
 			throw e;
@@ -149,7 +149,7 @@ public class EntityFileTransaction<T, R>
 				return;
 			}
 			
-			this.tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_STARTED_COMMIT);
+			this.tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT);
 			
 			this.tx.seek(0);
 			
@@ -188,7 +188,7 @@ public class EntityFileTransaction<T, R>
 				return;
 			}
 			
-			this.tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_STARTED_ROLLBACK);
+			this.tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK);
 			
 			this.tx.seek(0);
 			

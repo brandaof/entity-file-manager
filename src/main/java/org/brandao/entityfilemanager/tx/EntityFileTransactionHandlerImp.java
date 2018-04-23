@@ -15,7 +15,7 @@ public class EntityFileTransactionHandlerImp
 	
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
-	protected Map<EntityFileAccess<?,?>, EntityFileAccessTransaction<?,?>> transactionFiles;
+	protected Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> transactionFiles;
 	
 	private EntityFileManagerConfigurer manager;
 	
@@ -49,7 +49,7 @@ public class EntityFileTransactionHandlerImp
 	public <T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess)
 			throws PersistenceException {
 		
-		EntityFileAccessTransaction<T,R> txEntityFileAccess  = this.getManagedEntityFile(entityFileaccess);
+		TransactionEntityFileAccess<T,R> txEntityFileAccess  = this.getManagedEntityFile(entityFileaccess);
 		ReadWriteLock readWritelock = entityFileaccess.getLock();
 		
 		Lock lock = readWritelock.writeLock();
@@ -77,20 +77,20 @@ public class EntityFileTransactionHandlerImp
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	private <T,R> EntityFileAccessTransaction<T,R> getManagedEntityFile( 
+	private <T,R> TransactionEntityFileAccess<T,R> getManagedEntityFile( 
 			EntityFileAccess<T,R> entityFile) throws PersistenceException{
 		try{
 			
-			EntityFileAccessTransaction<T,R> tx = 
-					(EntityFileAccessTransaction<T,R>)this.transactionFiles.get(entityFile);
+			TransactionEntityFileAccess<T,R> tx = 
+					(TransactionEntityFileAccess<T,R>)this.transactionFiles.get(entityFile);
 			
 			if(tx != null){
 				return tx;
 			}
 			
-			tx = new EntityFileAccessTransaction<T,R>(entityFile, this.transactionID);
+			tx = new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID);
 			tx.createNewFile();
-			tx.setTransactionStatus(EntityFileAccessTransaction.TRANSACTION_NOT_STARTED);
+			tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_NOT_STARTED);
 			
 			this.transactionFiles.put(entityFile, tx);
 			return tx;
