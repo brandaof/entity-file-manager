@@ -2,6 +2,8 @@ package org.brandao.entityfilemanager.tx;
 
 import java.io.File;
 
+import org.brandao.entityfilemanager.EntityFileAccess;
+
 public class EntityFileTransactionUtil {
 
 	public static final byte OP_TYPE_FILTER = Byte.valueOf("00000111", 2);
@@ -73,6 +75,11 @@ public class EntityFileTransactionUtil {
 		String[] nameParts = parts[0].split("\\-");
 		return new TransactionFileNameMetadata(nameParts[0], 
 				Long.parseLong(parts[1], Character.MAX_RADIX));
+	}
+	
+	public static <T,R> TransactionEntityFileAccess<T,R> getTransactionEntityFileAccess( 
+		EntityFileAccess<T,R> entityFile, long transactionID) {
+		return new TransactionEntityFileAccess<T,R>(entityFile, transactionID);
 	}
 	
 	@SuppressWarnings("unchecked")
