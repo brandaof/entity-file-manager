@@ -135,7 +135,7 @@ public class EntityFileManagerImp
 
 	public void remove(String name) throws EntityFileManagerException{
 		
-		EntityFileAccess<?> entity = this.entities.get(name);
+		EntityFileAccess<?,?> entity = this.entities.get(name);
 		
 		try{
 			entity.close();
@@ -151,7 +151,7 @@ public class EntityFileManagerImp
 		if(!this.started)
 			throw new EntityFileManagerException("manager not started");
 		
-		EntityFileAccess<T> fileAccess = (EntityFileAccess<T>) this.entities.get(name); 
+		EntityFileAccess<T,?> fileAccess = (EntityFileAccess<T,?>) this.entities.get(name); 
 		return new EntityFileTransactionWrapper<T>(fileAccess, this.transactioManager);
 	}
 
@@ -178,7 +178,7 @@ public class EntityFileManagerImp
 	public void truncate(String name) throws EntityFileManagerException {
 		
 		try{
-			EntityFileAccess<?> entity = this.entities.get(name);
+			EntityFileAccess<?,?> entity = this.entities.get(name);
 			entity.createNewFile();
 		}
 		catch(Throwable e){
