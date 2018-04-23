@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.IOException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -15,6 +16,21 @@ public class TransactionalEntityFile<T, R>
 	private TransactionEntityFileAccess<T,R> tx;
 	
 	private int batchOperationLength;
+	
+	public TransactionalEntityFile(EntityFileAccess<T,R> data, 
+			TransactionEntityFileAccess<T,R> tx, int batchOperationLength){
+		this.data = data;
+		this.tx = tx;
+		this.batchOperationLength = batchOperationLength;
+	}
+	
+	public void setTransactionStatus(byte value) throws IOException{
+		this.tx.setTransactionStatus(value);
+	}
+	
+	public byte getTransactionStatus() throws IOException{
+		return this.tx.getTransactionStatus();
+	}
 	
 	public long insert(T entity) throws PersistenceException{
 		
@@ -146,8 +162,6 @@ public class TransactionalEntityFile<T, R>
 				return;
 			}
 			
-			this.tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT);
-			
 			this.tx.seek(0);
 			
 			long current = 0;
@@ -172,7 +186,6 @@ public class TransactionalEntityFile<T, R>
 
 				current += ops.length;
 			}
-			
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -185,8 +198,6 @@ public class TransactionalEntityFile<T, R>
 				return;
 			}
 			
-			this.tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK);
-			
 			this.tx.seek(0);
 			
 			long current = 0;
@@ -211,7 +222,6 @@ public class TransactionalEntityFile<T, R>
 
 				current += ops.length;
 			}
-			
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);

@@ -36,4 +36,8 @@ public class TransactionalEntity<T> {
 		return recordID;
 	}
 
+	public byte getFlags() {
+		return flags;
+	}
+
 }

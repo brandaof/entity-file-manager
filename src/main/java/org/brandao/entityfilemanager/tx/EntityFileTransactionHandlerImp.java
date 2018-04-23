@@ -1,8 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
@@ -38,12 +36,75 @@ public class EntityFileTransactionHandlerImp
 	}
 
 	public void rollback() throws TransactionException {
+		
+		if(this.rolledBack){
+			throw new TransactionException("transaction has been rolled back");
+		}
+
+		if(this.commited){
+			throw new TransactionException("transaction has been commited");
+		}
+		
+		if(!started){
+			throw new TransactionException("transaction not started");
+		}
+		
+		try{
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK);
+			}
+
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.rollback();
+			}
+			
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_ROLLBACK);
+			}
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
 	}
 
 	public void commit() throws TransactionException {
+		
+		if(this.rolledBack)
+			throw new TransactionException("transaction has been rolled back");
+
+		if(this.commited)
+			throw new TransactionException("transaction has been commited");
+		
+		if(!started)
+			throw new TransactionException("transaction not started");
+
+		try{
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT);
+			}
+
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.rollback();
+			}
+			
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_COMMITED);
+			}
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
+		
 	}
 
 	public void begin() throws TransactionException {
+		if(this.started)
+			throw new TransactionException("transaction has been started");
+
+		if(this.commitInProgress)
+			throw new TransactionException("commit in progress");
+		
+		this.started = true;
 	}
 
 	public <T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess)
@@ -85,9 +146,7 @@ public class EntityFileTransactionHandlerImp
 			
 			TransactionEntityFileAccess<T,R> txFile = 
 				new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID);
-			tx.createNewFile();
-			tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_NOT_STARTED);
-			
+			txFile.createNewFile();
 			this.transactionFiles.put(entityFile, tx);
 			return tx;
 		}

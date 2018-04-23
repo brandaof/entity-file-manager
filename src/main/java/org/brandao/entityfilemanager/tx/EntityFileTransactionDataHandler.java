@@ -37,11 +37,18 @@ public class EntityFileTransactionDataHandler<T>
 
 	public void write(DataOutputStream stream, TransactionalEntity<T> entity)
 			throws IOException {
+		stream.writeLong(entity.getRecordID());
+		stream.writeByte(entity.getFlags());
+		this.handler.write(stream, entity.getEntity());
 	}
 
 	public TransactionalEntity<T> read(DataInputStream stream)
 			throws IOException {
-		return null;
+		
+		long recordID = stream.readLong();
+		byte flags    = stream.readByte();
+		T entity      = this.handler.read(stream);
+		return new TransactionalEntity<T>(recordID, flags, entity);
 	}
 
 	public byte getTransactionStatus() {
