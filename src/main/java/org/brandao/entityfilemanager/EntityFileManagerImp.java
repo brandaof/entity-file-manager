@@ -126,6 +126,11 @@ public class EntityFileManagerImp
 		}
 	}
 
+	public EntityFileAccess<?, ?> getEntityFile(String name)
+			throws EntityFileManagerException {
+		return this.entities.get(name);
+	}
+	
 	public void remove(String name) throws EntityFileManagerException{
 		
 		EntityFileAccess<?,?> entity = this.entities.get(name);

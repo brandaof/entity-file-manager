@@ -18,6 +18,11 @@ public class TransactionalEntityFile<T, R>
 	private int batchOperationLength;
 	
 	public TransactionalEntityFile(EntityFileAccess<T,R> data, 
+			TransactionEntityFileAccess<T,R> tx){
+		this(data,tx, 100);
+	}
+	
+	public TransactionalEntityFile(EntityFileAccess<T,R> data, 
 			TransactionEntityFileAccess<T,R> tx, int batchOperationLength){
 		this.data = data;
 		this.tx = tx;

@@ -27,6 +27,8 @@ public interface EntityFileManagerConfigurer
 	
 	void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException;
 	
+	EntityFileAccess<?,?> getEntityFile(String name) throws EntityFileManagerException;
+	
 	void remove(String name) throws EntityFileManagerException;
 	
 	void truncate(String name) throws EntityFileManagerException;

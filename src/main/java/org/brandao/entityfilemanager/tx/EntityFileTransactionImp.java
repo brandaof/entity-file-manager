@@ -25,6 +25,20 @@ public class EntityFileTransactionImp
 	
 	private boolean commited;
 	
+	public EntityFileTransactionImp(
+			EntityFileTransactionManager entityFileTransactionManager,
+			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
+			EntityFileManagerConfigurer manager, long transactionID,
+			boolean started, boolean rolledBack, boolean commited) {
+		this.entityFileTransactionManager = entityFileTransactionManager;
+		this.transactionFiles = transactionFiles;
+		this.manager = manager;
+		this.transactionID = transactionID;
+		this.started = started;
+		this.rolledBack = rolledBack;
+		this.commited = commited;
+	}
+
 	public boolean isRolledBack() {
 		return this.rolledBack;
 	}
