@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManager;
@@ -31,9 +30,12 @@ public class EntityFileManagerImp
 	
 	private boolean started;
 	
+	private LockProvider lockProvider;
+	
 	public EntityFileManagerImp(){
-		this.entities = new HashMap<String, EntityFileAccess<?,?>>();
-		this.started  = false;
+		this.lockProvider = new LockProviderImp();
+		this.entities     = new HashMap<String, EntityFileAccess<?,?>>();
+		this.started      = false;
 	}
 	
 	public void setPathName(String pathName) {
@@ -57,6 +59,14 @@ public class EntityFileManagerImp
 		return this.pathName;
 	}
 
+	public void setLockProvider(LockProvider provider) {
+		this.lockProvider = provider;
+	}
+
+	public LockProvider getLockProvider() {
+		return this.lockProvider;
+	}
+	
 	public void start() throws EntityFileManagerException{
 		
 		if(this.started)
@@ -200,4 +210,5 @@ public class EntityFileManagerImp
 		}
 		
 	}
+
 }

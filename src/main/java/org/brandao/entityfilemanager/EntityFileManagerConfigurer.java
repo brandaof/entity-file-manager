@@ -11,6 +11,10 @@ public interface EntityFileManagerConfigurer
 
 	EntityFileTransactionManager getEntityFileTransactionManager();
 	
+	void setLockProvider(LockProvider provider);
+	
+	LockProvider getLockProvider();
+	
 	void setPathName(String pathName);
 
 	String getPathName();
