@@ -17,35 +17,71 @@ public class EntityFileTransactionUtil {
 	@SuppressWarnings("serial")
 	private static Map<Integer,Byte> mappedTransactionStatus = new HashMap<Integer,Byte>(){{
 		
+		//transaction not started only
 		put(~EntityFileTransaction.TRANSACTION_NOT_STARTED,
 				EntityFileTransaction.TRANSACTION_NOT_STARTED);
 		
+		//transaction started rollback only
 		put(~EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK, 
 				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 		
+		//transaction rolledback only
 		put(~EntityFileTransaction.TRANSACTION_ROLLEDBACK, 
 				EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 		
+		//transaction started commit only
 		put(~EntityFileTransaction.TRANSACTION_STARTED_COMMIT, 
 				EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
 
+		//transaction commited only
 		put(~EntityFileTransaction.TRANSACTION_COMMITED, 
 				EntityFileTransaction.TRANSACTION_COMMITED);
 	
+		//transaction started and not started
 		put(~(EntityFileTransaction.TRANSACTION_NOT_STARTED | EntityFileTransaction.TRANSACTION_STARTED_COMMIT), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED);
 		
+		//transaction started with rollback
 		put(~(EntityFileTransaction.TRANSACTION_NOT_STARTED | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED);
 		
+		//transaction started rollback without fail
 		put(~(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
 				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 		
+		//transaction started commit without fail
 		put(~(EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_COMMITED), 
 				EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
 		
-		put(~(EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_COMMITED), 
-				EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
+		//transaction started commit with fail
+		put(~(EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~(EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~(EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		//transaction commited with fail
+		put(~(EntityFileTransaction.TRANSACTION_COMMITED | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~(EntityFileTransaction.TRANSACTION_COMMITED | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~(EntityFileTransaction.TRANSACTION_COMMITED | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+
+		//transaction commit with fail
+		put(~(EntityFileTransaction.TRANSACTION_COMMITED | EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~(EntityFileTransaction.TRANSACTION_COMMITED | EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~(EntityFileTransaction.TRANSACTION_COMMITED | EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 		
 	}};
 	
@@ -172,35 +208,6 @@ public class EntityFileTransactionUtil {
 		}
 		
 		return (byte)result;
-	}
-	
-	public static boolean isTransactionNotStarted(byte mergedTransactionStatus){
-		
-		boolean result = 
-			(mergedTransactionStatus | EntityFileTransaction.TRANSACTION_NOT_STARTED) == 
-					EntityFileTransaction.TRANSACTION_NOT_STARTED;
-		
-		result = result ||
-			(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_NOT_STARTED) == 0 &&
-			(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_STARTED_COMMIT) == 0;
-			
-		result = result ||
-				(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_NOT_STARTED) == 0 &&
-				(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK) == 0;
-		
-		return result;
-	}
-
-	public static boolean isTransactionRolledback(byte mergedTransactionStatus){
-		return
-			(mergedTransactionStatus & ~EntityFileTransaction.TRANSACTION_ROLLEDBACK) == 
-			mergedTransactionStatus;
-	}
-	
-	public static boolean isTransactionCommited(byte mergedTransactionStatus){
-		return
-			(mergedTransactionStatus & ~EntityFileTransaction.TRANSACTION_COMMITED) == 
-			mergedTransactionStatus;
 	}
 	
 	public static byte getTransactionStatus(byte mergedTransactionStatus){
