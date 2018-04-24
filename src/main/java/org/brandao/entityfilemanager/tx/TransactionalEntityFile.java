@@ -147,11 +147,11 @@ public class TransactionalEntityFile<T, R>
 		try{
 			byte status = this.tx.getTransactionStatus();
 			
-			if(status != TransactionEntityFileAccess.TRANSACTION_NOT_STARTED){
+			if(status != EntityFileTransaction.TRANSACTION_NOT_STARTED){
 				throw new TransactionException("transaction has been started");
 			}
 			
-			this.tx.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED);
+			this.tx.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED);
 		}
 		catch(TransactionException e){
 			throw e;

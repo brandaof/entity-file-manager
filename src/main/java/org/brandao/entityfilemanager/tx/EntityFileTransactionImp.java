@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
+import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.PersistenceException;
 
 public class EntityFileTransactionImp 
@@ -17,6 +18,8 @@ public class EntityFileTransactionImp
 	
 	private EntityFileManagerConfigurer manager;
 	
+	private LockProvider lockProvider;
+	
 	private long transactionID;
 	
 	private boolean started;
@@ -24,6 +27,8 @@ public class EntityFileTransactionImp
 	private boolean rolledBack;
 	
 	private boolean commited;
+	
+	private boolean dirty;
 	
 	private byte status;
 	
@@ -41,6 +46,7 @@ public class EntityFileTransactionImp
 		this.rolledBack                   = rolledBack;
 		this.commited                     = commited;
 		this.status                       = status;
+		this.dirty                        = false;
 	}
 
 	public byte getStatus() {
@@ -73,7 +79,9 @@ public class EntityFileTransactionImp
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
 				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 			}
-
+			
+			this.status = EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK;
+			
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
 				txFile.rollback();
 			}
@@ -81,6 +89,10 @@ public class EntityFileTransactionImp
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
 				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 			}
+			
+			this.status = EntityFileTransaction.TRANSACTION_ROLLEDBACK;
+			this.commited   = false;
+			this.rolledBack = true;
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -89,20 +101,29 @@ public class EntityFileTransactionImp
 
 	public void commit() throws TransactionException {
 		
-		if(this.rolledBack)
-			throw new TransactionException("transaction has been rolled back");
-
-		if(this.commited)
-			throw new TransactionException("transaction has been commited");
+		if(this.dirty){
+			throw new TransactionException("transaction rollback is needed");
+		}
 		
-		if(!started)
+		if(this.rolledBack){
+			throw new TransactionException("transaction has been rolled back");
+		}
+		
+		if(this.commited){
+			throw new TransactionException("transaction has been commited");
+		}
+		
+		if(!started){
 			throw new TransactionException("transaction not started");
+		}
 
 		try{
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
 				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
 			}
 
+			this.status = EntityFileTransaction.TRANSACTION_STARTED_COMMIT;
+			
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
 				txFile.rollback();
 			}
@@ -110,6 +131,11 @@ public class EntityFileTransactionImp
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
 				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
 			}
+			
+			this.status     = EntityFileTransaction.TRANSACTION_COMMITED;
+			this.commited   = true;
+			this.rolledBack = false;
+			
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -128,20 +154,52 @@ public class EntityFileTransactionImp
 
 	public <T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess)
 			throws PersistenceException {
-		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-		return txEntityFileAccess.insert(entity);
+		try{
+			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+			long pointer = txEntityFileAccess.insert(entity);
+			this.lockProvider.lock(entityFileaccess, pointer);
+			return pointer;
+		}
+		catch(PersistenceException e){
+			this.dirty = true;
+			throw e;
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw new PersistenceException(e);
+		}
 	}
 
 	public <T,R> void update(long id, T entity,
 			EntityFileAccess<T,R> entityFileaccess) throws PersistenceException {
-		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-		txEntityFileAccess.update(id, entity);
+		try{
+			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+			txEntityFileAccess.update(id, entity);
+		}
+		catch(PersistenceException e){
+			this.dirty = true;
+			throw e;
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw new PersistenceException(e);
+		}
 	}
 
 	public <T,R> void delete(long id, EntityFileAccess<T,R> entityFileaccess)
 			throws PersistenceException {
-		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-		txEntityFileAccess.delete(id);
+		try{
+			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+			txEntityFileAccess.delete(id);
+		}
+		catch(PersistenceException e){
+			this.dirty = true;
+			throw e;
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw new PersistenceException(e);
+		}
 	}
 
 	public <T,R> T select(long id, EntityFileAccess<T,R> entityFileaccess) {
@@ -149,6 +207,21 @@ public class EntityFileTransactionImp
 		return txEntityFileAccess.select(id);
 	}
 
+	public <T,R> T select(long id, boolean lock, EntityFileAccess<T,R> entityFileaccess) {
+		try{
+			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
+			return txEntityFileAccess.select(id);
+		}
+		catch(PersistenceException e){
+			this.dirty = true;
+			throw e;
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw new PersistenceException(e);
+		}
+	}
+	
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
@@ -174,4 +247,18 @@ public class EntityFileTransactionImp
 		}
 	}
 
+	public void close() throws TransactionException{
+		if(!this.commited && !this.rolledBack){
+			this.rollback();
+		}
+	}
+	
+	protected void finalize() throws Throwable{
+		try{
+			this.close();
+		}
+		finally{
+			super.finalize();
+		}
+	}
 }
