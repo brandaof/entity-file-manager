@@ -3,6 +3,7 @@ package org.brandao.entityfilemanager.tx;
 import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 
 public interface EntityFileTransactionManager {
 
@@ -10,8 +11,9 @@ public interface EntityFileTransactionManager {
 
 	EntityFileTransaction load(
 			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
-			byte status, long transactionID, boolean started, boolean rolledBack, boolean commited);
+			EntityFileManagerConfigurer manager, byte status, long transactionID, 
+			boolean started, boolean rolledBack, boolean commited);
 	
-	void close(EntityFileTransaction tx);
+	void close(EntityFileTransaction tx) throws TransactionException;
 	
 }

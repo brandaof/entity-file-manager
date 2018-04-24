@@ -1,7 +1,11 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 
 public class EntityFileTransactionManagerImp 
 	implements EntityFileTransactionManager{
@@ -26,17 +30,22 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 
-	public EntityFileTransaction begin() {
-		return null;
-	}
-
 	public EntityFileTransaction create() {
 		return null;
 	}
 
-	public void close(EntityFileTransaction tx) {
-		// TODO Auto-generated method stub
-		
+	public EntityFileTransaction load(
+			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
+			EntityFileManagerConfigurer manager, byte status, long transactionID, boolean started,
+			boolean rolledBack, boolean commited) {
+		return new EntityFileTransactionImp(this, transactionFiles, 
+				manager, status, transactionID, started, rolledBack, commited);
+	}
+
+	public void close(EntityFileTransaction tx) throws TransactionException {
+		if(!tx.isCommited() && !tx.isRolledBack()){
+			tx.rollback();
+		}
 	}
 
 }

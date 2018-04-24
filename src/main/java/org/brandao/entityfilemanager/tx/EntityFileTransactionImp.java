@@ -248,9 +248,7 @@ public class EntityFileTransactionImp
 	}
 
 	public void close() throws TransactionException{
-		if(!this.commited && !this.rolledBack){
-			this.rollback();
-		}
+		entityFileTransactionManager.close(this);
 	}
 	
 	protected void finalize() throws Throwable{
