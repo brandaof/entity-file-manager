@@ -7,7 +7,7 @@ import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 
 public interface EntityFileTransactionManager {
 
-	EntityFileTransaction create();
+	EntityFileTransaction create(EntityFileManagerConfigurer manager);
 
 	EntityFileTransaction load(
 			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,

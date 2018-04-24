@@ -29,7 +29,8 @@ public class TransactionLoader {
 		Map<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> transactionFiles =
 				this.toTransactionalEntityFile(mappedTXFMD, entityFileManager);
 		
-		return toEntityFileTransaction(transactionFiles, entityFileManager.getEntityFileTransactionManager());
+		return toEntityFileTransaction(transactionFiles, 
+				entityFileManager.getEntityFileTransactionManager(), entityFileManager);
 	}
 	
 	private File[] getTransactionFiles(File[] value){
@@ -125,7 +126,7 @@ public class TransactionLoader {
 
 	private EntityFileTransaction[] toEntityFileTransaction(
 			Map<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> values,
-			EntityFileTransactionManager transactioManager) throws IOException, TransactionException{
+			EntityFileTransactionManager transactioManager, EntityFileManagerConfigurer manager) throws IOException, TransactionException{
 
 		EntityFileTransaction[] result = new EntityFileTransaction[values.size()];
 		
@@ -144,7 +145,7 @@ public class TransactionLoader {
 			boolean commited       = (transactionStatus & EntityFileTransaction.TRANSACTION_COMMITED) != 0;
 			
 			EntityFileTransaction eft = 
-				transactioManager.load(transactionFiles, transactionStatus, 
+				transactioManager.load(transactionFiles, manager, transactionStatus, 
 						transactionID, started, rolledBack, commited);
 			
 			result[i++] = eft;

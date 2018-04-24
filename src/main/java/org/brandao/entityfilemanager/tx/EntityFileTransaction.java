@@ -31,6 +31,8 @@ public interface EntityFileTransaction {
 	
 	boolean isCommited();
 	
+	boolean isClosed();
+	
 	void rollback() throws TransactionException;
 	
 	void commit() throws TransactionException;

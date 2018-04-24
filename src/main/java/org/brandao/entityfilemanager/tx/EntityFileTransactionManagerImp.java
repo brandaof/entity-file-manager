@@ -1,6 +1,9 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,9 +17,12 @@ public class EntityFileTransactionManagerImp
 	
 	private Lock txIDLock;
 	
+	private ConcurrentMap<Long, EntityFileTransaction> transactions;
+	
 	public EntityFileTransactionManagerImp(){
 		this.txID = 0;
 		this.txIDLock = new ReentrantLock();
+		this.transactions = new ConcurrentHashMap<Long, EntityFileTransaction>();
 	}
 	
 	public long getNextTransactionID() {
@@ -30,8 +36,16 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 
-	public EntityFileTransaction create() {
-		return null;
+	public EntityFileTransaction create(EntityFileManagerConfigurer manager) {
+		EntityFileTransactionImp tx = 
+			new EntityFileTransactionImp(
+				this, 
+				new HashMap<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>>(), 
+				manager, EntityFileTransaction.TRANSACTION_NOT_STARTED, 
+				this.getNextTransactionID(), false, false, false);
+		
+		this.transactions.put(tx.getTransactionID(), tx);
+		return tx;
 	}
 
 	public EntityFileTransaction load(
@@ -42,10 +56,18 @@ public class EntityFileTransactionManagerImp
 				manager, status, transactionID, started, rolledBack, commited);
 	}
 
-	public void close(EntityFileTransaction tx) throws TransactionException {
-		if(!tx.isCommited() && !tx.isRolledBack()){
-			tx.rollback();
+	public void close(EntityFileTransaction transaction) throws TransactionException {
+		
+		EntityFileTransactionImp tx = (EntityFileTransactionImp)transaction;
+		
+		if(tx.isCommited() || tx.isRolledBack() || tx.isClosed() || !tx.isStarted()){
+			return;
 		}
+		
+		tx.rollback();
+		tx.setClosed(true);
+		
+		this.transactions.remove(tx.getTransactionID());
 	}
 
 }

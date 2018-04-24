@@ -32,6 +32,8 @@ public class EntityFileTransactionImp
 	
 	private byte status;
 	
+	private boolean closed;
+	
 	public EntityFileTransactionImp(
 			EntityFileTransactionManager entityFileTransactionManager,
 			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
@@ -53,6 +55,10 @@ public class EntityFileTransactionImp
 		return this.status;
 	}
 	
+	public boolean isClosed() {
+		return this.closed;
+	}
+	
 	public boolean isRolledBack() {
 		return this.rolledBack;
 	}
@@ -62,6 +68,10 @@ public class EntityFileTransactionImp
 	}
 
 	public void rollback() throws TransactionException {
+		
+		if(this.closed){
+			throw new TransactionException("transaction has been closed");
+		}
 		
 		if(this.rolledBack){
 			throw new TransactionException("transaction has been rolled back");
@@ -112,11 +122,15 @@ public class EntityFileTransactionImp
 		if(this.commited){
 			throw new TransactionException("transaction has been commited");
 		}
+
+		if(this.closed){
+			throw new TransactionException("transaction has been closed");
+		}
 		
 		if(!started){
 			throw new TransactionException("transaction not started");
 		}
-
+		
 		try{
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
 				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
@@ -222,6 +236,10 @@ public class EntityFileTransactionImp
 		}
 	}
 	
+	public void close() throws TransactionException{
+		entityFileTransactionManager.close(this);
+	}
+	
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
@@ -247,8 +265,26 @@ public class EntityFileTransactionImp
 		}
 	}
 
-	public void close() throws TransactionException{
-		entityFileTransactionManager.close(this);
+	/* restrict methods */
+	
+	public Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> getTransactionalEntityFile(){
+		return this.transactionFiles;
+	}
+	
+	public long getTransactionID(){
+		return this.transactionID;
+	}
+	
+	public void setClosed(boolean value){
+		this.closed = value;
+	}
+	
+	public boolean isStarted(){
+		return this.started;
+	}
+	
+	public boolean isDirty(){
+		return this.dirty;
 	}
 	
 	protected void finalize() throws Throwable{

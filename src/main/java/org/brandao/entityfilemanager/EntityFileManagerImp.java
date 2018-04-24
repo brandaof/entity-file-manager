@@ -8,6 +8,7 @@ import java.util.Map;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManager;
 import org.brandao.entityfilemanager.tx.TransactionException;
+import org.brandao.entityfilemanager.tx.TransactionLoader;
 
 public class EntityFileManagerImp 
 	implements EntityFileManagerConfigurer{
@@ -107,8 +108,19 @@ public class EntityFileManagerImp
 	}
 	
 	private void clearTransactions() throws EntityFileManagerException{
-		File[] txList = this.transactionPath.listFiles();
-		//load started transactions
+		try{
+			TransactionLoader txLoader = new TransactionLoader();
+			EntityFileTransaction[] txList = 
+					txLoader.loadTransactions(this, this.transactionPath);
+			
+			for(EntityFileTransaction tx: txList){
+				this.transactioManager.close(tx);
+			}
+			
+		}
+		catch(Throwable e){
+			throw new EntityFileManagerException(e);
+		}
 	}
 	
 	public void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException{
@@ -184,7 +196,7 @@ public class EntityFileManagerImp
 	}
 
 	public EntityFileTransaction beginTransaction() throws TransactionException{
-		return this.transactioManager.create();
+		return this.transactioManager.create(this);
 	}
 
 	public static class EntityFileTX<T> implements EntityFile<T>{
