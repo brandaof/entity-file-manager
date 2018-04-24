@@ -120,5 +120,87 @@ public class TransactionLoader {
 		
 		return result;
 	}
+
+	private EntityFileTransaction[] toEntityFileTransaction(
+			Map<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> values,
+			EntityFileTransactionManager transactioManager){
+
+		for(Entry<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> entry: values.entrySet()){
+			
+			
+		}
+		
+		
+	}
+	
+	private byte getCurrentTransactionStatus(
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map
+			) throws IOException, TransactionException{
+		
+		int result = 0;
+		
+		for(TransactionalEntityFile<?,?> txFile: map.values()){
+			result = result | txFile.getTransactionStatus();
+		}
+		
+		if(result == 0){
+			throw new TransactionException("invalid transaction status: " + result);
+		}
+		
+		if((result | TransactionEntityFileAccess.TRANSACTION_NOT_STARTED) == 
+			TransactionEntityFileAccess.TRANSACTION_NOT_STARTED){
+			return TransactionEntityFileAccess.TRANSACTION_NOT_STARTED;
+		}
+
+		if((result | TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) == 
+			TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK){
+			return TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK;
+		}
+
+		if((result | TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK) == 
+			TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK){
+			return TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK;
+		}
+
+		if((result | TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) == 
+			TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT){
+			return TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT;
+		}
+
+		if((result | TransactionEntityFileAccess.TRANSACTION_COMMITED) == 
+			TransactionEntityFileAccess.TRANSACTION_COMMITED){
+			return TransactionEntityFileAccess.TRANSACTION_COMMITED;
+		}
+		
+		if((result & TransactionEntityFileAccess.TRANSACTION_NOT_STARTED) != 0){
+			
+			if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) != 0){
+				return TransactionEntityFileAccess.TRANSACTION_NOT_STARTED;
+			}
+			
+			if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) != 0){
+				return TransactionEntityFileAccess.TRANSACTION_NOT_STARTED;
+			}
+			
+		}
+
+		if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) != 0){
+			
+			if((result & TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK) != 0){
+				return TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK;
+			}
+			
+		}
+		
+		if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) != 0){
+			
+			if((result & TransactionEntityFileAccess.TRANSACTION_COMMITED) != 0){
+				return TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT;
+			}
+			
+		}
+		
+		throw new TransactionException("invalid transaction status: " + result);
+	}
 	
 }
