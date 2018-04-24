@@ -10,7 +10,7 @@ public interface EntityFileTransactionManager {
 
 	EntityFileTransaction load(
 			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
-			long transactionID,	boolean started, boolean rolledBack, boolean commited);
+			byte status, long transactionID, boolean started, boolean rolledBack, boolean commited);
 	
 	void close(EntityFileTransaction tx);
 	

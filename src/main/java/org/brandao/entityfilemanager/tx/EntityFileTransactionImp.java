@@ -25,20 +25,28 @@ public class EntityFileTransactionImp
 	
 	private boolean commited;
 	
+	private byte status;
+	
 	public EntityFileTransactionImp(
 			EntityFileTransactionManager entityFileTransactionManager,
-			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
-			EntityFileManagerConfigurer manager, long transactionID,
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
+			EntityFileManagerConfigurer manager, byte status, long transactionID,
 			boolean started, boolean rolledBack, boolean commited) {
+		
 		this.entityFileTransactionManager = entityFileTransactionManager;
-		this.transactionFiles = transactionFiles;
-		this.manager = manager;
-		this.transactionID = transactionID;
-		this.started = started;
-		this.rolledBack = rolledBack;
-		this.commited = commited;
+		this.transactionFiles             = transactionFiles;
+		this.manager                      = manager;
+		this.transactionID                = transactionID;
+		this.started                      = started;
+		this.rolledBack                   = rolledBack;
+		this.commited                     = commited;
+		this.status                       = status;
 	}
 
+	public byte getStatus() {
+		return this.status;
+	}
+	
 	public boolean isRolledBack() {
 		return this.rolledBack;
 	}
@@ -63,7 +71,7 @@ public class EntityFileTransactionImp
 		
 		try{
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK);
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 			}
 
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
@@ -71,7 +79,7 @@ public class EntityFileTransactionImp
 			}
 			
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK);
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 			}
 		}
 		catch(Throwable e){
@@ -92,7 +100,7 @@ public class EntityFileTransactionImp
 
 		try{
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT);
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
 			}
 
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
@@ -100,7 +108,7 @@ public class EntityFileTransactionImp
 			}
 			
 			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(TransactionEntityFileAccess.TRANSACTION_COMMITED);
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
 			}
 		}
 		catch(Throwable e){
@@ -165,5 +173,5 @@ public class EntityFileTransactionImp
 			throw new PersistenceException(e);
 		}
 	}
-	
+
 }

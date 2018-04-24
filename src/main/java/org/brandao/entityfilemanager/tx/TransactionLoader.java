@@ -28,6 +28,8 @@ public class TransactionLoader {
 		
 		Map<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> transactionFiles =
 				this.toTransactionalEntityFile(mappedTXFMD, entityFileManager);
+		
+		return toEntityFileTransaction(transactionFiles, entityFileManager.getEntityFileTransactionManager());
 	}
 	
 	private File[] getTransactionFiles(File[] value){
@@ -123,84 +125,119 @@ public class TransactionLoader {
 
 	private EntityFileTransaction[] toEntityFileTransaction(
 			Map<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> values,
-			EntityFileTransactionManager transactioManager){
+			EntityFileTransactionManager transactioManager) throws IOException, TransactionException{
 
+		EntityFileTransaction[] result = new EntityFileTransaction[values.size()];
+		
+		int i = 0;
+		
 		for(Entry<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> entry: values.entrySet()){
 			
+			long transactionID = entry.getKey();
 			
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles =
+					entry.getValue();
+			
+			byte transactionStatus = this.getCurrentTransactionStatus(transactionFiles);
+			boolean started        = (transactionStatus & EntityFileTransaction.TRANSACTION_NOT_STARTED) != 0;
+			boolean rolledBack     = (transactionStatus & EntityFileTransaction.TRANSACTION_ROLLEDBACK) != 0;
+			boolean commited       = (transactionStatus & EntityFileTransaction.TRANSACTION_COMMITED) != 0;
+			
+			EntityFileTransaction eft = 
+				transactioManager.load(transactionFiles, transactionStatus, 
+						transactionID, started, rolledBack, commited);
+			
+			result[i++] = eft;
 		}
 		
 		
+		return result;
 	}
 	
 	private byte getCurrentTransactionStatus(
 			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map
 			) throws IOException, TransactionException{
 		
-		int result = 0;
+		byte mergedTransactionStatus = EntityFileTransactionUtil.mergeTransactionStatus(map);
 		
-		for(TransactionalEntityFile<?,?> txFile: map.values()){
-			result = result | txFile.getTransactionStatus();
+		if(mergedTransactionStatus == 0){
+			throw new TransactionException("invalid transaction status: " + mergedTransactionStatus);
+		}
+
+		byte status = EntityFileTransactionUtil.getTransactionStatus(mergedTransactionStatus);
+		
+		if(status == 0){
+			throw new TransactionException("invalid transaction status: " + mergedTransactionStatus);
 		}
 		
-		if(result == 0){
-			throw new TransactionException("invalid transaction status: " + result);
+		return status;
+	}
+	
+	/*
+	private byte getCurrentTransactionStatus(
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map
+			) throws IOException, TransactionException{
+		
+		int mergedTransactionStatus = EntityFileTransactionUtil.mergeTransactionStatus(map);
+		
+		if(mergedTransactionStatus == 0){
+			throw new TransactionException("invalid transaction status: " + mergedTransactionStatus);
 		}
 		
-		if((result | TransactionEntityFileAccess.TRANSACTION_NOT_STARTED) == 
+		if((mergedTransactionStatus | TransactionEntityFileAccess.TRANSACTION_NOT_STARTED) == 
 			TransactionEntityFileAccess.TRANSACTION_NOT_STARTED){
 			return TransactionEntityFileAccess.TRANSACTION_NOT_STARTED;
 		}
 
-		if((result | TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) == 
+		if((mergedTransactionStatus | TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) == 
 			TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK){
 			return TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK;
 		}
 
-		if((result | TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK) == 
+		if((mergedTransactionStatus | TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK) == 
 			TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK){
 			return TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK;
 		}
 
-		if((result | TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) == 
+		if((mergedTransactionStatus | TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) == 
 			TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT){
 			return TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT;
 		}
 
-		if((result | TransactionEntityFileAccess.TRANSACTION_COMMITED) == 
+		if((mergedTransactionStatus | TransactionEntityFileAccess.TRANSACTION_COMMITED) == 
 			TransactionEntityFileAccess.TRANSACTION_COMMITED){
 			return TransactionEntityFileAccess.TRANSACTION_COMMITED;
 		}
 		
-		if((result & TransactionEntityFileAccess.TRANSACTION_NOT_STARTED) != 0){
+		if((mergedTransactionStatus & TransactionEntityFileAccess.TRANSACTION_NOT_STARTED) != 0){
 			
-			if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) != 0){
+			if((mergedTransactionStatus & TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) != 0){
 				return TransactionEntityFileAccess.TRANSACTION_NOT_STARTED;
 			}
 			
-			if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) != 0){
+			if((mergedTransactionStatus & TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) != 0){
 				return TransactionEntityFileAccess.TRANSACTION_NOT_STARTED;
 			}
 			
 		}
 
-		if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) != 0){
+		if((mergedTransactionStatus & TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK) != 0){
 			
-			if((result & TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK) != 0){
+			if((mergedTransactionStatus & TransactionEntityFileAccess.TRANSACTION_ROLLEDBACK) != 0){
 				return TransactionEntityFileAccess.TRANSACTION_STARTED_ROLLBACK;
 			}
 			
 		}
 		
-		if((result & TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) != 0){
+		if((mergedTransactionStatus & TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT) != 0){
 			
-			if((result & TransactionEntityFileAccess.TRANSACTION_COMMITED) != 0){
+			if((mergedTransactionStatus & TransactionEntityFileAccess.TRANSACTION_COMMITED) != 0){
 				return TransactionEntityFileAccess.TRANSACTION_STARTED_COMMIT;
 			}
 			
 		}
 		
-		throw new TransactionException("invalid transaction status: " + result);
+		throw new TransactionException("invalid transaction status: " + mergedTransactionStatus);
 	}
-	
+	*/
 }

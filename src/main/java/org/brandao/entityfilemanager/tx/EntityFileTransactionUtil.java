@@ -1,6 +1,10 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 
@@ -9,6 +13,41 @@ public class EntityFileTransactionUtil {
 	public static final byte OP_TYPE_FILTER = Byte.valueOf("00000111", 2);
 
 	public static final String EXTENSION = "txa";
+	
+	@SuppressWarnings("serial")
+	private static Map<Integer,Byte> mappedTransactionStatus = new HashMap<Integer,Byte>(){{
+		
+		put(~EntityFileTransaction.TRANSACTION_NOT_STARTED,
+				EntityFileTransaction.TRANSACTION_NOT_STARTED);
+		
+		put(~EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK, 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~EntityFileTransaction.TRANSACTION_ROLLEDBACK, 
+				EntityFileTransaction.TRANSACTION_ROLLEDBACK);
+		
+		put(~EntityFileTransaction.TRANSACTION_STARTED_COMMIT, 
+				EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
+
+		put(~EntityFileTransaction.TRANSACTION_COMMITED, 
+				EntityFileTransaction.TRANSACTION_COMMITED);
+	
+		put(~(EntityFileTransaction.TRANSACTION_NOT_STARTED | EntityFileTransaction.TRANSACTION_STARTED_COMMIT), 
+				EntityFileTransaction.TRANSACTION_NOT_STARTED);
+		
+		put(~(EntityFileTransaction.TRANSACTION_NOT_STARTED | EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK), 
+				EntityFileTransaction.TRANSACTION_NOT_STARTED);
+		
+		put(~(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK | EntityFileTransaction.TRANSACTION_ROLLEDBACK), 
+				EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		put(~(EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_COMMITED), 
+				EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
+		
+		put(~(EntityFileTransaction.TRANSACTION_STARTED_COMMIT | EntityFileTransaction.TRANSACTION_COMMITED), 
+				EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
+		
+	}};
 	
 	@SuppressWarnings("rawtypes")
 	private static final RawTransactionEntity[] EMPTY_ARRAY = new RawTransactionEntity[0];
@@ -123,4 +162,56 @@ public class EntityFileTransactionUtil {
 		}
 		
 	}
+	
+	public static byte mergeTransactionStatus(
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map) throws IOException{
+		int result = 0;
+		
+		for(TransactionalEntityFile<?,?> txFile: map.values()){
+			result = result | txFile.getTransactionStatus();
+		}
+		
+		return (byte)result;
+	}
+	
+	public static boolean isTransactionNotStarted(byte mergedTransactionStatus){
+		
+		boolean result = 
+			(mergedTransactionStatus | EntityFileTransaction.TRANSACTION_NOT_STARTED) == 
+					EntityFileTransaction.TRANSACTION_NOT_STARTED;
+		
+		result = result ||
+			(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_NOT_STARTED) == 0 &&
+			(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_STARTED_COMMIT) == 0;
+			
+		result = result ||
+				(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_NOT_STARTED) == 0 &&
+				(mergedTransactionStatus & EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK) == 0;
+		
+		return result;
+	}
+
+	public static boolean isTransactionRolledback(byte mergedTransactionStatus){
+		return
+			(mergedTransactionStatus & ~EntityFileTransaction.TRANSACTION_ROLLEDBACK) == 
+			mergedTransactionStatus;
+	}
+	
+	public static boolean isTransactionCommited(byte mergedTransactionStatus){
+		return
+			(mergedTransactionStatus & ~EntityFileTransaction.TRANSACTION_COMMITED) == 
+			mergedTransactionStatus;
+	}
+	
+	public static byte getTransactionStatus(byte mergedTransactionStatus){
+		
+		for(Entry<Integer,Byte> entry: mappedTransactionStatus.entrySet()){
+			if((entry.getKey() & mergedTransactionStatus) == mergedTransactionStatus){
+				return entry.getValue();
+			}
+		}
+		
+		return 0;
+	}
+	
 }

@@ -8,18 +8,6 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 public class TransactionEntityFileAccess<T, R> 
 	extends AbstractEntityFileAccess<TransactionalEntity<T>, RawTransactionEntity<R>> {
 
-	public static final byte TRANSACTION_NOT_STARTED 		= Byte.valueOf("00000001", 2);
-	
-	public static final byte TRANSACTION_STARTED 			= Byte.valueOf("00000010", 2);
-	
-	public static final byte TRANSACTION_STARTED_ROLLBACK 	= Byte.valueOf("00000100", 2);
-	
-	public static final byte TRANSACTION_ROLLEDBACK			= Byte.valueOf("00001000", 2);
-
-	public static final byte TRANSACTION_STARTED_COMMIT 	= Byte.valueOf("00010000", 2);
-	
-	public static final byte TRANSACTION_COMMITED 			= Byte.valueOf("00100000", 2);
-	
 	private EntityFileAccess<T, R> entityFileAccess;
 	
 	private EntityFileTransactionDataHandler<T> entityFileTransactionDataHandler;
@@ -40,7 +28,7 @@ public class TransactionEntityFileAccess<T, R>
 		this.transactionIDPointer             = this.transactionStatusPointer; 
 		this.entityFileTransactionDataHandler = ((EntityFileTransactionDataHandler<T>)super.getEntityFileDataHandler());
 		this.entityFileTransactionDataHandler.setTransactionID(transactionID);
-		this.entityFileTransactionDataHandler.setTransactionStatus(TRANSACTION_NOT_STARTED);
+		this.entityFileTransactionDataHandler.setTransactionStatus(EntityFileTransaction.TRANSACTION_NOT_STARTED);
 	}
 
 	public void setTransactionStatus(byte value) throws IOException{
@@ -54,7 +42,7 @@ public class TransactionEntityFileAccess<T, R>
 	}
 	
 	public boolean isStarted(){
-		return this.entityFileTransactionDataHandler.getTransactionStatus() != TRANSACTION_NOT_STARTED;
+		return this.entityFileTransactionDataHandler.getTransactionStatus() != EntityFileTransaction.TRANSACTION_NOT_STARTED;
 	}
 
 	public long getTransactionID() throws IOException{
