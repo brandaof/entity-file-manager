@@ -13,30 +13,32 @@ import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 public class EntityFileTransactionManagerImp 
 	implements EntityFileTransactionManager{
 
-	private long txID;
+	private long transactionIDCounter;
 	
 	private Lock txIDLock;
 	
 	private ConcurrentMap<Long, EntityFileTransaction> transactions;
 	
+	private long currentTransactionID;
+
 	public EntityFileTransactionManagerImp(){
-		this.txID = 0;
-		this.txIDLock = new ReentrantLock();
-		this.transactions = new ConcurrentHashMap<Long, EntityFileTransaction>();
+		this.transactionIDCounter = 0;
+		this.txIDLock             = new ReentrantLock();
+		this.transactions         = new ConcurrentHashMap<Long, EntityFileTransaction>();
 	}
 	
 	public long getNextTransactionID() {
 		this.txIDLock.lock();
 		try{
-			long current = this.txID++;
-			return current;
+			currentTransactionID = this.transactionIDCounter++;
 		}
 		finally{
 			this.txIDLock.unlock();
 		}
+		return currentTransactionID;
 	}
 
-	public EntityFileTransaction create(EntityFileManagerConfigurer manager) {
+	public EntityFileTransaction create(EntityFileManagerConfigurer manager) throws TransactionException {
 		EntityFileTransactionImp tx = 
 			new EntityFileTransactionImp(
 				this, 
@@ -44,6 +46,7 @@ public class EntityFileTransactionManagerImp
 				manager, EntityFileTransaction.TRANSACTION_NOT_STARTED, 
 				this.getNextTransactionID(), false, false, false);
 		
+		tx.begin();
 		this.transactions.put(tx.getTransactionID(), tx);
 		return tx;
 	}
