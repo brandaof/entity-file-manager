@@ -101,7 +101,7 @@ public class EntityFileTransactionManagerImp
 		EntityFileTransactionImp tx = 
 			new EntityFileTransactionImp(
 				this, this.lockProvider,
-				new HashMap<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>>(), 
+				new HashMap<EntityFileAccess<?, ?>, TransactionalEntityFileInfo>(), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED, 
 				this.getNextTransactionID(), false, false, false, this.timeout);
 		
@@ -153,7 +153,7 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	public EntityFileTransaction load(
-			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
+			Map<EntityFileAccess<?, ?>, TransactionalEntityFileInfo> transactionFiles,
 			byte status, long transactionID, boolean started,
 			boolean rolledBack, boolean commited) {
 		return new EntityFileTransactionImp(this, this.lockProvider, transactionFiles,

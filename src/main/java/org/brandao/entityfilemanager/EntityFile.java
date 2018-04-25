@@ -1,15 +1,25 @@
 package org.brandao.entityfilemanager;
 
-import java.io.IOException;
-
 public interface EntityFile<T> {
 
-	long insert(T entity) throws IOException;
-	
-	void update(long id, T entity) throws IOException;
-	
-	void delete(long id) throws IOException;
-	
-	T select(long id) throws IOException;
+	long insert(T entity) throws EntityFileException;
 
+	long insert(T[] entity) throws EntityFileException;
+	
+	void update(long id, T entity) throws EntityFileException;
+
+	void update(long[] id, T[] entity) throws EntityFileException;
+	
+	void delete(long id) throws EntityFileException;
+
+	void delete(long[] id) throws EntityFileException;
+	
+	T select(long id) throws EntityFileException;
+
+	T[] select(long[] id) throws EntityFileException;
+	
+	T select(long id, boolean lock) throws EntityFileException;
+
+	T[] select(long[] id, boolean lock) throws EntityFileException;
+	
 }

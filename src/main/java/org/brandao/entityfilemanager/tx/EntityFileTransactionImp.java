@@ -1,9 +1,12 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.PersistenceException;
 
@@ -12,7 +15,7 @@ public class EntityFileTransactionImp
 
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
-	protected Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles;
+	protected Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> transactionFiles;
 	
 	private LockProvider lockProvider;
 	
@@ -35,7 +38,7 @@ public class EntityFileTransactionImp
 	public EntityFileTransactionImp(
 			EntityFileTransactionManager entityFileTransactionManager,
 			LockProvider lockProvider,
-			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
+			Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> transactionFiles,
 			byte status, long transactionID, boolean started, boolean rolledBack, 
 			boolean commited, long timeout) {
 		this.entityFileTransactionManager = entityFileTransactionManager;
@@ -92,18 +95,18 @@ public class EntityFileTransactionImp
 		}
 		
 		try{
-			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
+				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 			}
 			
 			this.status = EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK;
 			
-			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.rollback();
+			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
+				txFile.getEntityFile().rollback();
 			}
 			
-			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
+			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
+				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 			}
 			
 			this.status = EntityFileTransaction.TRANSACTION_ROLLEDBACK;
@@ -138,18 +141,18 @@ public class EntityFileTransactionImp
 		}
 		
 		try{
-			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
+			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
+				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
 			}
 
 			this.status = EntityFileTransaction.TRANSACTION_STARTED_COMMIT;
 			
-			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.rollback();
+			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
+				txFile.getEntityFile().rollback();
 			}
 			
-			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
+			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
+				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
 			}
 			
 			this.status     = EntityFileTransaction.TRANSACTION_COMMITED;
@@ -173,11 +176,32 @@ public class EntityFileTransactionImp
 	}
 
 	public <T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess)
-			throws PersistenceException {
+			 throws EntityFileException {
+		
+		TransactionalEntityFileInfo<T,R> tei    = this.getManagedEntityFile(entityFileaccess);
+		TransactionalEntityFile<T,R> entityFile = tei.getEntityFile();
+		Set<Long> managedRecords                = tei.getManagedRecords();
+
+		long pointer;
+		this.lockProvider.lock(entityFileaccess);
 		try{
-			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-			long pointer = txEntityFileAccess.insert(entity);
-			this.lockProvider.tryLock(entityFileaccess, pointer, this.timeout, TimeUnit.MILLISECONDS);
+			pointer = entityFile.insert(entity);
+		}
+		catch(EntityFileException e){
+			this.dirty = true;
+			throw e;
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw new EntityFileException(e);
+		}
+		finally{
+			this.lockProvider.unlock(entityFileaccess);
+		}
+		
+		try{
+			this.lockProvider.lock(entityFileaccess, pointer);
+			managedRecords.add(pointer);
 			return pointer;
 		}
 		catch(PersistenceException e){
@@ -192,7 +216,16 @@ public class EntityFileTransactionImp
 
 	public <T,R> void update(long id, T entity,
 			EntityFileAccess<T,R> entityFileaccess) throws PersistenceException {
+		
+		TransactionalEntityFileInfo<T,R> tei    = this.getManagedEntityFile(entityFileaccess);
+		TransactionalEntityFile<T,R> entityFile = tei.getEntityFile();
+		Set<Long> managedRecords                = tei.getManagedRecords();
+		
+		if(!managedRecords.contains(id)){
+			
+		}
 		try{
+			i
 			this.lockProvider.tryLock(entityFileaccess, id, this.timeout, TimeUnit.MILLISECONDS);
 			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
 			txEntityFileAccess.update(id, entity);
@@ -252,12 +285,12 @@ public class EntityFileTransactionImp
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	private <T,R> TransactionalEntityFile<T,R> getManagedEntityFile( 
+	private <T,R> TransactionalEntityFileInfo<T,R> getManagedEntityFile( 
 			EntityFileAccess<T,R> entityFile) throws PersistenceException{
 		try{
 			
-			TransactionalEntityFile<T,R> tx = 
-					(TransactionalEntityFile<T,R>)this.transactionFiles.get(entityFile);
+			TransactionalEntityFileInfo<T,R> tx = 
+				(TransactionalEntityFileInfo<T, R>) this.transactionFiles.get(entityFile);
 			
 			if(tx != null){
 				return tx;
@@ -276,7 +309,7 @@ public class EntityFileTransactionImp
 
 	/* restrict methods */
 	
-	public Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> getTransactionalEntityFile(){
+	public Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> getTransactionalEntityFile(){
 		return this.transactionFiles;
 	}
 	

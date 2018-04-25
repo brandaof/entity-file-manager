@@ -1,7 +1,6 @@
 package org.brandao.entityfilemanager;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -83,7 +82,7 @@ public class EntityFileManagerImp
 		
 	}
 	
-	public void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException{
+	public void register(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException{
 		
 		try{
 			if(entityFile.exists())
@@ -98,30 +97,34 @@ public class EntityFileManagerImp
 		}
 	}
 
-	public EntityFileAccess<?, ?> getEntityFile(String name)
-			throws EntityFileManagerException {
-		return this.entities.get(name);
-	}
-	
-	public void remove(String name) throws EntityFileManagerException{
-		
-		EntityFileAccess<?,?> entity = this.entities.get(name);
+	public void unregister(String name) throws EntityFileManagerException{
 		
 		try{
-			entity.close();
+			EntityFileAccess<?,?> entity = this.entities.get(name);
+			
+			if(entity != null){
+				entity.close();
+			}
 		}
 		catch(Throwable e){
 			throw new EntityFileManagerException(e);
 		}
 	}
-
+	
+	public EntityFileAccess<?, ?> getEntityFile(String name)
+			throws EntityFileManagerException {
+		return this.entities.get(name);
+	}
+	
 	@SuppressWarnings("unchecked")
 	public <T> EntityFile<T> getEntityFile(String name, EntityFileTransaction tx, Class<T> type){
 		
-		if(!this.started)
-			throw new EntityFileManagerException("manager not started");
+		EntityFileAccess<T,?> fileAccess = (EntityFileAccess<T,?>) this.entities.get(name);
 		
-		EntityFileAccess<T,?> fileAccess = (EntityFileAccess<T,?>) this.entities.get(name); 
+		if(fileAccess == null){
+			throw new EntityFileManagerException("not found: " + name);
+		}
+		
 		return new EntityFileTX<T>(fileAccess, tx);
 	}
 
@@ -155,27 +158,51 @@ public class EntityFileManagerImp
 
 		private EntityFileTransaction tx;
 		
-		private EntityFileAccess<T,?> entityFile;
+		private EntityFileAccess<T,?> entityFileAccess;
 		
-		public EntityFileTX(EntityFileAccess<T,?> entityFile, EntityFileTransaction tx) {
+		public EntityFileTX(EntityFileAccess<T,?> entityFileAccess, EntityFileTransaction tx) {
 			this.tx = tx;
-			this.entityFile = entityFile;
+			this.entityFileAccess = entityFileAccess;
 		}
 
-		public long insert(T entity) throws IOException {
-			return this.tx.insert(entity, entityFile);
+		public long insert(T entity) throws EntityFileException {
+			return tx.insert(entity, entityFileAccess);
 		}
 
-		public void update(long id, T entity) throws IOException {
-			this.tx.update(id, entity, entityFile);
+		public long insert(T[] entity) throws EntityFileException {
+			return tx.insert(entity, entityFileAccess);
 		}
 
-		public void delete(long id) throws IOException {
-			this.tx.delete(id, entityFile);
+		public void update(long id, T entity) throws EntityFileException {
+			tx.update(id, entity, entityFileAccess);
 		}
 
-		public T select(long id) throws IOException {
-			return this.tx.select(id, entityFile);		
+		public void update(long[] id, T[] entity) throws EntityFileException {
+			tx.update(id, entity, entityFileAccess);
+		}
+
+		public void delete(long id) throws EntityFileException {
+			tx.delete(id, entityFileAccess);
+		}
+
+		public void delete(long[] id) throws EntityFileException {
+			tx.delete(id, entityFileAccess);
+		}
+
+		public T select(long id) throws EntityFileException {
+			return tx.select(id, entityFileAccess);
+		}
+
+		public T[] select(long[] id) throws EntityFileException {
+			return tx.select(id, entityFileAccess);
+		}
+
+		public T select(long id, boolean lock) throws EntityFileException {
+			return tx.select(id, lock, entityFileAccess);
+		}
+
+		public T[] select(long[] id, boolean lock) throws EntityFileException {
+			return tx.select(id, lock, entityFileAccess);
 		}
 		
 	}

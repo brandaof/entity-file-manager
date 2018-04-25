@@ -19,13 +19,13 @@ public interface EntityFileManagerConfigurer
 
 	File getPath();
 
-	void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException;
+	void register(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException;
 	
-	EntityFileAccess<?,?> getEntityFile(String name) throws EntityFileManagerException;
-	
-	void remove(String name) throws EntityFileManagerException;
+	void unregister(String name) throws EntityFileManagerException;
 	
 	void truncate(String name) throws EntityFileManagerException;
+	
+	EntityFileAccess<?,?> getEntityFile(String name) throws EntityFileManagerException;
 	
 	void init() throws EntityFileManagerException;
 	

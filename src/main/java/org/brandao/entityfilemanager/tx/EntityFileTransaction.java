@@ -1,7 +1,7 @@
 package org.brandao.entityfilemanager.tx;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
-import org.brandao.entityfilemanager.PersistenceException;
+import org.brandao.entityfilemanager.EntityFileException;
 
 public interface EntityFileTransaction {
 
@@ -17,13 +17,25 @@ public interface EntityFileTransaction {
 	
 	public static final byte TRANSACTION_COMMITED 			= Byte.valueOf("00100000", 2);
 	
-	<T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
+	<T,R> long insert(T entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+
+	<T,R> long insert(T[] entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
 	
-	<T,R> void update(long id, T entity, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
+	<T,R> void update(long id, T entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+
+	<T,R> void update(long[] id, T[] entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
 	
-	<T,R> void delete(long id, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
+	<T,R> void delete(long id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+
+	<T,R> void delete(long[] id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
 	
-	<T,R> T select(long id, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
+	<T,R> T select(long id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+
+	<T,R> T[] select(long[] id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	
+	<T,R> T select(long id, boolean lock, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+
+	<T,R> T[] select(long[] id, boolean lock, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
 	
 	void setTimeout(long value);
 	
