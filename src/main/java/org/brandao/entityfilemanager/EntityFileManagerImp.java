@@ -12,18 +12,10 @@ import org.brandao.entityfilemanager.tx.TransactionException;
 public class EntityFileManagerImp 
 	implements EntityFileManagerConfigurer{
 
-	public static final String TRANSACTION_PATH = "/tx";
-
-	public static final String DATA_PATH = "/data";
-	
-	private String pathName;
-	
 	private File path;
 	
 	private Map<String, EntityFileAccess<?,?>> entities;
 
-	private File dataPath;
-	
 	private EntityFileTransactionManager transactioManager;
 	
 	private boolean started;
@@ -31,28 +23,17 @@ public class EntityFileManagerImp
 	private LockProvider lockProvider;
 	
 	public EntityFileManagerImp(){
-		this.lockProvider = new LockProviderImp();
 		this.entities     = new HashMap<String, EntityFileAccess<?,?>>();
 		this.started      = false;
 	}
 	
-	public void setPathName(String pathName) {
-		this.pathName        = pathName;
-		this.path            = new File(this.pathName);
-		this.dataPath        = new File(this.path, DATA_PATH);
+	public void setPath(File value) {
+		this.path = value;
 		
 		if(!this.path.exists()){
 			this.path.mkdirs();
 		}
 
-		if(!this.dataPath.exists()){
-			this.dataPath.mkdirs();
-		}
-		
-	}
-
-	public String getPathName() {
-		return this.pathName;
 	}
 
 	public void setLockProvider(LockProvider provider) {
@@ -63,12 +44,13 @@ public class EntityFileManagerImp
 		return this.lockProvider;
 	}
 	
-	public void start() throws EntityFileManagerException{
+	public void init() throws EntityFileManagerException{
 		
 		if(this.started)
 			throw new EntityFileManagerException("manager has been started");
 		
 		try{
+			this.transactioManager.init();
 			this.started = true;
 		}
 		catch(EntityFileManagerException ex){
@@ -87,7 +69,7 @@ public class EntityFileManagerImp
 			throw new EntityFileManagerException("manager not started");
 
 		try{
-			//this.transactioManager.
+			this.transactioManager.destroy();
 			
 			for(EntityFileAccess<?,?> entityFile: this.entities.values()){
 				entityFile.close();
@@ -145,10 +127,6 @@ public class EntityFileManagerImp
 
 	public File getPath() {
 		return this.path;
-	}
-
-	public File getDataPath() {
-		return this.dataPath;
 	}
 
 	public void setEntityFileTransactionManager(EntityFileTransactionManager transactioMmanager){

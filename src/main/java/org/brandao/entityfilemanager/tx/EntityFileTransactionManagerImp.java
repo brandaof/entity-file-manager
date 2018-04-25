@@ -14,7 +14,7 @@ import org.brandao.entityfilemanager.EntityFileManagerException;
 import org.brandao.entityfilemanager.LockProvider;
 
 public class EntityFileTransactionManagerImp 
-	implements EntityFileTransactionManager{
+	implements EntityFileTransactionManagerConfigurer{
 
 	public static final String TRANSACTION_PATH = "/tx";
 	
@@ -36,13 +36,10 @@ public class EntityFileTransactionManagerImp
 	
 	private LockProvider lockProvider;
 	
-	public EntityFileTransactionManagerImp(long timeout, File transactionPath, LockProvider lockProvider){
+	public EntityFileTransactionManagerImp(){
 		this.transactionIDCounter = 0;
 		this.txIDLock             = new ReentrantLock();
 		this.transactions         = new ConcurrentHashMap<Long, EntityFileTransaction>();
-		this.timeout              = timeout;
-		this.transactionPath      = transactionPath;
-		this.lockProvider         = lockProvider;
 	}
 	
 	private long getNextTransactionID() {
@@ -56,6 +53,14 @@ public class EntityFileTransactionManagerImp
 		return currentTransactionID;
 	}
 
+	public LockProvider getLockProvider() {
+		return this.lockProvider;
+	}
+
+	public void setLockProvider(LockProvider value) {
+		this.lockProvider = value;
+	}
+	
 	public void setEntityFileManagerConfigurer(EntityFileManagerConfigurer value) {
 		this.entityFileManagerConfigurer = value;
 	}

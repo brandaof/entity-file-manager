@@ -1,17 +1,49 @@
 package org.brandao.entityfilemanager;
 
+import java.io.File;
 import java.io.IOException;
 
 import junit.framework.TestCase;
 
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
+import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerConfigurer;
+import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerImp;
 import org.brandao.entityfilemanager.tx.TransactionException;
 
 public class EntityFileManagerImpTest extends TestCase{
 
+	private EntityFileManagerConfigurer efm;
+	
+	public void setUp(){
+		File path   = new File("./");
+		File txPath = new File(path, "tx");
+		
+		EntityFileManagerConfigurer efm = new EntityFileManagerImp();
+		
+		LockProvider lp = new LockProviderImp();
+		
+		EntityFileTransactionManagerConfigurer tm = new EntityFileTransactionManagerImp();
+		
+		tm.setLockProvider(lp);
+		tm.setTimeout(EntityFileTransactionManagerImp.DEFAULY_TIME_OUT);
+		tm.setTransactionPath(txPath);
+		tm.setEntityFileManagerConfigurer(efm);
+		
+		efm.setEntityFileTransactionManager(tm);
+		efm.setLockProvider(lp);
+		efm.setPath(path);
+		
+		efm.init();
+		
+		this.efm = efm;
+	}
+	
+	public void tearDown(){
+		this.efm.destroy();
+	}
+	
 	public void testCommitOneFile() throws TransactionException, IOException{
 		
-		EntityFileManager efm    = new EntityFileManagerImp();
 		EntityFileTransaction tx = efm.beginTransaction();
 		
 		try{
@@ -44,7 +76,6 @@ public class EntityFileManagerImpTest extends TestCase{
 	
 	public void testCommitMoreFile() throws TransactionException, IOException{
 		
-		EntityFileManager efm    = new EntityFileManagerImp();
 		EntityFileTransaction tx = efm.beginTransaction();
 		
 		try{

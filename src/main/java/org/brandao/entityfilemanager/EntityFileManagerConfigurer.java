@@ -15,14 +15,10 @@ public interface EntityFileManagerConfigurer
 	
 	LockProvider getLockProvider();
 	
-	void setPathName(String pathName);
+	void setPath(File value);
 
-	String getPathName();
-	
 	File getPath();
 
-	File getDataPath();
-	
 	void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException;
 	
 	EntityFileAccess<?,?> getEntityFile(String name) throws EntityFileManagerException;
@@ -31,7 +27,7 @@ public interface EntityFileManagerConfigurer
 	
 	void truncate(String name) throws EntityFileManagerException;
 	
-	void start() throws EntityFileManagerException;
+	void init() throws EntityFileManagerException;
 	
 	void destroy() throws EntityFileManagerException;
 	
