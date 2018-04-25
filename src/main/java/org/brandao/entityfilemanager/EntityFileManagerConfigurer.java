@@ -21,8 +21,6 @@ public interface EntityFileManagerConfigurer
 	
 	File getPath();
 
-	File getTransactionPath();
-
 	File getDataPath();
 	
 	void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException;

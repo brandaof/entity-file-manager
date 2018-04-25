@@ -15,7 +15,8 @@ import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil.TransactionFil
 public class TransactionLoader {
 
 	public EntityFileTransaction[] loadTransactions(
-			EntityFileManagerConfigurer entityFileManager, File txPath
+			EntityFileManagerConfigurer entityFileManager, 
+			EntityFileTransactionManagerImp transactionManager, File txPath
 			) throws TransactionException, IOException{
 		
 		File[] files = txPath.listFiles();
@@ -30,7 +31,7 @@ public class TransactionLoader {
 				this.toTransactionalEntityFile(mappedTXFMD, entityFileManager);
 		
 		return toEntityFileTransaction(transactionFiles, 
-				entityFileManager.getEntityFileTransactionManager(), entityFileManager);
+				transactionManager, entityFileManager);
 	}
 	
 	private File[] getTransactionFiles(File[] value){
@@ -126,7 +127,7 @@ public class TransactionLoader {
 
 	private EntityFileTransaction[] toEntityFileTransaction(
 			Map<Long, Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>> values,
-			EntityFileTransactionManager transactioManager, EntityFileManagerConfigurer manager) throws IOException, TransactionException{
+			EntityFileTransactionManagerImp transactioManager, EntityFileManagerConfigurer manager) throws IOException, TransactionException{
 
 		EntityFileTransaction[] result = new EntityFileTransaction[values.size()];
 		
@@ -145,7 +146,7 @@ public class TransactionLoader {
 			boolean commited       = (transactionStatus & EntityFileTransaction.TRANSACTION_COMMITED) != 0;
 			
 			EntityFileTransaction eft = 
-				transactioManager.load(transactionFiles, manager, transactionStatus, 
+				transactioManager.load(transactionFiles, transactionStatus, 
 						transactionID, started, rolledBack, commited);
 			
 			result[i++] = eft;

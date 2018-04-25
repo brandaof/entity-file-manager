@@ -25,6 +25,10 @@ public interface EntityFileTransaction {
 	
 	<T,R> T select(long id, EntityFileAccess<T,R> entityFileaccess) throws PersistenceException;
 	
+	void setTimeout(long value);
+	
+	long getTimeout();
+	
 	byte getStatus();
 	
 	boolean isRolledBack();

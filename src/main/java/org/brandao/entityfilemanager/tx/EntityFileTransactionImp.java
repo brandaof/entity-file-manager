@@ -1,22 +1,18 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
-import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.PersistenceException;
 
 public class EntityFileTransactionImp 
 	implements EntityFileTransaction{
 
-	private static final long TIME_OUT = 5*60*1000;
-	
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
 	protected Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles;
-	
-	private EntityFileManagerConfigurer manager;
 	
 	private LockProvider lockProvider;
 	
@@ -34,23 +30,33 @@ public class EntityFileTransactionImp
 	
 	private boolean closed;
 	
+	private long timeout;
+	
 	public EntityFileTransactionImp(
 			EntityFileTransactionManager entityFileTransactionManager,
+			LockProvider lockProvider,
 			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
-			EntityFileManagerConfigurer manager, byte status, long transactionID,
-			boolean started, boolean rolledBack, boolean commited) {
-		
+			byte status, long transactionID, boolean started, boolean rolledBack, 
+			boolean commited, long timeout) {
 		this.entityFileTransactionManager = entityFileTransactionManager;
 		this.transactionFiles             = transactionFiles;
-		this.manager                      = manager;
 		this.transactionID                = transactionID;
-		this.started                      = started;
+		this.lockProvider                 = lockProvider;
 		this.rolledBack                   = rolledBack;
 		this.commited                     = commited;
+		this.started                      = started;
 		this.status                       = status;
 		this.dirty                        = false;
 	}
 
+	public void setTimeout(long value) {
+		this.timeout = value;
+	}
+
+	public long getTimeout() {
+		return this.timeout;
+	}
+	
 	public byte getStatus() {
 		return this.status;
 	}
@@ -171,7 +177,7 @@ public class EntityFileTransactionImp
 		try{
 			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
 			long pointer = txEntityFileAccess.insert(entity);
-			this.lockProvider.lock(entityFileaccess, pointer);
+			this.lockProvider.tryLock(entityFileaccess, pointer, this.timeout, TimeUnit.MILLISECONDS);
 			return pointer;
 		}
 		catch(PersistenceException e){
@@ -187,6 +193,7 @@ public class EntityFileTransactionImp
 	public <T,R> void update(long id, T entity,
 			EntityFileAccess<T,R> entityFileaccess) throws PersistenceException {
 		try{
+			this.lockProvider.tryLock(entityFileaccess, id, this.timeout, TimeUnit.MILLISECONDS);
 			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
 			txEntityFileAccess.update(id, entity);
 		}
@@ -203,6 +210,7 @@ public class EntityFileTransactionImp
 	public <T,R> void delete(long id, EntityFileAccess<T,R> entityFileaccess)
 			throws PersistenceException {
 		try{
+			this.lockProvider.tryLock(entityFileaccess, id, this.timeout, TimeUnit.MILLISECONDS);
 			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
 			txEntityFileAccess.delete(id);
 		}
@@ -223,6 +231,7 @@ public class EntityFileTransactionImp
 
 	public <T,R> T select(long id, boolean lock, EntityFileAccess<T,R> entityFileaccess) {
 		try{
+			this.lockProvider.tryLock(entityFileaccess, id, this.timeout, TimeUnit.MILLISECONDS);
 			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
 			return txEntityFileAccess.select(id);
 		}
@@ -237,7 +246,7 @@ public class EntityFileTransactionImp
 	}
 	
 	public void close() throws TransactionException{
-		entityFileTransactionManager.close(this);
+		entityFileTransactionManager.closeTransaction(this);
 	}
 	
 	/* private methods */
@@ -295,4 +304,5 @@ public class EntityFileTransactionImp
 			super.finalize();
 		}
 	}
+
 }

@@ -8,7 +8,6 @@ import java.util.Map;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManager;
 import org.brandao.entityfilemanager.tx.TransactionException;
-import org.brandao.entityfilemanager.tx.TransactionLoader;
 
 public class EntityFileManagerImp 
 	implements EntityFileManagerConfigurer{
@@ -23,8 +22,6 @@ public class EntityFileManagerImp
 	
 	private Map<String, EntityFileAccess<?,?>> entities;
 
-	private File transactionPath;
-	
 	private File dataPath;
 	
 	private EntityFileTransactionManager transactioManager;
@@ -42,17 +39,15 @@ public class EntityFileManagerImp
 	public void setPathName(String pathName) {
 		this.pathName        = pathName;
 		this.path            = new File(this.pathName);
-		this.transactionPath = new File(this.path, TRANSACTION_PATH);
 		this.dataPath        = new File(this.path, DATA_PATH);
 		
-		if(!this.path.exists())
+		if(!this.path.exists()){
 			this.path.mkdirs();
-		
-		if(!this.transactionPath.exists())
-			this.transactionPath.mkdirs();
+		}
 
-		if(!this.dataPath.exists())
+		if(!this.dataPath.exists()){
 			this.dataPath.mkdirs();
+		}
 		
 	}
 
@@ -75,7 +70,6 @@ public class EntityFileManagerImp
 		
 		try{
 			this.started = true;
-			this.clearTransactions();
 		}
 		catch(EntityFileManagerException ex){
 			this.started = false;
@@ -93,7 +87,7 @@ public class EntityFileManagerImp
 			throw new EntityFileManagerException("manager not started");
 
 		try{
-			this.clearTransactions();
+			//this.transactioManager.
 			
 			for(EntityFileAccess<?,?> entityFile: this.entities.values()){
 				entityFile.close();
@@ -105,22 +99,6 @@ public class EntityFileManagerImp
 			throw new EntityFileManagerException(e);
 		}
 		
-	}
-	
-	private void clearTransactions() throws EntityFileManagerException{
-		try{
-			TransactionLoader txLoader = new TransactionLoader();
-			EntityFileTransaction[] txList = 
-					txLoader.loadTransactions(this, this.transactionPath);
-			
-			for(EntityFileTransaction tx: txList){
-				this.transactioManager.close(tx);
-			}
-			
-		}
-		catch(Throwable e){
-			throw new EntityFileManagerException(e);
-		}
 	}
 	
 	public void create(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException{
@@ -169,10 +147,6 @@ public class EntityFileManagerImp
 		return this.path;
 	}
 
-	public File getTransactionPath() {
-		return this.transactionPath;
-	}
-
 	public File getDataPath() {
 		return this.dataPath;
 	}
@@ -196,7 +170,7 @@ public class EntityFileManagerImp
 	}
 
 	public EntityFileTransaction beginTransaction() throws TransactionException{
-		return this.transactioManager.create(this);
+		return this.transactioManager.openTransaction();
 	}
 
 	public static class EntityFileTX<T> implements EntityFile<T>{

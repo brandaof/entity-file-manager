@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,10 +10,16 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
+import org.brandao.entityfilemanager.EntityFileManagerException;
+import org.brandao.entityfilemanager.LockProvider;
 
 public class EntityFileTransactionManagerImp 
 	implements EntityFileTransactionManager{
 
+	public static final String TRANSACTION_PATH = "/tx";
+	
+	public static final long DEFAULY_TIME_OUT = 5*60*1000;
+	
 	private long transactionIDCounter;
 	
 	private Lock txIDLock;
@@ -21,13 +28,24 @@ public class EntityFileTransactionManagerImp
 	
 	private long currentTransactionID;
 
-	public EntityFileTransactionManagerImp(){
+	private long timeout;
+	
+	private File transactionPath;
+	
+	private EntityFileManagerConfigurer entityFileManagerConfigurer;
+	
+	private LockProvider lockProvider;
+	
+	public EntityFileTransactionManagerImp(long timeout, File transactionPath, LockProvider lockProvider){
 		this.transactionIDCounter = 0;
 		this.txIDLock             = new ReentrantLock();
 		this.transactions         = new ConcurrentHashMap<Long, EntityFileTransaction>();
+		this.timeout              = timeout;
+		this.transactionPath      = transactionPath;
+		this.lockProvider         = lockProvider;
 	}
 	
-	public long getNextTransactionID() {
+	private long getNextTransactionID() {
 		this.txIDLock.lock();
 		try{
 			currentTransactionID = this.transactionIDCounter++;
@@ -38,28 +56,56 @@ public class EntityFileTransactionManagerImp
 		return currentTransactionID;
 	}
 
-	public EntityFileTransaction create(EntityFileManagerConfigurer manager) throws TransactionException {
+	public void setEntityFileManagerConfigurer(EntityFileManagerConfigurer value) {
+		this.entityFileManagerConfigurer = value;
+	}
+
+	public EntityFileManagerConfigurer getEntityFileManagerConfigurer() {
+		return this.entityFileManagerConfigurer;
+	}
+	
+	public File getTransactionPath() {
+		return transactionPath;
+	}
+
+	public void setTransactionPath(File transactionPath) {
+		this.transactionPath = transactionPath;
+		
+		if(!this.transactionPath.exists()){
+			this.transactionPath.mkdirs();
+		}
+	}
+
+	public long getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+
+	public void init() throws TransactionException{
+		this.reloadTransactions();
+	}
+	
+	public void destroy() throws TransactionException{
+		this.closeAllTransactions();
+	}
+	
+	public EntityFileTransaction openTransaction() throws TransactionException {
 		EntityFileTransactionImp tx = 
 			new EntityFileTransactionImp(
-				this, 
+				this, this.lockProvider,
 				new HashMap<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>>(), 
-				manager, EntityFileTransaction.TRANSACTION_NOT_STARTED, 
-				this.getNextTransactionID(), false, false, false);
+				EntityFileTransaction.TRANSACTION_NOT_STARTED, 
+				this.getNextTransactionID(), false, false, false, this.timeout);
 		
 		tx.begin();
 		this.transactions.put(tx.getTransactionID(), tx);
 		return tx;
 	}
 
-	public EntityFileTransaction load(
-			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
-			EntityFileManagerConfigurer manager, byte status, long transactionID, boolean started,
-			boolean rolledBack, boolean commited) {
-		return new EntityFileTransactionImp(this, transactionFiles, 
-				manager, status, transactionID, started, rolledBack, commited);
-	}
-
-	public void close(EntityFileTransaction transaction) throws TransactionException {
+	public void closeTransaction(EntityFileTransaction transaction) throws TransactionException {
 		
 		EntityFileTransactionImp tx = (EntityFileTransactionImp)transaction;
 		
@@ -73,4 +119,40 @@ public class EntityFileTransactionManagerImp
 		this.transactions.remove(tx.getTransactionID());
 	}
 
+	private void reloadTransactions() throws EntityFileManagerException{
+		try{
+			TransactionLoader txLoader = new TransactionLoader();
+			EntityFileTransaction[] txList = 
+					txLoader.loadTransactions(this.entityFileManagerConfigurer, 
+							this, this.transactionPath);
+			
+			for(EntityFileTransaction tx: txList){
+				this.closeTransaction(tx);
+			}
+			
+		}
+		catch(Throwable e){
+			throw new EntityFileManagerException(e);
+		}
+	}
+
+	private void closeAllTransactions() throws EntityFileManagerException{
+		try{
+			for(EntityFileTransaction tx: this.transactions.values()){
+				this.closeTransaction(tx);
+			}
+		}
+		catch(Throwable e){
+			throw new EntityFileManagerException(e);
+		}
+	}
+	
+	public EntityFileTransaction load(
+			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
+			byte status, long transactionID, boolean started,
+			boolean rolledBack, boolean commited) {
+		return new EntityFileTransactionImp(this, this.lockProvider, transactionFiles,
+				status, transactionID, started, rolledBack, commited, this.timeout);
+	}
+	
 }
