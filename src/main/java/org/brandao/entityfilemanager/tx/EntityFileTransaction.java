@@ -19,7 +19,7 @@ public interface EntityFileTransaction {
 	
 	<T,R> long insert(T entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
 
-	<T,R> long insert(T[] entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R> long[] insert(T[] entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
 	
 	<T,R> void update(long id, T entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
 

@@ -4,7 +4,7 @@ public interface EntityFile<T> {
 
 	long insert(T entity) throws EntityFileException;
 
-	long insert(T[] entity) throws EntityFileException;
+	long[] insert(T[] entity) throws EntityFileException;
 	
 	void update(long id, T entity) throws EntityFileException;
 
