@@ -14,4 +14,6 @@ public interface EntityFileDataHandler<T> {
 	
 	T read(DataInputStream stream) throws IOException;
 	
+	Class<T> getType();
+	
 }

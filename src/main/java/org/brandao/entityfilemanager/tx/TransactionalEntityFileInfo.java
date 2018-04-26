@@ -1,25 +1,25 @@
 package org.brandao.entityfilemanager.tx;
 
-import java.util.HashSet;
-import java.util.Set;
-
 public class TransactionalEntityFileInfo<T,R> {
 
-	public TransactionalEntityFile<T,R> entityFile;
+	private TransactionalEntityFile<T,R> entityFile;
 	
-	public Set<Long> managedRecords;
-	
-	public TransactionalEntityFileInfo(TransactionalEntityFile<T,R> entityFile){
-		this.entityFile     = entityFile;
-		this.managedRecords = new HashSet<Long>();
+	private PointerManager<?,?> pointerManager;
+
+	public TransactionalEntityFileInfo(
+			TransactionalEntityFile<T, R> entityFile,
+			PointerManager<?, ?> pointerManager) {
+		this.entityFile = entityFile;
+		this.pointerManager = pointerManager;
 	}
 
 	public TransactionalEntityFile<T, R> getEntityFile() {
 		return entityFile;
 	}
 
-	public Set<Long> getManagedRecords() {
-		return managedRecords;
+	public PointerManager<?, ?> getPointerManager() {
+		return pointerManager;
 	}
+	
 	
 }

@@ -6,6 +6,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 public interface EntityFileAccess<T, R> {
 
+	Class<T> getType();
+	
 	int getRecordLength();
 	
 	int getFirstRecord();
@@ -40,7 +42,7 @@ public interface EntityFileAccess<T, R> {
 
 	void batchWriteRawEntity(R[] entities) throws IOException;
 	
-	T[] batchRead(long value) throws IOException;
+	T[] batchRead(long[] value) throws IOException;
 	
 	T read() throws IOException;
 	
