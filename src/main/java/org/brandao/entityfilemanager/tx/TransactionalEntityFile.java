@@ -60,23 +60,17 @@ public class TransactionalEntityFile<T, R>
 			if(id == -1){
 				id = data.length();
 				
-				tx.seek(tx.length());
-				tx.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, null));
+				this.managerPointer(id, true);
 				
 				data.seek(data.length());
 				data.write(entity);
 			}
 			else{
-				tx.seek(tx.length());
-				tx.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, null));
+				this.managerPointer(id, true);
 				
-				data.seek(data.length());
+				data.seek(id);
 				data.write(entity);
-				
 			}
-			
-			this.lockProvider.lock(this.data, id);
-			this.managedRecords.add(id);
 			
 			return id;
 		}
@@ -97,26 +91,17 @@ public class TransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			long id = data.length();
-			
-			TransactionalEntity<T>[] values = new TransactionalEntity[entity.length];
+			long id    = data.length();
 			long[] ids = new long[entity.length];
 			
-			for(int i=0;i<values.length;i++){
-				ids[i]    = id + i;
-				values[i] = new TransactionalEntity<T>(id + i, TransactionalEntity.NEW_RECORD, null); 
+			for(int i=0;i<ids.length;i++){
+				ids[i] = id + i;
 			}
 			
-			tx.seek(tx.length());
-			tx.batchWrite(values);
+			this.managerPointer(ids, true);
 			
-			data.seek(data.length());
+			data.seek(id);
 			data.batchWrite(entity);
-			
-			for(long i: ids){
-				this.lockProvider.lock(this.data, i);
-				this.managedRecords.add(i);
-			}
 			
 			return ids;
 		}
@@ -136,14 +121,7 @@ public class TransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			this.lockProvider.lock(this.data, id);
-			this.managedRecords.add(id);
-			
-			this.data.seek(id);
-			R rawData = this.data.readRawEntity();
-			
-			tx.seek(tx.length());
-			tx.writeRawEntity(new RawTransactionEntity<R>(id, TransactionalEntity.UPDATE_RECORD, rawData));
+			this.managerPointer(id, false);
 			
 			this.data.seek(id);
 			this.data.write(entity);
@@ -164,42 +142,12 @@ public class TransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			int[] indexNotManaged = new int[entity.length];
-			int idxNotManaged     = 0;
+			this.managerPointer(id, false);
 			
-			for(int i=0;i<entity.length;i++){
-				
-				long r = id[i];
-				
-				if(!this.managedRecords.contains(r)){
-					indexNotManaged[idxNotManaged++] = i;
-					this.lockProvider.lock(this.data, r);
-					this.managedRecords.add(r);
-				}
-				
+			for(int i=0;i<id.length;i++){
+				data.seek(id[i]);
+				data.write(entity[i]);
 			}
-			
-			if(idxNotManaged > 0){
-				RawTransactionEntity<R>[] values = new RawTransactionEntity[idxNotManaged];
-				
-				int idx = 0;
-				
-				for(int i=0;i<idxNotManaged;i++){
-					int x  = indexNotManaged[i];
-					long r = id[x];
-					
-					this.data.seek(r);
-					R rawData = this.data.readRawEntity();
-					values[idx++] = new RawTransactionEntity<R>(r, TransactionalEntity.UPDATE_RECORD, rawData); 
-				}
-				
-				tx.seek(tx.length());
-				tx.batchWriteRawEntity(values);
-			}
-			
-			data.seek(data.length());
-			data.batchWrite(entity);
-			
 		}
 		catch(Throwable e){
 			throw new PersistenceException(e);
@@ -216,15 +164,7 @@ public class TransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			this.data.seek(id);
-			R rawData = this.data.readRawEntity();
-
-			if(rawData == null){
-				return;
-			}
-			
-			tx.seek(tx.length());
-			tx.writeRawEntity(new RawTransactionEntity<R>(id, TransactionalEntity.DELETE_RECORD, rawData));
+			this.managerPointer(id, false);
 			
 			this.data.seek(id);
 			this.data.write(null);
@@ -235,6 +175,28 @@ public class TransactionalEntityFile<T, R>
 		finally{
 			lock.unlock();
 		}
+	}
+	
+	public void delete(long[] id) throws EntityFileException{
+		ReadWriteLock readWritelock = data.getLock();
+		Lock lock = readWritelock.writeLock();
+		lock.lock();
+		
+		try{
+			this.managerPointer(id, false);
+			
+			for(int i=0;i<id.length;i++){
+				data.seek(id[i]);
+				data.write(null);
+			}
+		}
+		catch(Throwable e){
+			throw new PersistenceException(e);
+		}
+		finally{
+			lock.unlock();
+		}		
+		
 	}
 	
 	public T select(long id){
@@ -367,6 +329,7 @@ public class TransactionalEntityFile<T, R>
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void managerPointer(long[] id, boolean insert) throws IOException{
 		
 		int[] indexNotManaged = new int[id.length];
@@ -386,31 +349,42 @@ public class TransactionalEntityFile<T, R>
 
 		if(idxNotManaged > 0){
 			
-			RawTransactionEntity<R>[] values = new RawTransactionEntity[idxNotManaged];
-			
 			int idx = 0;
 			
-			for(int i=0;i<idxNotManaged;i++){
-				int x  = indexNotManaged[i];
-				long r = id[x];
+			if(insert){
+				TransactionalEntity<T>[] values = new TransactionalEntity[idxNotManaged];
 				
-				if(insert){
-					tx.seek(tx.length());
-					tx.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, null));
+				for(int i=0;i<idxNotManaged;i++){
+					int x  = indexNotManaged[i];
+					long r = id[x];
+					
+					values[idx++] = new TransactionalEntity<T>(r, TransactionalEntity.NEW_RECORD, null);
+					
 				}
-				else{
+				
+				tx.seek(tx.length());
+				tx.batchWrite(values);
+				
+			}
+			else{
+				RawTransactionEntity<R>[] values = new RawTransactionEntity[idxNotManaged];
+				
+				for(int i=0;i<idxNotManaged;i++){
+					int x  = indexNotManaged[i];
+					long r = id[x];
+					
 					this.data.seek(r);
 					R rawData = this.data.readRawEntity();
+					
 					values[idx++] = new RawTransactionEntity<R>(r, TransactionalEntity.UPDATE_RECORD, rawData);
+					
 				}
 				
-				this.data.seek(r);
-				R rawData = this.data.readRawEntity();
-				values[idx++] = new RawTransactionEntity<R>(r, TransactionalEntity.UPDATE_RECORD, rawData); 
+				tx.seek(tx.length());
+				tx.batchWriteRawEntity(values);
+				
 			}
-			
-			tx.seek(tx.length());
-			tx.batchWriteRawEntity(values);
+
 		}
 		
 	}
