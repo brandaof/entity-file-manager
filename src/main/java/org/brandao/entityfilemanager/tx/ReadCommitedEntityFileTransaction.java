@@ -7,6 +7,8 @@ import java.util.Set;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
+import org.brandao.entityfilemanager.tx.readcommited.PointerManager;
+import org.brandao.entityfilemanager.tx.readcommited.TransactionalEntityFile;
 
 public class ReadCommitedEntityFileTransaction 
 	extends AbstractEntityFileTransaction{

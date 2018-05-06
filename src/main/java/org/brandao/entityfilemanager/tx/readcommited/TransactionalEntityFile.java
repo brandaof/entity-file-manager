@@ -1,4 +1,4 @@
-package org.brandao.entityfilemanager.tx;
+package org.brandao.entityfilemanager.tx.readcommited;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -11,6 +11,12 @@ import org.brandao.entityfilemanager.EntityFile;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.PersistenceException;
+import org.brandao.entityfilemanager.tx.EntityFileTransaction;
+import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
+import org.brandao.entityfilemanager.tx.RawTransactionEntity;
+import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
+import org.brandao.entityfilemanager.tx.TransactionException;
+import org.brandao.entityfilemanager.tx.TransactionalEntity;
 
 public class TransactionalEntityFile<T, R> 
 	implements EntityFile<T> {

@@ -1,4 +1,4 @@
-package org.brandao.entityfilemanager.tx;
+package org.brandao.entityfilemanager.tx.readcommited;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -6,6 +6,9 @@ import java.util.Set;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.LockProvider;
+import org.brandao.entityfilemanager.tx.RawTransactionEntity;
+import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
+import org.brandao.entityfilemanager.tx.TransactionalEntity;
 
 public class PointerManager<T,R> {
 

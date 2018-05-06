@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.tx.readcommited.TransactionalEntityFile;
 
 public class EntityFileTransactionUtil {
 

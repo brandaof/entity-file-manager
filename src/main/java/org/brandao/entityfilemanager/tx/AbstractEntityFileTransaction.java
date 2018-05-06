@@ -5,6 +5,8 @@ import java.util.Map;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.PersistenceException;
+import org.brandao.entityfilemanager.tx.readcommited.PointerManager;
+import org.brandao.entityfilemanager.tx.readcommited.TransactionalEntityFile;
 
 public abstract class AbstractEntityFileTransaction 
 	implements EntityFileTransaction{

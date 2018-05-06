@@ -1,8 +1,9 @@
-package org.brandao.entityfilemanager.tx;
+package org.brandao.entityfilemanager.tx.readcommited;
 
 import java.io.IOException;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.tx.RawTransactionEntity;
 
 public class RollbackOperations {
 
