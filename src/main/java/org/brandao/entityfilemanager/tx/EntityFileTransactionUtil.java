@@ -153,8 +153,8 @@ public class EntityFileTransactionUtil {
 	}
 	
 	public static <T,R> TransactionEntityFileAccess<T,R> getTransactionEntityFileAccess( 
-		EntityFileAccess<T,R> entityFile, long transactionID) {
-		return new TransactionEntityFileAccess<T,R>(entityFile, transactionID);
+		EntityFileAccess<T,R> entityFile, long transactionID, byte transactionIsolation) {
+		return new TransactionEntityFileAccess<T,R>(entityFile, transactionID, transactionIsolation);
 	}
 	
 	@SuppressWarnings("unchecked")

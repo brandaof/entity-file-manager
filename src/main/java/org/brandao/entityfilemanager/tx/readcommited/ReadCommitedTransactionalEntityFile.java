@@ -303,12 +303,12 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 				return;
 			}
 			
-			this.tx.seek(0);
-			
 			long current = 0;
 			long max     = this.tx.length();
 			
 			while(current < max){
+				
+				this.tx.seek(current);
 				
 				RawTransactionEntity<R>[] ops = 
 					this.tx.batchReadRawEntity(this.batchOperationLength);
@@ -339,12 +339,12 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 				return;
 			}
 			
-			this.tx.seek(0);
-			
 			long current = 0;
 			long max     = this.tx.length();
 			
 			while(current < max){
+				
+				this.tx.seek(current);
 				
 				RawTransactionEntity<R>[] ops = 
 					this.tx.batchReadRawEntity(this.batchOperationLength);
