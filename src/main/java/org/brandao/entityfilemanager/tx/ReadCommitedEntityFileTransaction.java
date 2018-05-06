@@ -1,24 +1,19 @@
 package org.brandao.entityfilemanager.tx;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
-import org.brandao.entityfilemanager.tx.readcommited.PointerManager;
 import org.brandao.entityfilemanager.tx.readcommited.TransactionalEntityFile;
 
 public class ReadCommitedEntityFileTransaction 
 	extends AbstractEntityFileTransaction{
 
-	private Set<Long> pointers;
-	
 	public ReadCommitedEntityFileTransaction(
 			EntityFileTransactionManager entityFileTransactionManager,
 			LockProvider lockProvider,
-			Map<EntityFileAccess<?, ?>, TransactionalEntityFileInfo<?, ?>> transactionFiles,
+			Map<EntityFileAccess<?, ?>, TransactionalEntityFile<?, ?>> transactionFiles,
 			byte status, long transactionID, boolean started,
 			boolean rolledBack, boolean commited, long timeout) {
 		super(entityFileTransactionManager, lockProvider, transactionFiles, status,
@@ -27,94 +22,62 @@ public class ReadCommitedEntityFileTransaction
 
 	public <T, R> long insert(T entity, EntityFileAccess<T, R> entityFileAccess)
 			throws EntityFileException {
-		
-		TransactionalEntityFileInfo<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		
-		this.lockProvider.lock(entityFileAccess);
-		try{
-			TransactionalEntityFile<T, R> tef = tei.getEntityFile();
-			PointerManager<T, R> pm = tei.getPointerManager();
-			long id = tef.getNextFreePointer(false);
-			pm.managerPointer(id, true);
-			tef.insert(entity);
-			return id;
-		}
-		catch(Throwable e){
-			throw new EntityFileException(e);
-		}
-		finally{
-			this.lockProvider.unlock(entityFileAccess);
-		}
-		
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.insert(entity);
 	}
 
 	public <T, R> long[] insert(T[] entity,
 			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
-		TransactionalEntityFileInfo<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		
-		this.lockProvider.lock(entityFileAccess);
-		try{
-			TransactionalEntityFile<T, R> tef = tei.getEntityFile();
-			PointerManager<T, R> pm = tei.getPointerManager();
-			long id = tef.getNextFreePointer(true);
-			pm.managerPointer(id, true);
-			tef.insert(entity);
-			return id;
-		}
-		catch(Throwable e){
-			throw new EntityFileException(e);
-		}
-		finally{
-			this.lockProvider.unlock(entityFileAccess);
-		}
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.insert(entity);
 	}
 
 	public <T, R> void update(long id, T entity,
 			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
-		// TODO Auto-generated method stub
-		
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.update(id, entity);
 	}
 
 	public <T, R> void update(long[] id, T[] entity,
 			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
-		// TODO Auto-generated method stub
-		
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.update(id, entity);
 	}
 
 	public <T, R> void delete(long id, EntityFileAccess<T, R> entityFileAccess)
 			throws EntityFileException {
-		// TODO Auto-generated method stub
-		
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.delete(id);
 	}
 
 	public <T, R> void delete(long[] id, EntityFileAccess<T, R> entityFileAccess)
 			throws EntityFileException {
-		// TODO Auto-generated method stub
-		
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.delete(id);
 	}
 
 	public <T, R> T select(long id, EntityFileAccess<T, R> entityFileAccess)
 			throws EntityFileException {
-		// TODO Auto-generated method stub
-		return null;
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id);
 	}
 
 	public <T, R> T[] select(long[] id, EntityFileAccess<T, R> entityFileAccess)
 			throws EntityFileException {
-		// TODO Auto-generated method stub
-		return null;
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id);
 	}
 
 	public <T, R> T select(long id, boolean lock,
 			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
-		// TODO Auto-generated method stub
-		return null;
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id, lock);
 	}
 
 	public <T, R> T[] select(long[] id, boolean lock,
 			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
-		// TODO Auto-generated method stub
-		return null;
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id, lock);
 	}
 	
 }

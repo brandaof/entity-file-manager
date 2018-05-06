@@ -3,8 +3,8 @@ package org.brandao.entityfilemanager.tx;
 import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
-import org.brandao.entityfilemanager.PersistenceException;
 import org.brandao.entityfilemanager.tx.readcommited.PointerManager;
 import org.brandao.entityfilemanager.tx.readcommited.TransactionalEntityFile;
 
@@ -181,7 +181,7 @@ public abstract class AbstractEntityFileTransaction
 	
 	@SuppressWarnings("unchecked")
 	protected <T,R> TransactionalEntityFile<T,R> getManagedEntityFile( 
-			EntityFileAccess<T,R> entityFile) throws PersistenceException{
+			EntityFileAccess<T,R> entityFile) throws EntityFileException{
 		try{
 			
 			TransactionalEntityFile<T,R> tx = 
@@ -205,7 +205,7 @@ public abstract class AbstractEntityFileTransaction
 			return tx;
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 	}
 

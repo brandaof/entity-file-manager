@@ -10,7 +10,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import org.brandao.entityfilemanager.EntityFile;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
-import org.brandao.entityfilemanager.PersistenceException;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
 import org.brandao.entityfilemanager.tx.RawTransactionEntity;
@@ -64,7 +63,7 @@ public class TransactionalEntityFile<T, R>
 			return id;
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
@@ -91,7 +90,7 @@ public class TransactionalEntityFile<T, R>
 			return ids;
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
@@ -99,7 +98,7 @@ public class TransactionalEntityFile<T, R>
 		
 	}
 	
-	public void update(long id, T entity) throws PersistenceException{
+	public void update(long id, T entity) throws EntityFileException{
 		
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
@@ -110,7 +109,7 @@ public class TransactionalEntityFile<T, R>
 			this.write(id, entity);
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
@@ -155,7 +154,7 @@ public class TransactionalEntityFile<T, R>
 			
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
@@ -163,7 +162,7 @@ public class TransactionalEntityFile<T, R>
 		
 	}
 	
-	public void delete(long id) throws PersistenceException{
+	public void delete(long id) throws EntityFileException{
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
@@ -173,7 +172,7 @@ public class TransactionalEntityFile<T, R>
 			this.write(id, (T)null);
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
@@ -207,7 +206,7 @@ public class TransactionalEntityFile<T, R>
 			
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
@@ -231,7 +230,7 @@ public class TransactionalEntityFile<T, R>
 			return this.read(id);
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
@@ -273,7 +272,7 @@ public class TransactionalEntityFile<T, R>
 			return result;
 		}
 		catch(Throwable e){
-			throw new PersistenceException(e);
+			throw new EntityFileException(e);
 		}
 		finally{
 			lock.unlock();
