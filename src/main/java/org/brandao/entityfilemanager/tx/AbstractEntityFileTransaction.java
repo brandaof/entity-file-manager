@@ -1,41 +1,37 @@
 package org.brandao.entityfilemanager.tx;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
-import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.PersistenceException;
 
-public class EntityFileTransactionImp 
+public abstract class AbstractEntityFileTransaction 
 	implements EntityFileTransaction{
 
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
 	protected Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> transactionFiles;
 	
-	private LockProvider lockProvider;
+	protected LockProvider lockProvider;
 	
-	private long transactionID;
+	protected long transactionID;
 	
-	private boolean started;
+	protected boolean started;
 
-	private boolean rolledBack;
+	protected boolean rolledBack;
 	
-	private boolean commited;
+	protected boolean commited;
 	
-	private boolean dirty;
+	protected boolean dirty;
 	
-	private byte status;
+	protected byte status;
 	
-	private boolean closed;
+	protected boolean closed;
 	
-	private long timeout;
+	protected long timeout;
 	
-	public EntityFileTransactionImp(
+	public AbstractEntityFileTransaction(
 			EntityFileTransactionManager entityFileTransactionManager,
 			LockProvider lockProvider,
 			Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> transactionFiles,
@@ -174,109 +170,6 @@ public class EntityFileTransactionImp
 
 		this.started = true;
 	}
-
-	public <T,R> long insert(T entity, EntityFileAccess<T,R> entityFileaccess)
-			 throws EntityFileException {
-		
-		TransactionalEntityFileInfo<T,R> tei    = this.getManagedEntityFile(entityFileaccess);
-		TransactionalEntityFile<T,R> entityFile = tei.getEntityFile();
-		Set<Long> managedRecords                = tei.getManagedRecords();
-
-		long pointer;
-		this.lockProvider.lock(entityFileaccess);
-		try{
-			pointer = entityFile.insert(entity);
-		}
-		catch(EntityFileException e){
-			this.dirty = true;
-			throw e;
-		}
-		catch(Throwable e){
-			this.dirty = true;
-			throw new EntityFileException(e);
-		}
-		finally{
-			this.lockProvider.unlock(entityFileaccess);
-		}
-		
-		try{
-			this.lockProvider.lock(entityFileaccess, pointer);
-			managedRecords.add(pointer);
-			return pointer;
-		}
-		catch(PersistenceException e){
-			this.dirty = true;
-			throw e;
-		}
-		catch(Throwable e){
-			this.dirty = true;
-			throw new PersistenceException(e);
-		}
-	}
-
-	public <T,R> void update(long id, T entity,
-			EntityFileAccess<T,R> entityFileaccess) throws PersistenceException {
-		
-		TransactionalEntityFileInfo<T,R> tei    = this.getManagedEntityFile(entityFileaccess);
-		TransactionalEntityFile<T,R> entityFile = tei.getEntityFile();
-		Set<Long> managedRecords                = tei.getManagedRecords();
-		
-		if(!managedRecords.contains(id)){
-			
-		}
-		try{
-			i
-			this.lockProvider.tryLock(entityFileaccess, id, this.timeout, TimeUnit.MILLISECONDS);
-			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-			txEntityFileAccess.update(id, entity);
-		}
-		catch(PersistenceException e){
-			this.dirty = true;
-			throw e;
-		}
-		catch(Throwable e){
-			this.dirty = true;
-			throw new PersistenceException(e);
-		}
-	}
-
-	public <T,R> void delete(long id, EntityFileAccess<T,R> entityFileaccess)
-			throws PersistenceException {
-		try{
-			this.lockProvider.tryLock(entityFileaccess, id, this.timeout, TimeUnit.MILLISECONDS);
-			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-			txEntityFileAccess.delete(id);
-		}
-		catch(PersistenceException e){
-			this.dirty = true;
-			throw e;
-		}
-		catch(Throwable e){
-			this.dirty = true;
-			throw new PersistenceException(e);
-		}
-	}
-
-	public <T,R> T select(long id, EntityFileAccess<T,R> entityFileaccess) {
-		TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-		return txEntityFileAccess.select(id);
-	}
-
-	public <T,R> T select(long id, boolean lock, EntityFileAccess<T,R> entityFileaccess) {
-		try{
-			this.lockProvider.tryLock(entityFileaccess, id, this.timeout, TimeUnit.MILLISECONDS);
-			TransactionalEntityFile<T,R> txEntityFileAccess = this.getManagedEntityFile(entityFileaccess);
-			return txEntityFileAccess.select(id);
-		}
-		catch(PersistenceException e){
-			this.dirty = true;
-			throw e;
-		}
-		catch(Throwable e){
-			this.dirty = true;
-			throw new PersistenceException(e);
-		}
-	}
 	
 	public void close() throws TransactionException{
 		entityFileTransactionManager.closeTransaction(this);
@@ -285,7 +178,7 @@ public class EntityFileTransactionImp
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	private <T,R> TransactionalEntityFileInfo<T,R> getManagedEntityFile( 
+	protected <T,R> TransactionalEntityFileInfo<T,R> getManagedEntityFile( 
 			EntityFileAccess<T,R> entityFile) throws PersistenceException{
 		try{
 			

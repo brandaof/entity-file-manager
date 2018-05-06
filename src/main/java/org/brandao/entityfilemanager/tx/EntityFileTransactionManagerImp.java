@@ -98,8 +98,8 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	public EntityFileTransaction openTransaction() throws TransactionException {
-		EntityFileTransactionImp tx = 
-			new EntityFileTransactionImp(
+		AbstractEntityFileTransaction tx = 
+			new AbstractEntityFileTransaction(
 				this, this.lockProvider,
 				new HashMap<EntityFileAccess<?, ?>, TransactionalEntityFileInfo>(), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED, 
@@ -112,7 +112,7 @@ public class EntityFileTransactionManagerImp
 
 	public void closeTransaction(EntityFileTransaction transaction) throws TransactionException {
 		
-		EntityFileTransactionImp tx = (EntityFileTransactionImp)transaction;
+		AbstractEntityFileTransaction tx = (AbstractEntityFileTransaction)transaction;
 		
 		if(tx.isCommited() || tx.isRolledBack() || tx.isClosed() || !tx.isStarted()){
 			return;
@@ -156,7 +156,7 @@ public class EntityFileTransactionManagerImp
 			Map<EntityFileAccess<?, ?>, TransactionalEntityFileInfo> transactionFiles,
 			byte status, long transactionID, boolean started,
 			boolean rolledBack, boolean commited) {
-		return new EntityFileTransactionImp(this, this.lockProvider, transactionFiles,
+		return new AbstractEntityFileTransaction(this, this.lockProvider, transactionFiles,
 				status, transactionID, started, rolledBack, commited, this.timeout);
 	}
 	

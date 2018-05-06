@@ -27,6 +27,7 @@ public class PointerManager<T,R> {
 	}
 
 	public void managerPointer(long id, boolean insert) throws IOException{
+		
 		if(!this.pointers.contains(id)){
 			this.lockProvider.lock(this.data, id);
 			this.pointers.add(id);

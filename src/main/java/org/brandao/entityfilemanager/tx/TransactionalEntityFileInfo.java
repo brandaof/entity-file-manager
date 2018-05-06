@@ -4,11 +4,11 @@ public class TransactionalEntityFileInfo<T,R> {
 
 	private TransactionalEntityFile<T,R> entityFile;
 	
-	private PointerManager<?,?> pointerManager;
+	private PointerManager<T,R> pointerManager;
 
 	public TransactionalEntityFileInfo(
 			TransactionalEntityFile<T, R> entityFile,
-			PointerManager<?, ?> pointerManager) {
+			PointerManager<T,R> pointerManager) {
 		this.entityFile = entityFile;
 		this.pointerManager = pointerManager;
 	}
@@ -17,7 +17,7 @@ public class TransactionalEntityFileInfo<T,R> {
 		return entityFile;
 	}
 
-	public PointerManager<?, ?> getPointerManager() {
+	public PointerManager<T,R> getPointerManager() {
 		return pointerManager;
 	}
 	
