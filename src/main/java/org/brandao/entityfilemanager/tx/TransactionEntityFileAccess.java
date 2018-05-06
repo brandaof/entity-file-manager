@@ -18,7 +18,8 @@ public class TransactionEntityFileAccess<T, R>
 
 	private int transactionIsolationPointer;
 	
-	public TransactionEntityFileAccess(EntityFileAccess<T, R> e, long transactionID){
+	public TransactionEntityFileAccess(EntityFileAccess<T, R> e, long transactionID, 
+			byte transactionIsolation){
 		super(
 			EntityFileTransactionUtil.getTransactionFile(e.getAbsoluteFile(), transactionID), 
 			new EntityFileTransactionDataHandler<T>(e.getEntityFileDataHandler())
@@ -32,6 +33,7 @@ public class TransactionEntityFileAccess<T, R>
 		this.entityFileTransactionDataHandler = ((EntityFileTransactionDataHandler<T>)super.getEntityFileDataHandler());
 		this.entityFileTransactionDataHandler.setTransactionID(transactionID);
 		this.entityFileTransactionDataHandler.setTransactionStatus(EntityFileTransaction.TRANSACTION_NOT_STARTED);
+		this.entityFileTransactionDataHandler.setTransactionIsolation(transactionIsolation);
 	}
 
 	public void setTransactionStatus(byte value) throws IOException{

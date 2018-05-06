@@ -31,13 +31,16 @@ public abstract class AbstractEntityFileTransaction
 	
 	protected long timeout;
 	
+	protected byte transactionIsolation;
+	
 	public AbstractEntityFileTransaction(
 			EntityFileTransactionManager entityFileTransactionManager,
 			LockProvider lockProvider,
 			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
-			byte status, long transactionID, boolean started, boolean rolledBack, 
+			byte status, long transactionID, byte transactionIsolation, boolean started, boolean rolledBack, 
 			boolean commited, long timeout) {
 		this.entityFileTransactionManager = entityFileTransactionManager;
+		this.transactionIsolation         = transactionIsolation;
 		this.transactionFiles             = transactionFiles;
 		this.transactionID                = transactionID;
 		this.lockProvider                 = lockProvider;
@@ -250,7 +253,8 @@ public abstract class AbstractEntityFileTransaction
 			}
 			
 			TransactionEntityFileAccess<T,R> txFile = 
-				new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID);
+				new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID, 
+						this.transactionIsolation);
 			txFile.createNewFile();
 			
 			tx = this.createTransactionalEntityFile(entityFile, txFile);
