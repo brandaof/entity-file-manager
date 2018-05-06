@@ -216,7 +216,7 @@ public class AbstractEntityFileAccess<T, R>
 	public void writeRawEntity(R value) throws IOException {
 	}
 
-	public T[] batchRead(long value) throws IOException {
+	public T[] batchRead(int len) throws IOException {
 		return null;
 	}
 	
@@ -239,7 +239,7 @@ public class AbstractEntityFileAccess<T, R>
 		return entity;
 	}
 
-	public R[] batchReadRawEntity(long value) throws IOException {
+	public R[] batchReadRawEntity(int len) throws IOException {
 		return null;
 	}
 	
@@ -282,6 +282,11 @@ public class AbstractEntityFileAccess<T, R>
 	
 	public ReadWriteLock getLock(){
 		return this.lock;
+	}
+
+	public Class<T> getType() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

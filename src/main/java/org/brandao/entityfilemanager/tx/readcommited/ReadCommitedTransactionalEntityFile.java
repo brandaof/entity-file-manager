@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import org.brandao.entityfilemanager.EntityFile;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
@@ -16,9 +15,10 @@ import org.brandao.entityfilemanager.tx.RawTransactionEntity;
 import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
 import org.brandao.entityfilemanager.tx.TransactionException;
 import org.brandao.entityfilemanager.tx.TransactionalEntity;
+import org.brandao.entityfilemanager.tx.TransactionalEntityFile;
 
-public class TransactionalEntityFile<T, R> 
-	implements EntityFile<T> {
+public class ReadCommitedTransactionalEntityFile<T, R> 
+	implements TransactionalEntityFile<T, R> {
 
 	private EntityFileAccess<T,R> data;
 	
@@ -28,12 +28,12 @@ public class TransactionalEntityFile<T, R>
 	
 	private int batchOperationLength;
 	
-	public TransactionalEntityFile(EntityFileAccess<T,R> data, 
+	public ReadCommitedTransactionalEntityFile(EntityFileAccess<T,R> data, 
 			TransactionEntityFileAccess<T,R> tx, PointerManager<T, R> pointerManager){
 		this(data,tx, pointerManager, 100);
 	}
 	
-	public TransactionalEntityFile(EntityFileAccess<T,R> data, 
+	public ReadCommitedTransactionalEntityFile(EntityFileAccess<T,R> data, 
 			TransactionEntityFileAccess<T,R> tx, PointerManager<T, R> pointerManager, 
 			int batchOperationLength){
 		this.data 					= data;
@@ -317,13 +317,13 @@ public class TransactionalEntityFile<T, R>
 					EntityFileTransactionUtil.mapOperations(ops);
 				
 				ops = map[TransactionalEntity.NEW_RECORD];
-				RollbackOperations.insert(ops, data);
+				CommitOperations.insert(ops, data);
 				
 				ops = map[TransactionalEntity.UPDATE_RECORD];
-				RollbackOperations.insert(ops, data);
+				CommitOperations.update(ops, data);
 				
 				ops = map[TransactionalEntity.DELETE_RECORD];
-				RollbackOperations.insert(ops, data);
+				CommitOperations.delete(ops, data);
 
 				current += ops.length;
 			}
@@ -356,10 +356,10 @@ public class TransactionalEntityFile<T, R>
 				RollbackOperations.insert(ops, data);
 				
 				ops = map[TransactionalEntity.UPDATE_RECORD];
-				RollbackOperations.insert(ops, data);
+				RollbackOperations.update(ops, data);
 				
 				ops = map[TransactionalEntity.DELETE_RECORD];
-				RollbackOperations.insert(ops, data);
+				RollbackOperations.delete(ops, data);
 
 				current += ops.length;
 			}
@@ -395,4 +395,5 @@ public class TransactionalEntityFile<T, R>
 		return data.batchRead(len);
 	}
 	
+
 }

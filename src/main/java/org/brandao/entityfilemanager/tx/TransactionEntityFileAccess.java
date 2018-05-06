@@ -14,8 +14,10 @@ public class TransactionEntityFileAccess<T, R>
 	
 	private int transactionStatusPointer;
 	
-	private long transactionIDPointer;
+	private int transactionIDPointer;
 
+	private int transactionIsolationPointer;
+	
 	public TransactionEntityFileAccess(EntityFileAccess<T, R> e, long transactionID){
 		super(
 			EntityFileTransactionUtil.getTransactionFile(e.getAbsoluteFile(), transactionID), 
@@ -23,9 +25,10 @@ public class TransactionEntityFileAccess<T, R>
 		);
 
 		this.entityFileAccess                 = e;
-		this.firstRecord                      = this.entityFileAccess.getFirstRecord() + 9;
+		this.firstRecord                      = this.entityFileAccess.getFirstRecord() + 10;
 		this.transactionStatusPointer         = this.entityFileAccess.getFirstRecord() + 1;
-		this.transactionIDPointer             = this.transactionStatusPointer; 
+		this.transactionIDPointer             = this.transactionStatusPointer + 1; 
+		this.transactionIsolationPointer      = this.transactionIDPointer + 8;
 		this.entityFileTransactionDataHandler = ((EntityFileTransactionDataHandler<T>)super.getEntityFileDataHandler());
 		this.entityFileTransactionDataHandler.setTransactionID(transactionID);
 		this.entityFileTransactionDataHandler.setTransactionStatus(EntityFileTransaction.TRANSACTION_NOT_STARTED);
@@ -55,8 +58,18 @@ public class TransactionEntityFileAccess<T, R>
 		this.fileAccess.writeLong(transactionID);
 	}
 
+	public void setTransactionIsolation(byte value) throws IOException{
+		this.entityFileTransactionDataHandler.setTransactionIsolation(value);
+		this.fileAccess.seek(this.transactionIsolationPointer);
+		this.fileAccess.writeByte(value);
+	}
+	
+	public byte getTransactionIsolation() throws IOException{
+		return this.entityFileTransactionDataHandler.getTransactionIsolation();
+	}
+	
 	public EntityFileAccess<T, R> getEntityFileAccess() {
 		return entityFileAccess;
 	}
-
+	
 }

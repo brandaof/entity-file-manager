@@ -5,8 +5,6 @@ import java.util.Map;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
-import org.brandao.entityfilemanager.tx.readcommited.PointerManager;
-import org.brandao.entityfilemanager.tx.readcommited.TransactionalEntityFile;
 
 public abstract class AbstractEntityFileTransaction 
 	implements EntityFileTransaction{
@@ -177,6 +175,66 @@ public abstract class AbstractEntityFileTransaction
 		entityFileTransactionManager.closeTransaction(this);
 	}
 	
+	public <T, R> long insert(T entity, EntityFileAccess<T, R> entityFileAccess)
+			throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.insert(entity);
+	}
+
+	public <T, R> long[] insert(T[] entity,
+			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.insert(entity);
+	}
+
+	public <T, R> void update(long id, T entity,
+			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.update(id, entity);
+	}
+
+	public <T, R> void update(long[] id, T[] entity,
+			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.update(id, entity);
+	}
+
+	public <T, R> void delete(long id, EntityFileAccess<T, R> entityFileAccess)
+			throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.delete(id);
+	}
+
+	public <T, R> void delete(long[] id, EntityFileAccess<T, R> entityFileAccess)
+			throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		tei.delete(id);
+	}
+
+	public <T, R> T select(long id, EntityFileAccess<T, R> entityFileAccess)
+			throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id);
+	}
+
+	public <T, R> T[] select(long[] id, EntityFileAccess<T, R> entityFileAccess)
+			throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id);
+	}
+
+	public <T, R> T select(long id, boolean lock,
+			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id, lock);
+	}
+
+	public <T, R> T[] select(long[] id, boolean lock,
+			EntityFileAccess<T, R> entityFileAccess) throws EntityFileException {
+		TransactionalEntityFile<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+		return tei.select(id, lock);
+	}
+	
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
@@ -195,11 +253,7 @@ public abstract class AbstractEntityFileTransaction
 				new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID);
 			txFile.createNewFile();
 			
-			tx = new TransactionalEntityFile<T, R>(
-					entityFile, 
-					txFile, 
-					new PointerManager<T, R>(txFile, entityFile, lockProvider, this.timeout)
-			);
+			tx = this.createTransactionalEntityFile(entityFile, txFile);
 			
 			this.transactionFiles.put(entityFile, tx);
 			return tx;
@@ -209,6 +263,9 @@ public abstract class AbstractEntityFileTransaction
 		}
 	}
 
+	protected abstract <T,R> TransactionalEntityFile<T,R> createTransactionalEntityFile(
+			EntityFileAccess<T,R> entityFile, TransactionEntityFileAccess<T,R> txFile);
+	
 	/* restrict methods */
 	
 	public Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> getTransactionalEntityFile(){

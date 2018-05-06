@@ -11,7 +11,6 @@ import java.util.Map.Entry;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil.TransactionFileNameMetadata;
-import org.brandao.entityfilemanager.tx.readcommited.TransactionalEntityFile;
 
 public class TransactionLoader {
 

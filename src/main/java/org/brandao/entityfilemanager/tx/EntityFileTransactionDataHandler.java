@@ -1,6 +1,7 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
 
 import org.brandao.entityfilemanager.DataInputStream;
 import org.brandao.entityfilemanager.DataOutputStream;
@@ -15,6 +16,8 @@ public class EntityFileTransactionDataHandler<T>
 	
 	private long transactionID;
 	
+	private byte transactionIsolation;
+	
 	public EntityFileTransactionDataHandler(EntityFileDataHandler<T> handler){
 		this.handler = handler;
 	}
@@ -23,6 +26,7 @@ public class EntityFileTransactionDataHandler<T>
 		this.handler.writeMetaData(stream);
 		stream.writeByte(this.transactionStatus);
 		stream.writeLong(this.transactionID);
+		stream.writeByte(this.transactionIsolation);
 	}
 
 	public void readMetaData(DataInputStream stream) throws IOException {
@@ -65,6 +69,20 @@ public class EntityFileTransactionDataHandler<T>
 
 	public void setTransactionID(long transactionID) {
 		this.transactionID = transactionID;
+	}
+
+	public byte getTransactionIsolation() {
+		return transactionIsolation;
+	}
+
+	public void setTransactionIsolation(byte transactionIsolation) {
+		this.transactionIsolation = transactionIsolation;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Class<TransactionalEntity<T>> getType() {
+		return (Class<TransactionalEntity<T>>)((ParameterizedType)this.getClass()
+				.getGenericInterfaces()[0]).getActualTypeArguments()[0];
 	}
 
 }
