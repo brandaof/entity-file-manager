@@ -221,4 +221,33 @@ public class EntityFileTransactionUtil {
 		return 0;
 	}
 	
+	public static long[] getNextSequenceGroup(long[] ids, int off){
+		
+		int max = ids.length;
+		
+		if(off >= max || ids[off + 1] != (ids[off] + 1)){
+			return null;
+		}
+		
+		int end = off + 2;
+		
+		while(end < max && ids[end] == (ids[end++ - 1] - 1));
+		
+		int len = end - off;
+		long[] result = new long[len];
+		System.arraycopy(ids, off, result, 0, len);
+		return result;
+	}
+
+	public static <T> Map<Long,Integer> getMappedIdIndex(long[] ids){
+		
+		Map<Long, Integer> result = new HashMap<Long, Integer>();
+		
+		for(int i=0;i<ids.length;i++){
+			result.put(ids[i], i);
+		}
+		
+		return result;
+	}
+
 }

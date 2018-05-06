@@ -11,7 +11,7 @@ public abstract class AbstractEntityFileTransaction
 
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
-	protected Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> transactionFiles;
+	protected Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles;
 	
 	protected LockProvider lockProvider;
 	
@@ -34,7 +34,7 @@ public abstract class AbstractEntityFileTransaction
 	public AbstractEntityFileTransaction(
 			EntityFileTransactionManager entityFileTransactionManager,
 			LockProvider lockProvider,
-			Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> transactionFiles,
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
 			byte status, long transactionID, boolean started, boolean rolledBack, 
 			boolean commited, long timeout) {
 		this.entityFileTransactionManager = entityFileTransactionManager;
@@ -91,18 +91,18 @@ public abstract class AbstractEntityFileTransaction
 		}
 		
 		try{
-			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
-				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 			}
 			
 			this.status = EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK;
 			
-			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
-				txFile.getEntityFile().rollback();
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.rollback();
 			}
 			
-			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
-				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 			}
 			
 			this.status = EntityFileTransaction.TRANSACTION_ROLLEDBACK;
@@ -137,18 +137,18 @@ public abstract class AbstractEntityFileTransaction
 		}
 		
 		try{
-			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
-				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
 			}
 
 			this.status = EntityFileTransaction.TRANSACTION_STARTED_COMMIT;
 			
-			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
-				txFile.getEntityFile().rollback();
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.rollback();
 			}
 			
-			for(TransactionalEntityFileInfo<?,?> txFile: this.transactionFiles.values()){
-				txFile.getEntityFile().setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
+			for(TransactionalEntityFile<?,?> txFile: this.transactionFiles.values()){
+				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
 			}
 			
 			this.status     = EntityFileTransaction.TRANSACTION_COMMITED;
@@ -178,12 +178,12 @@ public abstract class AbstractEntityFileTransaction
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	protected <T,R> TransactionalEntityFileInfo<T,R> getManagedEntityFile( 
+	protected <T,R> TransactionalEntityFile<T,R> getManagedEntityFile( 
 			EntityFileAccess<T,R> entityFile) throws PersistenceException{
 		try{
 			
-			TransactionalEntityFileInfo<T,R> tx = 
-				(TransactionalEntityFileInfo<T, R>) this.transactionFiles.get(entityFile);
+			TransactionalEntityFile<T,R> tx = 
+				(TransactionalEntityFile<T, R>) this.transactionFiles.get(entityFile);
 			
 			if(tx != null){
 				return tx;
@@ -192,6 +192,13 @@ public abstract class AbstractEntityFileTransaction
 			TransactionEntityFileAccess<T,R> txFile = 
 				new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID);
 			txFile.createNewFile();
+			
+			tx = new TransactionalEntityFile<T, R>(
+					entityFile, 
+					txFile, 
+					new PointerManager<T, R>(txFile, entityFile, lockProvider, this.timeout)
+			);
+			
 			this.transactionFiles.put(entityFile, tx);
 			return tx;
 		}
@@ -202,7 +209,7 @@ public abstract class AbstractEntityFileTransaction
 
 	/* restrict methods */
 	
-	public Map<EntityFileAccess<?,?>, TransactionalEntityFileInfo<?,?>> getTransactionalEntityFile(){
+	public Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> getTransactionalEntityFile(){
 		return this.transactionFiles;
 	}
 	

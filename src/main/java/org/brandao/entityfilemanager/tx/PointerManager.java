@@ -16,38 +16,42 @@ public class PointerManager<T,R> {
 	private EntityFileAccess<T,R> data;
 	
 	private LockProvider lockProvider;
+
+	private long timeout;
 	
 	public PointerManager(
 			TransactionEntityFileAccess<T, R> tx, EntityFileAccess<T, R> data,
-			LockProvider lockProvider) {
+			LockProvider lockProvider, long timeout) {
 		this.pointers     = new HashSet<Long>();
 		this.tx           = tx;
 		this.data         = data;
 		this.lockProvider = lockProvider;
 	}
 
-	public void managerPointer(long id, boolean insert) throws IOException{
+	public void managerPointer(long id, Boolean insert) throws IOException{
 		
 		if(!this.pointers.contains(id)){
 			this.lockProvider.lock(this.data, id);
 			this.pointers.add(id);
 			
-			if(insert){
-				tx.seek(tx.length());
-				tx.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, null));
-			}
-			else{
-				this.data.seek(id);
-				R rawData = this.data.readRawEntity();
-				tx.seek(tx.length());
-				tx.writeRawEntity(new RawTransactionEntity<R>(id, TransactionalEntity.UPDATE_RECORD, rawData));
+			if(insert != null){
+				if(insert){
+					tx.seek(tx.length());
+					tx.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, null));
+				}
+				else{
+					this.data.seek(id);
+					R rawData = this.data.readRawEntity();
+					tx.seek(tx.length());
+					tx.writeRawEntity(new RawTransactionEntity<R>(id, TransactionalEntity.UPDATE_RECORD, rawData));
+				}
 			}
 		}
 		
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void managerPointer(long[] id, boolean insert) throws IOException{
+	public void managerPointer(long[] id, Boolean insert) throws IOException{
 		
 		int[] indexNotManaged = new int[id.length];
 		int idxNotManaged     = 0;
@@ -64,7 +68,7 @@ public class PointerManager<T,R> {
 			
 		}
 
-		if(idxNotManaged > 0){
+		if(insert != null && idxNotManaged > 0){
 			
 			int idx = 0;
 			

@@ -3,6 +3,7 @@ package org.brandao.entityfilemanager.tx;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -18,18 +19,22 @@ public class TransactionalEntityFile<T, R>
 	
 	private TransactionEntityFileAccess<T,R> tx;
 	
+	private PointerManager<T, R> pointerManager;
+	
 	private int batchOperationLength;
 	
 	public TransactionalEntityFile(EntityFileAccess<T,R> data, 
-			TransactionEntityFileAccess<T,R> tx){
-		this(data,tx, 100);
+			TransactionEntityFileAccess<T,R> tx, PointerManager<T, R> pointerManager){
+		this(data,tx, pointerManager, 100);
 	}
 	
 	public TransactionalEntityFile(EntityFileAccess<T,R> data, 
-			TransactionEntityFileAccess<T,R> tx, int batchOperationLength){
-		this.data = data;
-		this.tx = tx;
-		this.batchOperationLength = batchOperationLength;
+			TransactionEntityFileAccess<T,R> tx, PointerManager<T, R> pointerManager, 
+			int batchOperationLength){
+		this.data 					= data;
+		this.tx 					= tx;
+		this.batchOperationLength 	= batchOperationLength;
+		this.pointerManager 		= pointerManager;
 	}
 	
 	public void setTransactionStatus(byte value) throws IOException{
@@ -39,26 +44,17 @@ public class TransactionalEntityFile<T, R>
 	public byte getTransactionStatus() throws IOException{
 		return this.tx.getTransactionStatus();
 	}
-	
+
 	public long insert(T entity) throws EntityFileException{
 		
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
-		long id = this.getNextFreePointer();
-		
 		try{
-			if(id == -1){
-				id = data.length();
-				data.seek(data.length());
-				data.write(entity);
-			}
-			else{
-				data.seek(id);
-				data.write(entity);
-			}
-			
+			long id = this.getNextFreePointer(false);
+			this.pointerManager.managerPointer(id, true);
+			this.write(id, entity);
 			return id;
 		}
 		catch(Throwable e){
@@ -69,7 +65,7 @@ public class TransactionalEntityFile<T, R>
 		}
 		
 	}
-	
+
 	public long[] insert(T[] entity) throws EntityFileException{
 		
 		ReadWriteLock readWritelock = data.getLock();
@@ -77,16 +73,15 @@ public class TransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			long id    = data.length();
+			long id    = this.getNextFreePointer(true);
 			long[] ids = new long[entity.length];
 			
 			for(int i=0;i<ids.length;i++){
 				ids[i] = id + i;
 			}
 			
-			data.seek(id);
-			data.batchWrite(entity);
-			
+			this.pointerManager.managerPointer(ids, true);
+			this.write(id, entity);
 			return ids;
 		}
 		catch(Throwable e){
@@ -105,8 +100,8 @@ public class TransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			this.data.seek(id);
-			this.data.write(entity);
+			this.pointerManager.managerPointer(id, false);
+			this.write(id, entity);
 		}
 		catch(Throwable e){
 			throw new PersistenceException(e);
@@ -117,23 +112,48 @@ public class TransactionalEntityFile<T, R>
 		
 	}
 	
-	public void update(long[] id, T[] entity) throws EntityFileException{
+	@SuppressWarnings("unchecked")
+	public void update(long[] ids, T[] entities) throws EntityFileException{
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			for(int i=0;i<id.length;i++){
-				data.seek(id[i]);
-				data.write(entity[i]);
+			this.pointerManager.managerPointer(ids, false);
+			Map<Long,Integer> mappedIndex = EntityFileTransactionUtil.getMappedIdIndex(ids);
+			
+			int off = 0;
+			
+			while(off < ids.length){
+				
+				long[] group =                                                            
+					EntityFileTransactionUtil.getNextSequenceGroup(ids, off);
+				
+				if(group == null){
+					this.write(ids[off], entities[off]);
+					off++;
+				}
+				else{
+					T[] values = (T[])Array.newInstance(this.data.getType(), group.length);
+					
+					for(int i=0;i<group.length;i++){
+						int idx = mappedIndex.get(group[i]);
+						values[i] = entities[idx];
+					}
+					
+					this.write(group[0], values);
+					
+					off += group.length;
+				}
 			}
+			
 		}
 		catch(Throwable e){
 			throw new PersistenceException(e);
 		}
 		finally{
 			lock.unlock();
-		}		
+		}
 		
 	}
 	
@@ -143,8 +163,8 @@ public class TransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			this.data.seek(id);
-			this.data.write(null);
+			this.pointerManager.managerPointer(id, true);
+			this.write(id, (T)null);
 		}
 		catch(Throwable e){
 			throw new PersistenceException(e);
@@ -154,15 +174,29 @@ public class TransactionalEntityFile<T, R>
 		}
 	}
 	
-	public void delete(long[] id) throws EntityFileException{
+	public void delete(long[] ids) throws EntityFileException{
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			for(int i=0;i<id.length;i++){
-				data.seek(id[i]);
-				data.write(null);
+			this.pointerManager.managerPointer(ids, false);
+			
+			int off = 0;
+			
+			while(off < ids.length){
+				
+				long[] group =                                                            
+					EntityFileTransactionUtil.getNextSequenceGroup(ids, off);
+				
+				if(group == null){
+					this.write(ids[off], (T)null);
+					off++;
+				}
+				else{
+					this.write(group[0], (T[])null);
+					off += group.length;
+				}
 			}
 			
 		}
@@ -172,21 +206,23 @@ public class TransactionalEntityFile<T, R>
 		finally{
 			lock.unlock();
 		}		
-		
 	}
 	
 	public T select(long id){
 		return this.select(id, false);
 	}
 	
-	public T select(long id, boolean notUsed){
+	public T select(long id, boolean forUpdate){
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			this.data.seek(id);
-			return data.read();
+			if(forUpdate){
+				this.pointerManager.managerPointer(id, null);
+			}
+			
+			return this.read(id);
 		}
 		catch(Throwable e){
 			throw new PersistenceException(e);
@@ -201,54 +237,33 @@ public class TransactionalEntityFile<T, R>
 	}
 	
 	@SuppressWarnings("unchecked")
-	public T[] select(long[] id, boolean notUsed){
+	public T[] select(long[] id, boolean forUpdate){
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			Arrays.sort(id);
-			
-			long maxPointer  = this.data.length();
-			int i            = 0;
-			T[] result       = (T[])Array.newInstance(this.data.getType(), id.length);
-			int resultDesloc = 0;
-			
-			int start;
-			int end;
-			int count;
-			
-			while(i < id.length && id[i] < maxPointer){
-				start = i;
-				count = i;
-				end   = i;
-				
-				while(i < id.length && id[i] < maxPointer){
-					
-					if(id[i++] != count++){
-						end = i + 1;
-						break;
-					}
-					
-				}
-				
-				int qty = end - start;
-				
-				if(qty == 1){
-					this.data.seek(id[start]);
-					result[resultDesloc++] = this.data.read();
-				}
-				else{
-					long[] buffIds = new long[qty];
-					System.arraycopy(id, start, buffIds, 0, qty);
-					resultDesloc += qty;
-					
-					this.data.seek(buffIds[0]);
-					T[] buffEntitys = this.data.batchRead(buffIds);
-					System.arraycopy(buffEntitys, 0, result, resultDesloc, buffEntitys.length);
-				}
+			if(forUpdate){
+				this.pointerManager.managerPointer(id, null);
 			}
 			
+			Arrays.sort(id);
+			int off    = 0;
+			T[] result = (T[])Array.newInstance(this.data.getType(), id.length);
+			
+			while(off < id.length){
+				long[] group = EntityFileTransactionUtil.getNextSequenceGroup(id, off);
+				
+				if(group == null){
+					result[off++] = this.read(id[off]);
+				}
+				else{
+					T[] buffEntitys = this.read(group[0], group.length);
+					System.arraycopy(buffEntitys, 0, result, off, buffEntitys.length);
+					off += group.length;
+				}
+			}
+
 			return result;
 		}
 		catch(Throwable e){
@@ -349,8 +364,30 @@ public class TransactionalEntityFile<T, R>
 		}
 	}
 
-	private long getNextFreePointer(){
-		return -1;
+	public long getNextFreePointer(boolean batch) throws IOException{
+		return this.data.length();
+	}
+	
+	/* private */
+	
+	private void write(long id, T entity) throws IOException{
+		data.seek(id);
+		data.write(entity);
+	}
+
+	private void write(long id, T[] entities) throws IOException{
+		data.seek(id);
+		data.batchWrite(entities);
+	}
+
+	private T read(long id) throws IOException{
+		data.seek(id);
+		return data.read();
+	}
+
+	private T[] read(long id, int len) throws IOException{
+		data.seek(id);
+		return data.batchRead(len);
 	}
 	
 }

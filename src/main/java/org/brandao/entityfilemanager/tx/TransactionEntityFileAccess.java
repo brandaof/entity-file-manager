@@ -55,4 +55,8 @@ public class TransactionEntityFileAccess<T, R>
 		this.fileAccess.writeLong(transactionID);
 	}
 
+	public EntityFileAccess<T, R> getEntityFileAccess() {
+		return entityFileAccess;
+	}
+
 }

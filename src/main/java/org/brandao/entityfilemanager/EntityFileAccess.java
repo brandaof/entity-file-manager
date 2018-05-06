@@ -42,13 +42,13 @@ public interface EntityFileAccess<T, R> {
 
 	void batchWriteRawEntity(R[] entities) throws IOException;
 	
-	T[] batchRead(long[] value) throws IOException;
+	T[] batchRead(int len) throws IOException;
 	
 	T read() throws IOException;
 	
 	R readRawEntity() throws IOException;
 	
-	R[] batchReadRawEntity(long value) throws IOException;
+	R[] batchReadRawEntity(int len) throws IOException;
 	
 	long length() throws IOException;
 	
