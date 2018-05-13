@@ -98,15 +98,16 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	public EntityFileTransaction openTransaction() throws TransactionException {
-		AbstractEntityFileTransaction tx = 
-			new AbstractEntityFileTransaction(
+		long txID = this.getNextTransactionID();
+		EntityFileTransaction tx = 
+			new ReadCommitedEntityFileTransaction(
 				this, this.lockProvider,
-				new HashMap<EntityFileAccess<?, ?>, TransactionalEntityFileInfo>(), 
+				new HashMap<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>(), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED, 
-				this.getNextTransactionID(), false, false, false, this.timeout);
+				txID, true, false, false, this.timeout);
 		
-		tx.begin();
-		this.transactions.put(tx.getTransactionID(), tx);
+		this.transactions.put(txID, tx);
+		
 		return tx;
 	}
 
@@ -153,11 +154,15 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	public EntityFileTransaction load(
-			Map<EntityFileAccess<?, ?>, TransactionalEntityFileInfo> transactionFiles,
-			byte status, long transactionID, boolean started,
-			boolean rolledBack, boolean commited) {
-		return new AbstractEntityFileTransaction(this, this.lockProvider, transactionFiles,
-				status, transactionID, started, rolledBack, commited, this.timeout);
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
+			byte status, long transactionID, byte transactionIsolation, boolean started, 
+			boolean rolledBack,	boolean commited) {
+		return
+			new ReadCommitedEntityFileTransaction(
+				this, this.lockProvider,
+				transactionFiles, 
+				status, 
+				transactionID, started, rolledBack, commited, this.timeout);
 	}
 	
 }

@@ -165,6 +165,7 @@ public abstract class AbstractEntityFileTransaction
 		
 	}
 
+	/*
 	public void begin() throws TransactionException {
 		
 		if(this.started){
@@ -173,6 +174,7 @@ public abstract class AbstractEntityFileTransaction
 
 		this.started = true;
 	}
+	*/
 	
 	public void close() throws TransactionException{
 		entityFileTransactionManager.closeTransaction(this);

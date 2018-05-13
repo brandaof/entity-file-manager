@@ -140,14 +140,15 @@ public class TransactionLoader {
 			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles =
 					entry.getValue();
 			
-			byte transactionStatus = this.getCurrentTransactionStatus(transactionFiles);
-			boolean started        = (transactionStatus & EntityFileTransaction.TRANSACTION_NOT_STARTED) != 0;
-			boolean rolledBack     = (transactionStatus & EntityFileTransaction.TRANSACTION_ROLLEDBACK) != 0;
-			boolean commited       = (transactionStatus & EntityFileTransaction.TRANSACTION_COMMITED) != 0;
+			byte transactionStatus    = this.getCurrentTransactionStatus(transactionFiles);
+			byte transactionIsolation = this.getTransactionIsolation(transactionFiles);
+			boolean started           = (transactionStatus & EntityFileTransaction.TRANSACTION_NOT_STARTED) != 0;
+			boolean rolledBack        = (transactionStatus & EntityFileTransaction.TRANSACTION_ROLLEDBACK) != 0;
+			boolean commited          = (transactionStatus & EntityFileTransaction.TRANSACTION_COMMITED) != 0;
 			
 			EntityFileTransaction eft = 
 				transactioManager.load(transactionFiles, transactionStatus, 
-						transactionID, started, rolledBack, commited);
+						transactionID, transactionIsolation, started, rolledBack, commited);
 			
 			result[i++] = eft;
 		}
@@ -173,6 +174,13 @@ public class TransactionLoader {
 		}
 		
 		return status;
+	}
+
+	private byte getTransactionIsolation(
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map
+			) throws IOException, TransactionException{
+		
+		return EntityFileTransactionUtil.getTransactionIsolation(map);
 	}
 	
 }

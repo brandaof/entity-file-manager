@@ -5,6 +5,12 @@ import org.brandao.entityfilemanager.EntityFileException;
 
 public interface EntityFileTransaction {
 
+	/* Transaction isolation */
+	
+	public static final byte TRANSACTION_READ_COMMITED 		= Byte.valueOf("00000001", 2);
+	
+	/* Transaction status */
+	
 	public static final byte TRANSACTION_NOT_STARTED 		= Byte.valueOf("00000001", 2);
 	
 	public static final byte TRANSACTION_STARTED 			= Byte.valueOf("00000010", 2);

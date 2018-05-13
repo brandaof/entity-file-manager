@@ -169,7 +169,7 @@ public class EntityFileManagerImp
 			return tx.insert(entity, entityFileAccess);
 		}
 
-		public long insert(T[] entity) throws EntityFileException {
+		public long[] insert(T[] entity) throws EntityFileException {
 			return tx.insert(entity, entityFileAccess);
 		}
 

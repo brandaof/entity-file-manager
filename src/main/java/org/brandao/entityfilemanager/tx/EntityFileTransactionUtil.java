@@ -209,6 +209,25 @@ public class EntityFileTransactionUtil {
 		
 		return (byte)result;
 	}
+
+	public static byte getTransactionIsolation(
+			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map
+			) throws TransactionException, IOException{
+		
+		byte result = -1;
+		
+		for(TransactionalEntityFile<?,?> txFile: map.values()){
+			if(result == -1){
+				result = txFile.getTransactionIsolation();
+			}
+			else
+			if(result != txFile.getTransactionIsolation()){
+				throw new TransactionException("invalid transaction isolation: expected " + result + " found " + txFile.getTransactionIsolation()); 
+			}
+		}
+		
+		return (byte)result;
+	}
 	
 	public static byte getTransactionStatus(byte mergedTransactionStatus){
 		
