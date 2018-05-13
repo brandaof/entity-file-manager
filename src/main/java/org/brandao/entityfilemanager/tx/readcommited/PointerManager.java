@@ -3,6 +3,7 @@ package org.brandao.entityfilemanager.tx.readcommited;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.LockProvider;
@@ -34,7 +35,7 @@ public class PointerManager<T,R> {
 	public void managerPointer(long id, Boolean insert) throws IOException{
 		
 		if(!this.pointers.contains(id)){
-			this.lockProvider.lock(this.data, id);
+			this.lockProvider.tryLock(this.data, this.timeout, TimeUnit.SECONDS);
 			this.pointers.add(id);
 			
 			if(insert != null){
@@ -65,7 +66,7 @@ public class PointerManager<T,R> {
 			
 			if(!this.pointers.contains(r)){
 				indexNotManaged[idxNotManaged++] = i;
-				this.lockProvider.lock(this.data, r);
+				this.lockProvider.tryLock(this.data, this.timeout, TimeUnit.SECONDS);
 				this.pointers.add(r);
 			}
 			

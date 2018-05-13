@@ -100,12 +100,18 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	
 	public void update(long id, T entity) throws EntityFileException{
 		
+		try{
+			this.pointerManager.managerPointer(id, false);
+		}
+		catch(Throwable e){
+			throw new EntityFileException(e);
+		}
+		
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			this.pointerManager.managerPointer(id, false);
 			this.write(id, entity);
 		}
 		catch(Throwable e){
@@ -119,12 +125,19 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	
 	@SuppressWarnings("unchecked")
 	public void update(long[] ids, T[] entities) throws EntityFileException{
+		
+		try{
+			this.pointerManager.managerPointer(ids, false);
+		}
+		catch(Throwable e){
+			throw new EntityFileException(e);
+		}
+		
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			this.pointerManager.managerPointer(ids, false);
 			Map<Long,Integer> mappedIndex = EntityFileTransactionUtil.getMappedIdIndex(ids);
 			
 			int off = 0;
@@ -163,12 +176,19 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	}
 	
 	public void delete(long id) throws EntityFileException{
+		
+		try{
+			this.pointerManager.managerPointer(id, false);
+		}
+		catch(Throwable e){
+			throw new EntityFileException(e);
+		}
+		
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			this.pointerManager.managerPointer(id, true);
 			this.write(id, (T)null);
 		}
 		catch(Throwable e){
@@ -180,13 +200,19 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	}
 	
 	public void delete(long[] ids) throws EntityFileException{
+		
+		try{
+			this.pointerManager.managerPointer(ids, false);
+		}
+		catch(Throwable e){
+			throw new EntityFileException(e);
+		}
+		
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			this.pointerManager.managerPointer(ids, false);
-			
 			int off = 0;
 			
 			while(off < ids.length){
@@ -218,15 +244,21 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	}
 	
 	public T select(long id, boolean forUpdate){
+
+		try{
+			if(forUpdate){
+				this.pointerManager.managerPointer(id, null);
+			}
+		}
+		catch(Throwable e){
+			throw new EntityFileException(e);
+		}
+		
 		ReadWriteLock readWritelock = data.getLock();
 		Lock lock = readWritelock.writeLock();
 		lock.lock();
 		
 		try{
-			if(forUpdate){
-				this.pointerManager.managerPointer(id, null);
-			}
-			
 			return this.read(id);
 		}
 		catch(Throwable e){
@@ -243,15 +275,21 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	
 	@SuppressWarnings("unchecked")
 	public T[] select(long[] id, boolean forUpdate){
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
 		
 		try{
 			if(forUpdate){
 				this.pointerManager.managerPointer(id, null);
 			}
-			
+		}
+		catch(Throwable e){
+			throw new EntityFileException(e);
+		}
+		
+		ReadWriteLock readWritelock = data.getLock();
+		Lock lock = readWritelock.writeLock();
+		lock.lock();
+		
+		try{
 			Arrays.sort(id);
 			int off    = 0;
 			T[] result = (T[])Array.newInstance(this.data.getType(), id.length);
