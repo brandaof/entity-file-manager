@@ -11,8 +11,6 @@ public interface TransactionalEntityFile<T, R>
 	
 	byte getTransactionStatus() throws IOException;
 
-	void setTransactionIsolation(byte value) throws IOException;
-	
 	byte getTransactionIsolation() throws IOException;
 	
 	void begin() throws TransactionException;

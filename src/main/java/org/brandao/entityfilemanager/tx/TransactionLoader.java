@@ -108,7 +108,7 @@ public class TransactionLoader {
 				}
 
 				TransactionEntityFileAccess<?, ?> tef = EntityFileTransactionUtil
-						.getTransactionEntityFileAccess(efa, txID);
+						.getTransactionEntityFileAccess(efa);
 				
 				if(tef == null || !tef.exists()){
 					throw new TransactionException("transaction data corrupted: " + txID);

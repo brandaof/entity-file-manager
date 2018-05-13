@@ -432,6 +432,10 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		data.seek(id);
 		return data.batchRead(len);
 	}
+
+	public byte getTransactionIsolation() throws IOException {
+		return EntityFileTransaction.TRANSACTION_READ_COMMITED;
+	}
 	
 
 }
