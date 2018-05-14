@@ -16,10 +16,10 @@ import org.brandao.entityfilemanager.tx.RawTransactionEntity;
 import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
 import org.brandao.entityfilemanager.tx.TransactionException;
 import org.brandao.entityfilemanager.tx.TransactionalEntity;
-import org.brandao.entityfilemanager.tx.TransactionalEntityFile;
+import org.brandao.entityfilemanager.tx.TransactionEntity;
 
 public class ReadCommitedTransactionalEntityFile<T, R> 
-	implements TransactionalEntityFile<T, R> {
+	implements TransactionEntity<T, R> {
 
 	private EntityFileAccess<T,R> data;
 	

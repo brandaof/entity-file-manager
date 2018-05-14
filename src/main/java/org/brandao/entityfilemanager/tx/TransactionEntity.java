@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.brandao.entityfilemanager.EntityFile;
 
-public interface TransactionalEntityFile<T, R> 
+public interface TransactionEntity<T, R> 
 	extends  EntityFile<T> {
 	
 	void setTransactionStatus(byte value) throws IOException;

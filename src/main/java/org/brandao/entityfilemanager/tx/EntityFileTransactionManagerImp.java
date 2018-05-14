@@ -104,7 +104,7 @@ public class EntityFileTransactionManagerImp
 		EntityFileTransaction tx = 
 			new ReadCommitedEntityFileTransaction(
 				this, this.lockProvider,
-				new HashMap<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>(), 
+				new HashMap<EntityFileAccess<?,?>, TransactionEntity<?,?>>(), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED, 
 				txID, true, false, false, this.timeout);
 		
@@ -175,8 +175,8 @@ public class EntityFileTransactionManagerImp
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
 			boolean rolledBack,	boolean commited){
 		
-		Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> tf =
-			new HashMap<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>();
+		Map<EntityFileAccess<?,?>, TransactionEntity<?,?>> tf =
+			new HashMap<EntityFileAccess<?,?>, TransactionEntity<?,?>>();
 		
 		for(Entry<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> entry: 
 			transactionFiles.entrySet()){
