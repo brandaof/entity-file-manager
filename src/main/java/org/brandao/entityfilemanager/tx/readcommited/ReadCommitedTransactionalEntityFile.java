@@ -9,6 +9,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
+import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
 import org.brandao.entityfilemanager.tx.RawTransactionEntity;
@@ -28,18 +29,17 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	
 	private int batchOperationLength;
 	
-	public ReadCommitedTransactionalEntityFile(EntityFileAccess<T,R> data, 
-			TransactionEntityFileAccess<T,R> tx, PointerManager<T, R> pointerManager){
-		this(data,tx, pointerManager, 100);
+	public ReadCommitedTransactionalEntityFile( 
+			TransactionEntityFileAccess<T,R> tx, LockProvider lockProvider, long timeout){
+		this(tx, lockProvider, timeout, 100);
 	}
 	
-	public ReadCommitedTransactionalEntityFile(EntityFileAccess<T,R> data, 
-			TransactionEntityFileAccess<T,R> tx, PointerManager<T, R> pointerManager, 
-			int batchOperationLength){
-		this.data 					= data;
+	public ReadCommitedTransactionalEntityFile(TransactionEntityFileAccess<T,R> tx,
+			LockProvider lockProvider, long timeout, int batchOperationLength){
+		this.data 					= tx.getEntityFileAccess();
 		this.tx 					= tx;
 		this.batchOperationLength 	= batchOperationLength;
-		this.pointerManager 		= pointerManager;
+		this.pointerManager 		= new PointerManager<T,R>(tx, lockProvider, timeout);
 	}
 	
 	public void setTransactionStatus(byte value) throws IOException{

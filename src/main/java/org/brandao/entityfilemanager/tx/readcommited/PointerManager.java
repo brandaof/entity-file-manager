@@ -24,11 +24,11 @@ public class PointerManager<T,R> {
 	private long timeout;
 	
 	public PointerManager(
-			TransactionEntityFileAccess<T, R> tx, EntityFileAccess<T, R> data,
+			TransactionEntityFileAccess<T, R> tx,
 			LockProvider lockProvider, long timeout) {
 		this.pointers     = new HashSet<Long>();
 		this.tx           = tx;
-		this.data         = data;
+		this.data         = tx.getEntityFileAccess();
 		this.lockProvider = lockProvider;
 	}
 

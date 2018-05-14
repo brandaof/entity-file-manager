@@ -200,10 +200,10 @@ public class EntityFileTransactionUtil {
 	}
 	
 	public static byte mergeTransactionStatus(
-			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map) throws IOException{
+			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> map) throws IOException{
 		int result = 0;
 		
-		for(TransactionalEntityFile<?,?> txFile: map.values()){
+		for(TransactionEntityFileAccess<?,?> txFile: map.values()){
 			result = result | txFile.getTransactionStatus();
 		}
 		
@@ -211,12 +211,12 @@ public class EntityFileTransactionUtil {
 	}
 
 	public static byte getTransactionIsolation(
-			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> map
+			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> map
 			) throws TransactionException, IOException{
 		
 		byte result = -1;
 		
-		for(TransactionalEntityFile<?,?> txFile: map.values()){
+		for(TransactionEntityFileAccess<?,?> txFile: map.values()){
 			if(result == -1){
 				result = txFile.getTransactionIsolation();
 			}

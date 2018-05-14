@@ -3,6 +3,7 @@ package org.brandao.entityfilemanager.tx;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
@@ -12,6 +13,7 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.EntityFileManagerException;
 import org.brandao.entityfilemanager.LockProvider;
+import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEntityFile;
 
 public class EntityFileTransactionManagerImp 
 	implements EntityFileTransactionManagerConfigurer{
@@ -154,15 +156,45 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	public EntityFileTransaction load(
-			Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> transactionFiles,
+			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
-			boolean rolledBack,	boolean commited) {
-		return
-			new ReadCommitedEntityFileTransaction(
+			boolean rolledBack,	boolean commited) throws TransactionException {
+		
+		if(transactionIsolation != EntityFileTransaction.TRANSACTION_READ_COMMITED){
+			throw new TransactionException("transaction not supported: " + transactionIsolation);
+		}
+		
+		return this.loadReadCommitedEntityFileTransaction(
+				transactionFiles, status, transactionID, transactionIsolation, 
+				started, rolledBack, commited);
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private EntityFileTransaction loadReadCommitedEntityFileTransaction(
+			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> transactionFiles,
+			byte status, long transactionID, byte transactionIsolation, boolean started, 
+			boolean rolledBack,	boolean commited){
+		
+		Map<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>> tf =
+			new HashMap<EntityFileAccess<?,?>, TransactionalEntityFile<?,?>>();
+		
+		for(Entry<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> entry: 
+			transactionFiles.entrySet()){
+			
+			tf.put(
+				entry.getKey(), 
+				new ReadCommitedTransactionalEntityFile(
+						entry.getValue(), this.lockProvider, this.timeout)
+			);
+			
+		}
+		
+		return new ReadCommitedEntityFileTransaction(
 				this, this.lockProvider,
-				transactionFiles, 
+				tf, 
 				status, 
 				transactionID, started, rolledBack, commited, this.timeout);
+		
 	}
 	
 }

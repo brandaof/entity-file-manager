@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.LockProvider;
-import org.brandao.entityfilemanager.tx.readcommited.PointerManager;
 import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEntityFile;
 
 public class ReadCommitedEntityFileTransaction 
@@ -23,10 +22,9 @@ public class ReadCommitedEntityFileTransaction
 	
 	protected <T,R> TransactionalEntityFile<T,R> createTransactionalEntityFile(
 			EntityFileAccess<T,R> entityFile, TransactionEntityFileAccess<T,R> txFile){
-		return new ReadCommitedTransactionalEntityFile<T, R>(
-				entityFile, 
-				txFile, 
-				new PointerManager<T, R>(txFile, entityFile, this.lockProvider, this.timeout));
+		return 
+			new ReadCommitedTransactionalEntityFile<T, R>(
+					txFile, this.lockProvider, this.timeout);
 	}
 	
 }
