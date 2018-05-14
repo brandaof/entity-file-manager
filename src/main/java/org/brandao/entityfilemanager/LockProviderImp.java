@@ -16,33 +16,63 @@ public class LockProviderImp
 	}
 	
 	public void lock(EntityFileAccess<?, ?> entityFile)
-			throws InterruptedException {
-		this.lockObject(entityFile);
+			throws LockException {
+		try{
+			this.lockObject(entityFile);
+		}
+		catch(Throwable e){
+			throw new LockException(e);
+		}
 	}
 
 	public boolean tryLock(EntityFileAccess<?, ?> entityFile, 
-			long unit, TimeUnit timeunit) throws InterruptedException {
-		return this.lockObject(entityFile, unit, timeunit);
+			long unit, TimeUnit timeunit) throws LockException {
+		try{
+			return this.lockObject(entityFile, unit, timeunit);
+		}
+		catch(Throwable e){
+			throw new LockException(e);
+		}
 	}
 	
 	public void unlock(EntityFileAccess<?, ?> entityFile)
-			throws InterruptedException {
-		this.unlockObject(entityFile);
+			throws LockException {
+		try{
+			this.unlockObject(entityFile);
+		}
+		catch(Throwable e){
+			throw new LockException(e);
+		}
 	}
 
 	public void lock(EntityFileAccess<?, ?> entityFile, long pointer)
-			throws InterruptedException {
-		this.lockObject(new PointerLock(entityFile, pointer));
+			throws LockException {
+		try{
+			this.lockObject(new PointerLock(entityFile, pointer));
+		}
+		catch(Throwable e){
+			throw new LockException(e);
+		}
 	}
 
 	public boolean tryLock(EntityFileAccess<?, ?> entityFile, 
-			long pointer, long unit, TimeUnit timeunit) throws InterruptedException {
-		return this.lockObject(new PointerLock(entityFile, pointer), unit, timeunit);
+			long pointer, long unit, TimeUnit timeunit) throws LockException {
+		try{
+			return this.lockObject(new PointerLock(entityFile, pointer), unit, timeunit);
+		}
+		catch(Throwable e){
+			throw new LockException(e);
+		}
 	}
 	
 	public void unlock(EntityFileAccess<?, ?> entityFile, long pointer)
-			throws InterruptedException {
-		this.unlockObject(new PointerLock(entityFile, pointer));
+			throws LockException {
+		try{
+			this.unlockObject(new PointerLock(entityFile, pointer));
+		}
+		catch(Throwable e){
+			throw new LockException(e);
+		}
 	}
 	
 	private void lockObject(Object object) throws InterruptedException {
@@ -54,7 +84,7 @@ public class LockProviderImp
 		Object lock = new Object();
 		LockObject lockObject;
 		
-		synchronized(object){
+		synchronized (this) {
 			lockObject = 
 					this.entityFileAccessLock.putIfAbsent(
 							object, 
@@ -92,19 +122,17 @@ public class LockProviderImp
 		Object lock = new Object();
 		LockObject lockObject;
 		
-		synchronized(object){
-			lockObject = 
-					this.entityFileAccessLock.putIfAbsent(
-							object, 
-							newLockObject
-					);
-			
-			if(lockObject == null){
-				return true;
-			}
-			
-			lockObject.getLocks().put(lock);
+		lockObject = 
+				this.entityFileAccessLock.putIfAbsent(
+						object, 
+						newLockObject
+				);
+		
+		if(lockObject == null){
+			return true;
 		}
+		
+		lockObject.getLocks().put(lock);
 		
 		long maxWaitingTime = timeunit.toMillis(unit);
 		
@@ -134,7 +162,9 @@ public class LockProviderImp
 	
 	private void unlockObject(Object object) {
 		
-		synchronized(object){
+		Object next;
+		
+		synchronized (this) {
 			LockObject lockObject = 
 					this.entityFileAccessLock.get(object);
 			
@@ -142,18 +172,17 @@ public class LockProviderImp
 				return;
 			}
 			
-			Object next = lockObject.getLocks().poll();
+			next = lockObject.getLocks().poll();
 			
 			if(next == null){
-				this.entityFileAccessLock.remove(object);
+				this.entityFileAccessLock.remove(object, lockObject);
 			}
 			
 			lockObject.setCurrentLock(next);
-			
-			synchronized(next){
-				Thread.currentThread().notifyAll();
-			}
-			
+		}
+		
+		synchronized(next){
+			Thread.currentThread().notifyAll();
 		}
 		
 	}
