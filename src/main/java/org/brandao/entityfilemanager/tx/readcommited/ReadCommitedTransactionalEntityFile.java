@@ -3,6 +3,7 @@ package org.brandao.entityfilemanager.tx.readcommited;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -12,6 +13,7 @@ import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
+import org.brandao.entityfilemanager.tx.PointerMap;
 import org.brandao.entityfilemanager.tx.RawTransactionEntity;
 import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
 import org.brandao.entityfilemanager.tx.TransactionException;
@@ -29,6 +31,8 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	
 	private int batchOperationLength;
 	
+	private Map<Long,PointerMap> pointerMap;
+	
 	public ReadCommitedTransactionalEntityFile( 
 			TransactionEntityFileAccess<T,R> tx, LockProvider lockProvider, long timeout){
 		this(tx, lockProvider, timeout, 100);
@@ -40,6 +44,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		this.tx 					= tx;
 		this.batchOperationLength 	= batchOperationLength;
 		this.pointerManager 		= new PointerManager<T,R>(tx, lockProvider, timeout);
+		this.pointerMap             = new HashMap<Long, PointerMap>();
 	}
 	
 	public void setTransactionStatus(byte value) throws IOException{
@@ -59,7 +64,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		try{
 			long id = this.getNextFreePointer(false);
 			this.pointerManager.managerPointer(id, true);
-			this.write(id, entity);
+			this.insert(id, entity);
 			return id;
 		}
 		catch(Throwable e){
@@ -86,7 +91,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			}
 			
 			this.pointerManager.managerPointer(ids, true);
-			this.write(id, entity);
+			this.insert(id, entity);
 			return ids;
 		}
 		catch(Throwable e){
@@ -413,14 +418,130 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	
 	/* private */
 	
-	private void write(long id, T entity) throws IOException{
-		data.seek(id);
-		data.write(entity);
+	private void insert(long id, T entity) throws IOException{
+		
+		long txid = this.tx.length();
+		
+		this.tx.seek(txid);
+		this.tx.write(new TransactionalEntity<T>(id, TransactionalEntity.NEW_RECORD, entity));
+		
+		
+		this.data.seek(id);
+		this.data.write(null);
+		
+		this.pointerMap.put(id, new PointerMap(txid, TransactionalEntity.NEW_RECORD));
 	}
 
-	private void write(long id, T[] entities) throws IOException{
-		data.seek(id);
-		data.batchWrite(entities);
+	@SuppressWarnings("unchecked")
+	private void insert(long id, T[] entities) throws IOException{
+		
+		TransactionalEntity<T>[] e = new TransactionalEntity[entities.length];
+		int max                    = entities.length;
+		
+		for(int i=0;i<max;i++){
+			e[i] = new TransactionalEntity<T>(id + i, TransactionalEntity.NEW_RECORD, entities[i]);
+		}
+
+		long txid = this.tx.length();
+		
+		this.tx.seek(txid);
+		this.tx.batchWrite(e);
+		
+		this.data.seek(id);
+		this.data.batchWrite(null);
+		
+		for(int i=0;i<max;i++){
+			this.pointerMap.put(id, new PointerMap(txid, TransactionalEntity.NEW_RECORD));
+		}
+		
+	}
+	
+	private void write(long id, T entity, byte status) throws IOException{
+		
+		PointerMap pointer = this.pointerMap.get(id);
+		
+		if(pointer == null){
+			long txID = this.tx.length();
+			
+			this.tx.seek(txID);
+			this.tx.write(new TransactionalEntity<T>(id, status, entity));
+			
+			data.seek(id);
+			data.write(null);
+			
+			this.pointerMap.put(id, new PointerMap(txID, status));
+		}
+		else{
+			this.tx.seek(pointer.getId());
+			this.tx.write(new TransactionalEntity<T>(id, pointer.getStatus(), entity));
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private void write(long id, T[] entities, byte status) throws IOException{
+		
+		TransactionalEntity<T>[][] opsArray =
+				EntityFileTransactionUtil.mapOperations(id, status, entities, this.pointerMap);
+		
+		//não gerenciado
+		TransactionalEntity<T>[] ops = opsArray[TransactionalEntity.NEW_RECORD];
+		
+		for(TransactionalEntity<T> op: ops){
+			
+		}
+		
+		//TransactionalEntity<T>[] e = new TransactionalEntity[entities.length];
+		//T[] emptyRecords           = (T[])Array.newInstance(entities.getClass().getComponentType(), entities.length);
+		int emptyQuantity          = 0;
+		T e;
+		
+		long currentid   = id;
+		long currentidTX = this.tx.length();
+		int max          = entities.length;
+		
+		for(int i=0;i<max;i++){
+			PointerMap pointer = this.pointerMap.get(currentid);
+			
+			if(pointer == null){
+				
+				this.tx.seek(currentidTX);
+				this.tx.write(new TransactionalEntity<T>(id, status, e));
+				
+				this.data.seek(id);
+				this.data.write(null);
+				
+				pointer = new PointerMap(currentidTX, status);
+				this.pointerMap.put(currentid, pointer);
+				
+				currentidTX++;
+				currentid++;
+			}
+			else{
+				this.tx.seek(pointer.id);
+				this.tx.write(new TransactionalEntity<T>(id, pointer.status, e));
+				
+			}
+		}
+		
+		for(int i=0;i<e.length;i++){
+			PointerMap pointer = this.pointerMap.get(id);
+			
+			
+		}
+		
+		this.tx.setLength(this.tx.length());
+		this.tx.batchWrite(e);
+		
+		this.data.seek(id);
+		this.data.batchWrite(emptyRecords);
+
+		long fid  = id;
+		long txid = this.tx.length();
+		
+		for(int i=0;i<entities.length;i++){
+			this.pointerMap.put(fid++, txid++);
+		}
+		
 	}
 
 	private T read(long id) throws IOException{
@@ -437,5 +558,4 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		return EntityFileTransaction.TRANSACTION_READ_COMMITED;
 	}
 	
-
 }

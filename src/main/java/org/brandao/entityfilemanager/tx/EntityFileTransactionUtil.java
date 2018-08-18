@@ -2,6 +2,7 @@ package org.brandao.entityfilemanager.tx;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -85,8 +86,47 @@ public class EntityFileTransactionUtil {
 		
 	}};
 	
-	@SuppressWarnings("rawtypes")
-	private static final RawTransactionEntity[] EMPTY_ARRAY = new RawTransactionEntity[0];
+	@SuppressWarnings("unchecked")
+	public static <R> TransactionalEntity<R>[][] mapOperations(long id, byte defaultStatus, R[] entities, 
+			Map<Long,PointerMap> map){
+		
+		TransactionalEntity<R>[][] result = new TransactionalEntity[OP_TYPE_FILTER][10];
+		int[] count                       = new int[OP_TYPE_FILTER];
+		
+		TransactionalEntity<R> e;
+		byte status;
+		int opType;
+		int c;
+		TransactionalEntity<R>[] a; 
+		PointerMap pm;
+		TransactionalEntity<R>[] tmp;
+		
+		for(R op: entities){
+			
+			pm     = map.get(id);
+			status = pm == null? defaultStatus : pm.getStatus();
+			e      = new TransactionalEntity<R>(id, status, op);			
+			opType = (pm == null? TransactionalEntity.NEW_RECORD : TransactionalEntity.UPDATE_RECORD) & OP_TYPE_FILTER;
+			c      = count[opType];
+			a      = result[opType]; 
+			
+			if(c == a.length){
+				tmp = new TransactionalEntity[a.length*2];
+				System.arraycopy(a, 0, tmp, 0, a.length);
+				a              = tmp;
+				result[opType] = tmp;
+			}
+			
+			a[c]          = e;
+			count[opType] = c++;
+		}
+		
+		for(int i=0;i<OP_TYPE_FILTER;i++){
+			result[i] = adjustArray(result[i], count[i]);
+		}
+		
+		return result;
+	}
 	
 	@SuppressWarnings("unchecked")
 	public static <R> RawTransactionEntity<R>[][] mapOperations(
@@ -106,9 +146,7 @@ public class EntityFileTransactionUtil {
 			
 			if(c == a.length){
 				RawTransactionEntity<R>[] tmp = new RawTransactionEntity[a.length + startSize];
-				
 				System.arraycopy(a, 0, tmp, 0, a.length);
-				
 				a              = tmp;
 				result[opType] = tmp;
 			}
@@ -158,6 +196,19 @@ public class EntityFileTransactionUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
+	private static <R> R[] adjustArray(R[] value, int len){
+		
+		if(len == 0){
+			return (R[])Array.newInstance(value.getClass().getComponentType(), 0);
+		}
+		
+		R[] result = (R[])Array.newInstance(value.getClass().getComponentType(), len);
+		System.arraycopy(value, 0, result, 0, len);
+		return result;
+	}
+
+/*
+ 	@SuppressWarnings("unchecked")
 	private static <R> RawTransactionEntity<R>[] adjustArray(RawTransactionEntity<R>[] value, int len){
 		
 		if(len == 0){
@@ -168,37 +219,7 @@ public class EntityFileTransactionUtil {
 		System.arraycopy(value, 0, result, 0, len);
 		return result;
 	}
-	
-	public static class TransactionFileNameMetadata{
-		
-		private String name;
-		
-		private long transactionID;
-
-		public TransactionFileNameMetadata(String name, long transactionID) {
-			super();
-			this.name = name;
-			this.transactionID = transactionID;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public long getTransactionID() {
-			return transactionID;
-		}
-
-		public void setTransactionID(long transactionID) {
-			this.transactionID = transactionID;
-		}
-		
-	}
-	
+ */	
 	public static byte mergeTransactionStatus(
 			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> map) throws IOException{
 		int result = 0;
