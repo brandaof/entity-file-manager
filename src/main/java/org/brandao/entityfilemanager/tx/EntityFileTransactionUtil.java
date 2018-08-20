@@ -3,6 +3,8 @@ package org.brandao.entityfilemanager.tx;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -261,24 +263,22 @@ public class EntityFileTransactionUtil {
 		return 0;
 	}
 	
-	public static long[] getNextSequenceGroup(long[] ids, int off){
+	public static int getLastSequence(long[] ids, int off){
 		
 		int max = ids.length;
 		
-		if(off >= max || ids[off + 1] != (ids[off] + 1)){
-			return null;
+		if(off >= max || (ids[off] + 1 != (ids[off++]))){
+			return off;
 		}
 		
-		int end = off + 2;
+		int end = ++off;
 		
-		while(end < max && ids[end] == (ids[end++ - 1] - 1));
+		while(end < max && (ids[end] + 1) == ids[++end]);
 		
-		int len = end - off;
-		long[] result = new long[len];
-		System.arraycopy(ids, off, result, 0, len);
-		return result;
+		return off;
 	}
 
+	@Deprecated
 	public static <T> Map<Long,Integer> getMappedIdIndex(long[] ids){
 		
 		Map<Long, Integer> result = new HashMap<Long, Integer>();
@@ -290,4 +290,41 @@ public class EntityFileTransactionUtil {
 		return result;
 	}
 
+	@SuppressWarnings("unchecked")
+	public static <T> void sort(long[] ids, T[] values){
+		
+		OrderEntityById<T>[] tmp = new OrderEntityById[ids.length];
+		
+		for(int i=0;i<ids.length;i++){
+			tmp[i] = new OrderEntityById<T>(ids[i], values[i]);
+		}
+		
+		Arrays.sort(tmp);
+		
+		for(int i=0;i<ids.length;i++){
+			OrderEntityById<T> e = tmp[i];
+			ids[i]    = e.id;
+			values[i] = e.value;
+		}
+		
+	}
+	
+	private static class OrderEntityById<T> implements Comparator<OrderEntityById<T>>{
+		
+		public long id;
+		
+		public T value;
+
+		public OrderEntityById(long id, T value) {
+			super();
+			this.id = id;
+			this.value = value;
+		}
+
+		public int compare(OrderEntityById<T> o1, OrderEntityById<T> o2) {
+			return (int)(o1.id - o2.id);
+		}
+		
+	}
+	
 }

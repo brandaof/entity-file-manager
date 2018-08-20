@@ -143,30 +143,28 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			Map<Long,Integer> mappedIndex = EntityFileTransactionUtil.getMappedIdIndex(ids);
 			
 			int off = 0;
-			
+			int q;
 			while(off < ids.length){
 				
-				long[] group =                                                            
-					EntityFileTransactionUtil.getNextSequenceGroup(ids, off);
+				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
 				
-				if(group == null){
-					this.write(ids[off], entities[off]);
+				if(nextOff == off){
+					this.update(ids[off], entities[off]);
 					off++;
 				}
 				else{
-					T[] values = (T[])Array.newInstance(this.data.getType(), group.length);
+					q               = nextOff - off;
+					T[] subEntities = (T[])Array.newInstance(this.data.getType(), q);
+					long[] subIds   = new long[q];
 					
-					for(int i=0;i<group.length;i++){
-						int idx = mappedIndex.get(group[i]);
-						values[i] = entities[idx];
-					}
+					System.arraycopy(entities, off, subEntities, 0, q);
+					System.arraycopy(ids, off, subIds, 0, q);
 					
-					this.write(group[0], values);
+					this.updateEntity(subIds, subEntities);
 					
-					off += group.length;
+					off = nextOff;
 				}
 			}
 			
@@ -456,7 +454,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		
 	}
 	
-	private void write(long id, T entity, byte status) throws IOException{
+	private void updateEntity(long id, T entity) throws IOException{
 		
 		PointerMap pointer = this.pointerMap.get(id);
 		
@@ -464,12 +462,8 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			long txID = this.tx.length();
 			
 			this.tx.seek(txID);
-			this.tx.write(new TransactionalEntity<T>(id, status, entity));
-			
-			data.seek(id);
-			data.write(null);
-			
-			this.pointerMap.put(id, new PointerMap(txID, status));
+			this.tx.write(new TransactionalEntity<T>(id, TransactionalEntity.UPDATE_RECORD, entity));
+			this.pointerMap.put(id, new PointerMap(txID, TransactionalEntity.UPDATE_RECORD));
 		}
 		else{
 			this.tx.seek(pointer.getId());
@@ -478,69 +472,25 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void write(long id, T[] entities, byte status) throws IOException{
+	private void updateEntity(long[] id, T[] entities) throws IOException{
 		
-		TransactionalEntity<T>[][] opsArray =
-				EntityFileTransactionUtil.mapOperations(id, status, entities, this.pointerMap);
+		T[][] opsArray =
+				EntityFileTransactionUtil.mapOperations(id, TransactionalEntity.UPDATE_RECORD, entities, this.pointerMap);
 		
 		//não gerenciado
-		TransactionalEntity<T>[] ops = opsArray[TransactionalEntity.NEW_RECORD];
+		T[] notManagedEntities = opsArray[TransactionalEntity.NEW_RECORD];
+		TransactionalEntity<T>[] e = new TransactionalEntity[notManagedEntities.length];
+		int max                    = entities.length;
+		long txID                  = this.tx.length();
 		
-		for(TransactionalEntity<T> op: ops){
-			
+		for(int i=0;i<notManagedEntities.length;i++){
+			e[i] = new TransactionalEntity<T>(id[i], TransactionalEntity.NEW_RECORD, entities[i]);
+			this.pointerMap.put(id[i], new PointerMap(txID, TransactionalEntity.UPDATE_RECORD));
 		}
 		
-		//TransactionalEntity<T>[] e = new TransactionalEntity[entities.length];
-		//T[] emptyRecords           = (T[])Array.newInstance(entities.getClass().getComponentType(), entities.length);
-		int emptyQuantity          = 0;
-		T e;
-		
-		long currentid   = id;
-		long currentidTX = this.tx.length();
-		int max          = entities.length;
-		
-		for(int i=0;i<max;i++){
-			PointerMap pointer = this.pointerMap.get(currentid);
-			
-			if(pointer == null){
-				
-				this.tx.seek(currentidTX);
-				this.tx.write(new TransactionalEntity<T>(id, status, e));
-				
-				this.data.seek(id);
-				this.data.write(null);
-				
-				pointer = new PointerMap(currentidTX, status);
-				this.pointerMap.put(currentid, pointer);
-				
-				currentidTX++;
-				currentid++;
-			}
-			else{
-				this.tx.seek(pointer.id);
-				this.tx.write(new TransactionalEntity<T>(id, pointer.status, e));
-				
-			}
-		}
-		
-		for(int i=0;i<e.length;i++){
-			PointerMap pointer = this.pointerMap.get(id);
-			
-			
-		}
-		
-		this.tx.setLength(this.tx.length());
+		this.tx.seek(txID);
 		this.tx.batchWrite(e);
-		
-		this.data.seek(id);
-		this.data.batchWrite(emptyRecords);
 
-		long fid  = id;
-		long txid = this.tx.length();
-		
-		for(int i=0;i<entities.length;i++){
-			this.pointerMap.put(fid++, txid++);
-		}
 		
 	}
 
