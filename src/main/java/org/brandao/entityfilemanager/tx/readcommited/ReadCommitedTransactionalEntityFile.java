@@ -117,7 +117,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			this.write(id, entity);
+			this.updateEntity(id, entity, TransactionalEntity.UPDATE_RECORD);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
@@ -162,7 +162,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 					System.arraycopy(entities, off, subEntities, 0, q);
 					System.arraycopy(ids, off, subIds, 0, q);
 					
-					this.updateEntity(subIds, subEntities);
+					this.updateEntity(subIds, subEntities, TransactionalEntity.UPDATE_RECORD);
 					
 					off = nextOff;
 				}
@@ -192,7 +192,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			this.write(id, (T)null);
+			this.updateEntity(id, (T)null, TransactionalEntity.DELETE_RECORD);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
@@ -216,20 +216,26 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			int off = 0;
 			
+			int off = 0;
+			int q;
 			while(off < ids.length){
 				
-				long[] group =                                                            
-					EntityFileTransactionUtil.getNextSequenceGroup(ids, off);
+				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
 				
-				if(group == null){
-					this.write(ids[off], (T)null);
+				if(nextOff == off){
+					this.update(ids[off], null);
 					off++;
 				}
 				else{
-					this.write(group[0], (T[])null);
-					off += group.length;
+					q               = nextOff - off;
+					long[] subIds   = new long[q];
+					
+					System.arraycopy(ids, off, subIds, 0, q);
+					
+					this.updateEntity(subIds, null, TransactionalEntity.DELETE_RECORD);
+					
+					off = nextOff;
 				}
 			}
 			
@@ -239,7 +245,8 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		}
 		finally{
 			lock.unlock();
-		}		
+		}
+		
 	}
 	
 	public T select(long id){
@@ -454,7 +461,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		
 	}
 	
-	private void updateEntity(long id, T entity) throws IOException{
+	private void updateEntity(long id, T entity, byte status) throws IOException{
 		
 		PointerMap pointer = this.pointerMap.get(id);
 		
@@ -462,35 +469,54 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			long txID = this.tx.length();
 			
 			this.tx.seek(txID);
-			this.tx.write(new TransactionalEntity<T>(id, TransactionalEntity.UPDATE_RECORD, entity));
-			this.pointerMap.put(id, new PointerMap(txID, TransactionalEntity.UPDATE_RECORD));
+			this.tx.write(new TransactionalEntity<T>(id, status, entity));
+			this.pointerMap.put(id, new PointerMap(txID, status));
 		}
 		else{
 			this.tx.seek(pointer.getId());
-			this.tx.write(new TransactionalEntity<T>(id, pointer.getStatus(), entity));
+			this.tx.write(new TransactionalEntity<T>(id, status, entity));
 		}
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void updateEntity(long[] id, T[] entities) throws IOException{
+	private void updateEntity(long[] ids, T[] entities, byte status) throws IOException{
 		
-		T[][] opsArray =
-				EntityFileTransactionUtil.mapOperations(id, TransactionalEntity.UPDATE_RECORD, entities, this.pointerMap);
+		int[][] opsArray =
+				EntityFileTransactionUtil.mapOperations(
+						ids, 
+						TransactionalEntity.UPDATE_RECORD, 
+						this.pointerMap
+				);
 		
 		//não gerenciado
-		T[] notManagedEntities = opsArray[TransactionalEntity.NEW_RECORD];
-		TransactionalEntity<T>[] e = new TransactionalEntity[notManagedEntities.length];
-		int max                    = entities.length;
+		int[] subIds               = opsArray[TransactionalEntity.NEW_RECORD];
+		TransactionalEntity<T>[] e = new TransactionalEntity[subIds.length];
+		int max                    = subIds.length;
 		long txID                  = this.tx.length();
+		long id;
 		
-		for(int i=0;i<notManagedEntities.length;i++){
-			e[i] = new TransactionalEntity<T>(id[i], TransactionalEntity.NEW_RECORD, entities[i]);
-			this.pointerMap.put(id[i], new PointerMap(txID, TransactionalEntity.UPDATE_RECORD));
+		for(int i=0;i<max;i++){
+			id = ids[subIds[i]];
+			e[i] = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
+			this.pointerMap.put(id, new PointerMap(txID + i, TransactionalEntity.UPDATE_RECORD));
 		}
 		
 		this.tx.seek(txID);
 		this.tx.batchWrite(e);
 
+		subIds = opsArray[TransactionalEntity.UPDATE_RECORD];
+		max    = subIds.length;
+		txID   = this.tx.length();
+		TransactionalEntity<T> en;
+		
+		for(int i=0;i<max;i++){
+			id = ids[subIds[i]];
+			PointerMap pm = this.pointerMap.get(id);
+			en = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
+			this.tx.seek(pm.getId());
+			this.tx.write(en);
+		}
+		
 		
 	}
 

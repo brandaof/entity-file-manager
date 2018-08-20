@@ -88,38 +88,32 @@ public class EntityFileTransactionUtil {
 		
 	}};
 	
-	@SuppressWarnings("unchecked")
-	public static <R> TransactionalEntity<R>[][] mapOperations(long id, byte defaultStatus, R[] entities, 
+	public static int[][] mapOperations(long[] ids, byte defaultStatus, 
 			Map<Long,PointerMap> map){
 		
-		TransactionalEntity<R>[][] result = new TransactionalEntity[OP_TYPE_FILTER][10];
-		int[] count                       = new int[OP_TYPE_FILTER];
+		int[][] result  = new int[OP_TYPE_FILTER][10];
+		int[] count     = new int[OP_TYPE_FILTER];
 		
-		TransactionalEntity<R> e;
-		byte status;
 		int opType;
 		int c;
-		TransactionalEntity<R>[] a; 
+		int[] a; 
 		PointerMap pm;
-		TransactionalEntity<R>[] tmp;
+		int[] tmp;
 		
-		for(R op: entities){
-			
-			pm     = map.get(id);
-			status = pm == null? defaultStatus : pm.getStatus();
-			e      = new TransactionalEntity<R>(id, status, op);			
+		for(int i=0;i<ids.length;i++){
+			pm     = map.get(ids[i]);
 			opType = (pm == null? TransactionalEntity.NEW_RECORD : TransactionalEntity.UPDATE_RECORD) & OP_TYPE_FILTER;
 			c      = count[opType];
 			a      = result[opType]; 
 			
 			if(c == a.length){
-				tmp = new TransactionalEntity[a.length*2];
+				tmp = new int[a.length*2];
 				System.arraycopy(a, 0, tmp, 0, a.length);
 				a              = tmp;
 				result[opType] = tmp;
 			}
 			
-			a[c]          = e;
+			a[c]          = i;
 			count[opType] = c++;
 		}
 		
@@ -209,6 +203,17 @@ public class EntityFileTransactionUtil {
 		return result;
 	}
 
+	private static int[] adjustArray(int[] value, int len){
+		
+		if(len == 0){
+			return new int[0];
+		}
+		
+		int[] result = new int[len];
+		System.arraycopy(value, 0, result, 0, len);
+		return result;
+	}
+	
 /*
  	@SuppressWarnings("unchecked")
 	private static <R> RawTransactionEntity<R>[] adjustArray(RawTransactionEntity<R>[] value, int len){
