@@ -296,24 +296,33 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		}
 		
 		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
+		Lock lock = readWritelock.readLock();
 		lock.lock();
 		
 		try{
 			Arrays.sort(id);
 			int off    = 0;
 			T[] result = (T[])Array.newInstance(this.data.getType(), id.length);
+			int q;
 			
 			while(off < id.length){
-				long[] group = EntityFileTransactionUtil.getNextSequenceGroup(id, off);
 				
-				if(group == null){
-					result[off++] = this.read(id[off]);
+				int nextOff = EntityFileTransactionUtil.getLastSequence(id, off);
+				
+				if(nextOff == off){
+					result[off] = this.read(id[off]);
+					off++;
 				}
 				else{
-					T[] buffEntitys = this.read(group[0], group.length);
+					q               = nextOff - off;
+					long[] subIds   = new long[q];
+					
+					System.arraycopy(id, off, subIds, 0, q);
+					
+					T[] buffEntitys = this.read(subIds[0], subIds.length);
 					System.arraycopy(buffEntitys, 0, result, off, buffEntitys.length);
-					off += group.length;
+					
+					off = nextOff;
 				}
 			}
 
