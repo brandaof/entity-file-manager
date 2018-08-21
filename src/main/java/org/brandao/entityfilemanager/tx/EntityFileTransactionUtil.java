@@ -89,7 +89,7 @@ public class EntityFileTransactionUtil {
 	}};
 	
 	public static int[][] mapOperations(long[] ids, byte defaultStatus, 
-			Map<Long,PointerMap> map){
+			Map<Long,Long> map){
 		
 		int[][] result  = new int[OP_TYPE_FILTER][10];
 		int[] count     = new int[OP_TYPE_FILTER];
@@ -97,12 +97,10 @@ public class EntityFileTransactionUtil {
 		int opType;
 		int c;
 		int[] a; 
-		PointerMap pm;
 		int[] tmp;
 		
 		for(int i=0;i<ids.length;i++){
-			pm     = map.get(ids[i]);
-			opType = (pm == null? TransactionalEntity.NEW_RECORD : TransactionalEntity.UPDATE_RECORD) & OP_TYPE_FILTER;
+			opType = (map.containsKey(ids[i])? TransactionalEntity.UPDATE_RECORD : TransactionalEntity.NEW_RECORD) & OP_TYPE_FILTER;
 			c      = count[opType];
 			a      = result[opType]; 
 			
