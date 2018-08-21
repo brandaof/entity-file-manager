@@ -88,8 +88,8 @@ public class EntityFileTransactionUtil {
 		
 	}};
 	
-	public static int[][] mapOperations(long[] ids, byte defaultStatus, 
-			Map<Long,Long> map){
+	public static int[][] mapOperations(long[] ids, 
+			Map<Long,Long> map, int off, int len){
 		
 		int[][] result  = new int[OP_TYPE_FILTER][10];
 		int[] count     = new int[OP_TYPE_FILTER];
@@ -99,7 +99,9 @@ public class EntityFileTransactionUtil {
 		int[] a; 
 		int[] tmp;
 		
-		for(int i=0;i<ids.length;i++){
+		int max = off + len; 
+		
+		for(int i=off;i<max;i++){
 			opType = (map.containsKey(ids[i])? TransactionalEntity.UPDATE_RECORD : TransactionalEntity.NEW_RECORD) & OP_TYPE_FILTER;
 			c      = count[opType];
 			a      = result[opType]; 
@@ -271,7 +273,7 @@ public class EntityFileTransactionUtil {
 		int max = ids.length;
 		
 		if(off >= max || (ids[off] + 1 != (ids[off++]))){
-			return off;
+			return off + 1;
 		}
 		
 		int end = ++off;
@@ -310,6 +312,22 @@ public class EntityFileTransactionUtil {
 			values[i] = e.value;
 		}
 		
+	}
+
+	public static long[] refToId(long[] ids, int[] refs){
+		long[] result = new long[refs.length];
+		for(int i=0;i<result.length;i++){
+			result[i] = ids[refs[i]];
+		}
+		return result;
+	}
+
+	public static long[] getTXId(long[] ids, Map<Long,Long> pointerMap){
+		long[] result = new long[ids.length];
+		for(int i=0;i<result.length;i++){
+			result[i] = pointerMap.get(ids[i]);
+		}
+		return result;
 	}
 	
 	private static class OrderEntityById<T> implements Comparator<OrderEntityById<T>>{

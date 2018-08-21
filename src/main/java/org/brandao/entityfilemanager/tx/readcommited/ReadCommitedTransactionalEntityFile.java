@@ -2,7 +2,6 @@ package org.brandao.entityfilemanager.tx.readcommited;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
@@ -215,9 +214,9 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			
 			int off = 0;
 			int q;
+			
 			while(off < ids.length){
 				
 				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
@@ -268,7 +267,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			return this.read(id);
+			return this.selectEntity(id);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
@@ -283,11 +282,11 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	}
 	
 	@SuppressWarnings("unchecked")
-	public T[] select(long[] id, boolean forUpdate){
+	public T[] select(long[] ids, boolean forUpdate){
 		
 		try{
 			if(forUpdate){
-				this.pointerManager.managerPointer(id, null);
+				this.pointerManager.managerPointer(ids, null);
 			}
 		}
 		catch(Throwable e){
@@ -299,32 +298,15 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		lock.lock();
 		
 		try{
-			Arrays.sort(id);
+			T[] result = (T[]) Array.newInstance(this.data.getType(), ids.length);			
 			int off    = 0;
-			T[] result = (T[])Array.newInstance(this.data.getType(), id.length);
-			int q;
 			
-			while(off < id.length){
-				
-				int nextOff = EntityFileTransactionUtil.getLastSequence(id, off);
-				
-				if(nextOff == off){
-					result[off] = this.read(id[off]);
-					off++;
-				}
-				else{
-					q               = nextOff - off;
-					long[] subIds   = new long[q];
-					
-					System.arraycopy(id, off, subIds, 0, q);
-					
-					T[] buffEntitys = this.read(subIds[0], subIds.length);
-					System.arraycopy(buffEntitys, 0, result, off, buffEntitys.length);
-					
-					off = nextOff;
-				}
+			while(off < ids.length){
+				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
+				this.selectEntity(ids, result, off, nextOff - off);
+				off = nextOff;
 			}
-
+			
 			return result;
 		}
 		catch(Throwable e){
@@ -333,6 +315,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		finally{
 			lock.unlock();
 		}
+		
 	}
 	
 	public void begin() throws TransactionException{
@@ -493,8 +476,9 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		int[][] opsArray =
 				EntityFileTransactionUtil.mapOperations(
 						ids, 
-						TransactionalEntity.UPDATE_RECORD, 
-						this.pointerMap
+						this.pointerMap,
+						0,
+						entities.length
 				);
 		
 		//não gerenciado
@@ -526,17 +510,88 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			this.tx.write(en);
 		}
 		
+	}
+
+	private T selectEntity(long id) throws IOException{
 		
+		Long pointer = this.pointerMap.get(id);
+		
+		if(pointer == null){
+			this.data.seek(id);
+			return this.data.read();
+		}
+		else{
+			this.tx.seek(pointer);
+			TransactionalEntity<T> e = this.tx.read();
+			return e == null? null : e.getEntity();
+		}
 	}
 
-	private T read(long id) throws IOException{
-		data.seek(id);
-		return data.read();
-	}
+	@SuppressWarnings("unchecked")
+	private void selectEntity(long[] ids, T[] values, int off, int len) throws IOException{
+		
+		int[][] opsArray =
+				EntityFileTransactionUtil.mapOperations(
+						ids, 
+						this.pointerMap,
+						off,
+						len
+				);
 
-	private T[] read(long id, int len) throws IOException{
-		data.seek(id);
-		return data.batchRead(len);
+		int[] subRefIds = opsArray[TransactionalEntity.NEW_RECORD];
+		T[] e           = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
+		long[] subIds   = EntityFileTransactionUtil.refToId(ids, subRefIds);
+		int pos         = 0;
+		
+		while(pos < subIds.length){
+			
+			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
+			
+			this.data.seek(subIds[pos]);
+			
+			if(pos == nextPos){
+				e[pos] = this.data.read();
+			}
+			else{
+				T[] data = this.data.batchRead(nextPos - pos);
+				System.arraycopy(data, 0, e, pos, data.length);
+			}
+			
+			pos = nextPos;
+		}
+		
+		for(int i=0;i<subRefIds.length;i++){
+			values[subRefIds[i]] = e[i];
+		}
+		
+
+		subRefIds = opsArray[TransactionalEntity.UPDATE_RECORD];
+		e         = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
+		subIds    = EntityFileTransactionUtil.refToId(ids, subRefIds);
+		subIds    = EntityFileTransactionUtil.getTXId(subIds, this.pointerMap);
+		pos       = 0;
+		
+		while(pos < subIds.length){
+			
+			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
+			
+			this.data.seek(subIds[pos]);
+			
+			if(pos == nextPos){
+				e[pos] = this.data.read();
+			}
+			else{
+				T[] data = this.data.batchRead(nextPos - pos);
+				System.arraycopy(data, 0, e, pos, data.length);
+			}
+			
+			pos = nextPos;
+		}
+		
+		for(int i=0;i<subRefIds.length;i++){
+			values[subRefIds[i]] = e[i];
+		}
+		
 	}
 
 	public byte getTransactionIsolation() throws IOException {
