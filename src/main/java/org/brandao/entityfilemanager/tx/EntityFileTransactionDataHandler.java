@@ -7,10 +7,10 @@ import org.brandao.entityfilemanager.DataInputStream;
 import org.brandao.entityfilemanager.DataOutputStream;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 
-public class EntityFileTransactionDataHandler<T> 
-	implements EntityFileDataHandler<TransactionalEntity<T>>{
+public class EntityFileTransactionDataHandler<T, R> 
+	implements EntityFileDataHandler<TransactionalEntity<T>, RawTransactionEntity<R>>{
 	
-	private EntityFileDataHandler<T> handler;
+	private EntityFileDataHandler<T, R> handler;
 	
 	private byte transactionStatus;
 	
@@ -18,7 +18,7 @@ public class EntityFileTransactionDataHandler<T>
 	
 	private byte transactionIsolation;
 	
-	public EntityFileTransactionDataHandler(EntityFileDataHandler<T> handler){
+	public EntityFileTransactionDataHandler(EntityFileDataHandler<T, R> handler){
 		this.handler = handler;
 	}
 	

@@ -10,7 +10,6 @@ import java.util.Map.Entry;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
-import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil.TransactionFileNameMetadata;
 
 public class TransactionLoader {
 
