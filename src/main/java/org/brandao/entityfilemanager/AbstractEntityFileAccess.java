@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Array;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -17,6 +18,8 @@ public class AbstractEntityFileAccess<T, R>
 	protected int eofLength;
 	
 	protected int firstRecord;
+
+	protected long length;
 	
 	protected long offset;
 	
@@ -226,13 +229,29 @@ public class AbstractEntityFileAccess<T, R>
 		this.fileAccess.write(data, 0, data.length);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public T[] batchRead(int len) throws IOException {
-		return null;
+		return (T[]) this.batchRead(false);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public T read() throws IOException {
-		long pointerOffset = this.firstRecord;
-		pointerOffset += this.recordLength*this.offset;
+		return (T) this.read(false);
+	}
+
+	@SuppressWarnings("unchecked")
+	public R[] batchReadRaw(int len) throws IOException {
+		return (R[])this.batchRead(true);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public R readRaw() throws IOException {
+		return (R) this.read(false);
+	}
+	
+	private Object read(boolean raw) throws IOException {
+		
+		long pointerOffset = this.firstRecord + this.recordLength*this.offset;
 		
 		byte[] buffer = new byte[this.recordLength];
 		
@@ -240,26 +259,51 @@ public class AbstractEntityFileAccess<T, R>
 		this.fileAccess.read(buffer);
 		
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
-		DataInputStream dStream = new DataInputStream(stream);
+		DataInputStream dStream     = new DataInputStream(stream);
 		
-		T entity = this.dataHandler.read(dStream);
+		Object entity = raw? this.dataHandler.readRaw(dStream) : this.dataHandler.read(dStream);
 		
 		this.offset++;
 		
 		return entity;
 	}
-
-	public R[] batchReadRawEntity(int len) throws IOException {
-		return null;
-	}
 	
-	public R readRawEntity() throws IOException {
-		return null;
+	private Object[] batchRead(boolean raw) throws IOException{
+		
+		long maxRead       = this.length - this.offset;
+		int batch          = maxRead > this.batchLength? this.batchLength : (int)maxRead;
+		int maxlength      = this.recordLength*batch;
+		long pointerOffset = this.firstRecord + this.recordLength*this.offset;
+		
+		byte[] buffer = new byte[maxlength];
+				
+		this.fileAccess.seek(pointerOffset);
+		this.fileAccess.read(buffer);
+				
+		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
+		DataInputStream dStream     = new DataInputStream(stream);
+
+		Object[] result = 
+				(Object[])Array.newInstance(
+						raw? 
+							this.dataHandler.getRawType() : 
+							this.dataHandler.getType(), 
+						batch
+				);
+		
+		for(int i=0;i<batch;i++){
+			result[i] = raw? this.dataHandler.readRaw(dStream) : this.dataHandler.read(dStream);
+		}
+		
+		this.offset += batch;
+		
+		return result;
 	}
 	
 	public long length() throws IOException {
-		return 
-			(this.fileAccess.length() - this.firstRecord) / this.recordLength;
+		return this.length;
+		//return 
+		//	(this.fileAccess.length() - this.firstRecord) / this.recordLength;
 	}
 	
 	public void setLength(long value) throws IOException {
