@@ -18,6 +18,22 @@ public interface EntityFileDataHandler<T, R> {
 	
 	R readRaw(DataInputStream stream) throws IOException;
 	
+	void setRecordLength(int value);
+	
+	int getRecordLength();
+	
+	void setEOFLength(int value);
+	
+	int getEOFLength();
+	
+	void setFirstRecord(int value);
+	
+	int getFirstRecord();
+
+	void setLength(int value);
+	
+	int getLength();
+
 	Class<T> getType();
 	
 	Class<R> getRawType();

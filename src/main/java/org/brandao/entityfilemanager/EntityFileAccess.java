@@ -32,7 +32,7 @@ public interface EntityFileAccess<T, R> {
 	
 	void open() throws IOException;
 	
-	void seek(long value) throws IOException;
+	void seek(int value) throws IOException;
 	
 	long getOffset() throws IOException;
 	
@@ -52,9 +52,9 @@ public interface EntityFileAccess<T, R> {
 	
 	R[] batchReadRaw(int len) throws IOException;
 	
-	long length() throws IOException;
+	int length() throws IOException;
 	
-	void setLength(long value) throws IOException;
+	void setLength(int value) throws IOException;
 	
 	boolean exists();
 	
