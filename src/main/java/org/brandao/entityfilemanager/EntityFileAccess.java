@@ -8,6 +8,8 @@ public interface EntityFileAccess<T, R> {
 
 	Class<T> getType();
 	
+	Class<R> getRawType();
+	
 	int getRecordLength();
 	
 	int getFirstRecord();

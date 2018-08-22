@@ -128,10 +128,9 @@ public class EntityFileTransactionUtil {
 	public static <R> RawTransactionEntity<R>[][] mapOperations(
 			RawTransactionEntity<R>[] ops){
 		
-		int startSize = (int)(ops.length*0.5);
-		startSize     = startSize < 10? 10 : startSize;
+		Arrays.sort(ops);
 		
-		RawTransactionEntity<R>[][] result = new RawTransactionEntity[OP_TYPE_FILTER][startSize];
+		RawTransactionEntity<R>[][] result = new RawTransactionEntity[OP_TYPE_FILTER][10];
 		int[] count                        = new int[OP_TYPE_FILTER];
 		
 		for(RawTransactionEntity<R> op: ops){
@@ -141,7 +140,7 @@ public class EntityFileTransactionUtil {
 			RawTransactionEntity<R>[] a = result[opType]; 
 			
 			if(c == a.length){
-				RawTransactionEntity<R>[] tmp = new RawTransactionEntity[a.length + startSize];
+				RawTransactionEntity<R>[] tmp = new RawTransactionEntity[a.length*2];
 				System.arraycopy(a, 0, tmp, 0, a.length);
 				a              = tmp;
 				result[opType] = tmp;
