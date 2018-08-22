@@ -61,7 +61,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		
 		try{
 			long id = this.getNextFreePointer(false);
-			this.pointerManager.managerPointer(id, true);
+			this.pointerManager.managerPointer(id);
 			this.insert(id, entity);
 			return id;
 		}
@@ -88,7 +88,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 				ids[i] = id + i;
 			}
 			
-			this.pointerManager.managerPointer(ids, true);
+			this.pointerManager.managerPointer(ids);
 			this.insert(id, entity);
 			return ids;
 		}
@@ -104,24 +104,17 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	public void update(long id, T entity) throws EntityFileException{
 		
 		try{
-			this.pointerManager.managerPointer(id, false);
+			this.pointerManager.managerPointer(id);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
 		}
-		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
 		
 		try{
 			this.updateEntity(id, entity, TransactionalEntity.UPDATE_RECORD);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
-		}
-		finally{
-			lock.unlock();
 		}
 		
 	}
@@ -130,15 +123,11 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 	public void update(long[] ids, T[] entities) throws EntityFileException{
 		
 		try{
-			this.pointerManager.managerPointer(ids, false);
+			this.pointerManager.managerPointer(ids);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
 		}
-		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
 		
 		try{
 			
@@ -170,24 +159,17 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		catch(Throwable e){
 			throw new EntityFileException(e);
 		}
-		finally{
-			lock.unlock();
-		}
 		
 	}
 	
 	public void delete(long id) throws EntityFileException{
 		
 		try{
-			this.pointerManager.managerPointer(id, false);
+			this.pointerManager.managerPointer(id);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
 		}
-		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
 		
 		try{
 			this.updateEntity(id, (T)null, TransactionalEntity.DELETE_RECORD);
@@ -195,15 +177,13 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		catch(Throwable e){
 			throw new EntityFileException(e);
 		}
-		finally{
-			lock.unlock();
-		}
+		
 	}
 	
 	public void delete(long[] ids) throws EntityFileException{
 		
 		try{
-			this.pointerManager.managerPointer(ids, false);
+			this.pointerManager.managerPointer(ids);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
@@ -255,7 +235,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 
 		try{
 			if(forUpdate){
-				this.pointerManager.managerPointer(id, null);
+				this.pointerManager.managerPointer(id);
 			}
 		}
 		catch(Throwable e){
@@ -286,7 +266,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		
 		try{
 			if(forUpdate){
-				this.pointerManager.managerPointer(ids, null);
+				this.pointerManager.managerPointer(ids);
 			}
 		}
 		catch(Throwable e){
@@ -421,7 +401,6 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		this.tx.seek(txid);
 		this.tx.write(new TransactionalEntity<T>(id, TransactionalEntity.UPDATE_RECORD, entity));
 		
-		
 		this.data.seek(id);
 		this.data.write(null);
 		
@@ -433,22 +412,23 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		
 		TransactionalEntity<T>[] e = new TransactionalEntity[entities.length];
 		int max                    = entities.length;
+		long txid                  = this.tx.length();
+
+		long eid;
+		long etxid;
 		
 		for(int i=0;i<max;i++){
-			e[i] = new TransactionalEntity<T>(id + i, TransactionalEntity.UPDATE_RECORD, entities[i]);
+			eid = id + i;
+			etxid = txid + i;
+			e[i] = new TransactionalEntity<T>(eid, TransactionalEntity.UPDATE_RECORD, entities[i]);
+			this.pointerMap.put(eid, etxid);
 		}
-
-		long txid = this.tx.length();
 		
 		this.tx.seek(txid);
 		this.tx.batchWrite(e);
 		
 		this.data.seek(id);
 		this.data.batchWrite(null);
-		
-		for(int i=0;i<max;i++){
-			this.pointerMap.put(id, txid);
-		}
 		
 	}
 	
