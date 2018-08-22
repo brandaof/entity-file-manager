@@ -136,13 +136,13 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			while(off < ids.length){
 				
 				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
+				q           = nextOff - off;
 				
-				if(nextOff == off){
+				if(q == 1){
 					this.update(ids[off], entities[off]);
 					off++;
 				}
 				else{
-					q               = nextOff - off;
 					T[] subEntities = (T[])Array.newInstance(this.data.getType(), q);
 					long[] subIds   = new long[q];
 					
@@ -189,10 +189,6 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			throw new EntityFileException(e);
 		}
 		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
-		
 		try{
 			int off = 0;
 			int q;
@@ -200,14 +196,14 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			while(off < ids.length){
 				
 				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
+				q           = nextOff - off;
 				
-				if(nextOff == off){
+				if(q == 1){
 					this.update(ids[off], null);
 					off++;
 				}
 				else{
-					q               = nextOff - off;
-					long[] subIds   = new long[q];
+					long[] subIds = new long[q];
 					
 					System.arraycopy(ids, off, subIds, 0, q);
 					
@@ -220,9 +216,6 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
-		}
-		finally{
-			lock.unlock();
 		}
 		
 	}
@@ -471,7 +464,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		for(int i=0;i<max;i++){
 			id = ids[subIds[i]];
 			e[i] = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
-			this.pointerMap.put(id, txID);
+			this.pointerMap.put(id, txID + i);
 		}
 		
 		this.tx.seek(txID);
@@ -522,19 +515,20 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		T[] e           = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
 		long[] subIds   = EntityFileTransactionUtil.refToId(ids, subRefIds);
 		int pos         = 0;
-		
+		int q;
 		while(pos < subIds.length){
 			
 			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
+			q = nextPos - pos;
 			
 			this.data.seek(subIds[pos]);
 			
-			if(pos == nextPos){
+			if(q == 1){
 				e[pos] = this.data.read();
 			}
 			else{
-				T[] data = this.data.batchRead(nextPos - pos);
-				System.arraycopy(data, 0, e, pos, data.length);
+				T[] data = this.data.batchRead(q);
+				System.arraycopy(data, 0, e, pos, q);
 			}
 			
 			pos = nextPos;
@@ -553,17 +547,18 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		while(pos < subIds.length){
 			
 			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
+			q = nextPos - pos;
 			
 			this.tx.seek(subIds[pos]);
 			
-			if(pos == nextPos){
+			if(q == 1){
 				TransactionalEntity<T> r = this.tx.read();
 				if(r != null){
 					e[pos] = r.getEntity();
 				}
 			}
 			else{
-				TransactionalEntity<T>[] rs = this.tx.batchRead(nextPos - pos);
+				TransactionalEntity<T>[] rs = this.tx.batchRead(q);
 				if(rs != null){
 					for(int i=0;i<rs.length;i++){
 						TransactionalEntity<T> r = rs[i];
