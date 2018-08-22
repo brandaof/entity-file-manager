@@ -30,9 +30,9 @@ public interface EntityFileDataHandler<T, R> {
 	
 	int getFirstRecord();
 
-	void setLength(int value);
+	void setLength(long value);
 	
-	int getLength();
+	long getLength();
 
 	Class<T> getType();
 	

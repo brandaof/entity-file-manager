@@ -25,7 +25,7 @@ public class CommitOperations {
 		
 		if(ops.length == 1){
 			data.seek(ops[0].getRecordID());
-			data.writeRawEntity(ops[0].getEntity());
+			data.writeRaw(ops[0].getEntity());
 			return;
 		}
 		
@@ -45,7 +45,7 @@ public class CommitOperations {
 			data.seek(ids[off]);
 			
 			if(q == 1){
-				data.writeRawEntity(ops[off].getEntity());
+				data.writeRaw(ops[off].getEntity());
 			}
 			else{
 				R[] subEntities = (R[]) Array.newInstance(data.getRawType(), q);
@@ -55,7 +55,7 @@ public class CommitOperations {
 				}
 				
 				data.seek(ids[off]);
-				data.batchWriteRawEntity(subEntities);
+				data.batchWriteRaw(subEntities);
 			}
 			
 			off = nextOff;

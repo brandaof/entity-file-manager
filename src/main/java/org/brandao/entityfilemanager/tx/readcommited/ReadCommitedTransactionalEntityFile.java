@@ -323,7 +323,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 				this.tx.seek(current);
 				
 				RawTransactionEntity<R>[] ops = 
-					this.tx.batchReadRawEntity(this.batchOperationLength);
+					this.tx.batchReadRaw(this.batchOperationLength);
 				
 				RawTransactionEntity<R>[][] map = 
 					EntityFileTransactionUtil.mapOperations(ops);
@@ -359,7 +359,7 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 				this.tx.seek(current);
 				
 				RawTransactionEntity<R>[] ops = 
-					this.tx.batchReadRawEntity(this.batchOperationLength);
+					this.tx.batchReadRaw(this.batchOperationLength);
 				
 				RawTransactionEntity<R>[][] map = 
 					EntityFileTransactionUtil.mapOperations(ops);

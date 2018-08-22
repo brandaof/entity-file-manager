@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class AbstractEntityFileAccess<T, R> 
 	implements EntityFileAccess<T, R>{
 
-	protected int offset;
+	protected long offset;
 	
 	protected File file;
 	
@@ -115,7 +115,7 @@ public class AbstractEntityFileAccess<T, R>
 		this.dataHandler.readMetaData(dStream);
 	}
 
-	public void seek(int value) throws IOException {
+	public void seek(long value) throws IOException {
 		
 		if(value > this.dataHandler.getLength())
 			throw new IOException(this.file.getName() + ": entry not found: " + value);
@@ -144,7 +144,7 @@ public class AbstractEntityFileAccess<T, R>
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength() + this.dataHandler.getEOFLength());
 		DataOutputStream dStream     = new DataOutputStream(stream);
-		int eof                      = this.offset + 1 - this.dataHandler.getLength();
+		long eof                     = this.offset + 1 - this.dataHandler.getLength();
 		
 		if(raw){
 			this.dataHandler.writeRaw(dStream, (R)entity);
@@ -188,7 +188,7 @@ public class AbstractEntityFileAccess<T, R>
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(maxlength + this.dataHandler.getEOFLength());
 		DataOutputStream dStream     = new DataOutputStream(stream);
-		int eof                      = this.offset + entities.length - this.dataHandler.getLength();
+		long eof                     = this.offset + entities.length - this.dataHandler.getLength();
 		
 		for(Object entity: entities){
 			
@@ -305,7 +305,7 @@ public class AbstractEntityFileAccess<T, R>
 		return result;
 	}
 	
-	public int length() throws IOException {
+	public long length() throws IOException {
 		return this.dataHandler.getLength();
 		//return 
 		//	(this.fileAccess.length() - this.firstRecord) / this.recordLength;
