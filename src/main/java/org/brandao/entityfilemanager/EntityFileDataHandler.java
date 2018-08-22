@@ -20,4 +20,6 @@ public interface EntityFileDataHandler<T, R> {
 	
 	Class<T> getType();
 	
+	Class<R> getRawType();
+	
 }

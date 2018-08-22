@@ -14,7 +14,7 @@ public interface EntityFileAccess<T, R> {
 	
 	int getFirstRecord();
 	
-	EntityFileDataHandler<T> getEntityFileDataHandler();
+	EntityFileDataHandler<T,R> getEntityFileDataHandler();
 	
 	void setBatchLength(int value);
 
@@ -40,17 +40,17 @@ public interface EntityFileAccess<T, R> {
 	
 	void write(T value) throws IOException;
 	
-	void writeRawEntity(R value) throws IOException;
+	void writeRaw(R value) throws IOException;
 
-	void batchWriteRawEntity(R[] entities) throws IOException;
+	void batchWriteRaw(R[] entities) throws IOException;
 	
 	T[] batchRead(int len) throws IOException;
 	
 	T read() throws IOException;
 	
-	R readRawEntity() throws IOException;
+	R readRaw() throws IOException;
 	
-	R[] batchReadRawEntity(int len) throws IOException;
+	R[] batchReadRaw(int len) throws IOException;
 	
 	long length() throws IOException;
 	
