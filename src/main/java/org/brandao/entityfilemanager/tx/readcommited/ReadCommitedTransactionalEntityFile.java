@@ -563,7 +563,6 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 		for(int i=0;i<subRefIds.length;i++){
 			values[subRefIds[i]] = e[i];
 		}
-		
 
 		subRefIds = opsArray[TransactionalEntity.UPDATE_RECORD];
 		e         = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
@@ -575,14 +574,24 @@ public class ReadCommitedTransactionalEntityFile<T, R>
 			
 			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
 			
-			this.data.seek(subIds[pos]);
+			this.tx.seek(subIds[pos]);
 			
 			if(pos == nextPos){
-				e[pos] = this.data.read();
+				TransactionalEntity<T> r = this.tx.read();
+				if(r != null){
+					e[pos] = r.getEntity();
+				}
 			}
 			else{
-				T[] data = this.data.batchRead(nextPos - pos);
-				System.arraycopy(data, 0, e, pos, data.length);
+				TransactionalEntity<T>[] rs = this.tx.batchRead(nextPos - pos);
+				if(rs != null){
+					for(int i=0;i<rs.length;i++){
+						TransactionalEntity<T> r = rs[i];
+						if(r != null){
+							e[pos + i] = r.getEntity();
+						}
+					}
+				}
 			}
 			
 			pos = nextPos;
