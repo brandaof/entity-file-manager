@@ -11,7 +11,7 @@ public abstract class AbstractEntityFileTransaction
 
 	protected EntityFileTransactionManager entityFileTransactionManager;
 	
-	protected Map<EntityFileAccess<?,?>, TransactionEntity<?,?>> transactionFiles;
+	protected Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles;
 	
 	protected LockProvider lockProvider;
 	
@@ -36,7 +36,7 @@ public abstract class AbstractEntityFileTransaction
 	public AbstractEntityFileTransaction(
 			EntityFileTransactionManager entityFileTransactionManager,
 			LockProvider lockProvider,
-			Map<EntityFileAccess<?,?>, TransactionEntity<?,?>> transactionFiles,
+			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, boolean rolledBack, 
 			boolean commited, long timeout) {
 		this.entityFileTransactionManager = entityFileTransactionManager;
@@ -180,7 +180,7 @@ public abstract class AbstractEntityFileTransaction
 		entityFileTransactionManager.closeTransaction(this);
 	}
 	
-	public <T, R> long insert(T entity, EntityFileAccess<T, R> entityFileAccess)
+	public <T, R, H> long insert(T entity, EntityFileAccess<T, R, H> entityFileAccess)
 			throws EntityFileException {
 		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
 		return tei.insert(entity);
@@ -243,8 +243,8 @@ public abstract class AbstractEntityFileTransaction
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")
-	protected <T,R> TransactionEntity<T,R> getManagedEntityFile( 
-			EntityFileAccess<T,R> entityFile) throws EntityFileException{
+	protected <T,R,H> TransactionEntity<T,R> getManagedEntityFile( 
+			EntityFileAccess<T,R,H> entityFile) throws EntityFileException{
 		try{
 			
 			TransactionEntity<T,R> tx = 
@@ -254,8 +254,8 @@ public abstract class AbstractEntityFileTransaction
 				return tx;
 			}
 			
-			TransactionEntityFileAccess<T,R> txFile = 
-				new TransactionEntityFileAccess<T,R>(entityFile, this.transactionID, 
+			TransactionEntityFileAccess<T,R,H> txFile = 
+				new TransactionEntityFileAccess<T,R,H>(entityFile, this.transactionID, 
 						this.transactionIsolation);
 			txFile.createNewFile();
 			
@@ -269,12 +269,12 @@ public abstract class AbstractEntityFileTransaction
 		}
 	}
 
-	protected abstract <T,R> TransactionEntity<T,R> createTransactionalEntityFile(
-			EntityFileAccess<T,R> entityFile, TransactionEntityFileAccess<T,R> txFile);
+	protected abstract <T,R,H> TransactionEntity<T,R> createTransactionalEntityFile(
+			EntityFileAccess<T,R,H> entityFile, TransactionEntityFileAccess<T,R,H> txFile);
 	
 	/* restrict methods */
 	
-	public Map<EntityFileAccess<?,?>, TransactionEntity<?,?>> getTransactionalEntityFile(){
+	public Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> getTransactionalEntityFile(){
 		return this.transactionFiles;
 	}
 	

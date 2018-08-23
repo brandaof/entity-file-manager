@@ -4,17 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.locks.ReadWriteLock;
 
-public interface EntityFileAccess<T, R> {
+public interface EntityFileAccess<T, R, H> {
 
 	Class<T> getType();
 	
 	Class<R> getRawType();
 	
-	int getRecordLength();
-	
-	int getFirstRecord();
-	
-	EntityFileDataHandler<T,R> getEntityFileDataHandler();
+	EntityFileDataHandler<T,R,H> getEntityFileDataHandler();
 	
 	void setBatchLength(int value);
 
@@ -54,7 +50,7 @@ public interface EntityFileAccess<T, R> {
 	
 	long length() throws IOException;
 	
-	void setLength(int value) throws IOException;
+	void setLength(long value) throws IOException;
 	
 	boolean exists();
 	

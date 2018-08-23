@@ -23,25 +23,25 @@ public interface EntityFileTransaction {
 	
 	public static final byte TRANSACTION_COMMITED 			= Byte.valueOf("00100000", 2);
 	
-	<T,R> long insert(T entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> long insert(T entity, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 
-	<T,R> long[] insert(T[] entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> long[] insert(T[] entity, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 	
-	<T,R> void update(long id, T entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> void update(long id, T entity, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 
-	<T,R> void update(long[] id, T[] entity, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> void update(long[] id, T[] entity, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 	
-	<T,R> void delete(long id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> void delete(long id, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 
-	<T,R> void delete(long[] id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> void delete(long[] id, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 	
-	<T,R> T select(long id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> T select(long id, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 
-	<T,R> T[] select(long[] id, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> T[] select(long[] id, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 	
-	<T,R> T select(long id, boolean lock, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> T select(long id, boolean lock, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 
-	<T,R> T[] select(long[] id, boolean lock, EntityFileAccess<T, R> entityFileAccess) throws EntityFileException;
+	<T,R,H> T[] select(long[] id, boolean lock, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 	
 	void setTimeout(long value);
 	

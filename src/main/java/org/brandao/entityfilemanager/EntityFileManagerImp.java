@@ -13,7 +13,7 @@ public class EntityFileManagerImp
 
 	private File path;
 	
-	private Map<String, EntityFileAccess<?,?>> entities;
+	private Map<String, EntityFileAccess<?,?,?>> entities;
 
 	private EntityFileTransactionManager transactioManager;
 	
@@ -22,7 +22,7 @@ public class EntityFileManagerImp
 	private LockProvider lockProvider;
 	
 	public EntityFileManagerImp(){
-		this.entities     = new HashMap<String, EntityFileAccess<?,?>>();
+		this.entities     = new HashMap<String, EntityFileAccess<?,?,?>>();
 		this.started      = false;
 	}
 	
@@ -70,7 +70,7 @@ public class EntityFileManagerImp
 		try{
 			this.transactioManager.destroy();
 			
-			for(EntityFileAccess<?,?> entityFile: this.entities.values()){
+			for(EntityFileAccess<?,?,?> entityFile: this.entities.values()){
 				entityFile.close();
 			}
 			
@@ -82,7 +82,7 @@ public class EntityFileManagerImp
 		
 	}
 	
-	public void register(String name, EntityFileAccess<?,?> entityFile) throws EntityFileManagerException{
+	public void register(String name, EntityFileAccess<?,?,?> entityFile) throws EntityFileManagerException{
 		
 		try{
 			if(entityFile.exists())
@@ -100,7 +100,7 @@ public class EntityFileManagerImp
 	public void unregister(String name) throws EntityFileManagerException{
 		
 		try{
-			EntityFileAccess<?,?> entity = this.entities.get(name);
+			EntityFileAccess<?,?,?> entity = this.entities.get(name);
 			
 			if(entity != null){
 				entity.close();
@@ -111,7 +111,7 @@ public class EntityFileManagerImp
 		}
 	}
 	
-	public EntityFileAccess<?, ?> getEntityFile(String name)
+	public EntityFileAccess<?, ?,?> getEntityFile(String name)
 			throws EntityFileManagerException {
 		return this.entities.get(name);
 	}
@@ -119,7 +119,7 @@ public class EntityFileManagerImp
 	@SuppressWarnings("unchecked")
 	public <T> EntityFile<T> getEntityFile(String name, EntityFileTransaction tx, Class<T> type){
 		
-		EntityFileAccess<T,?> fileAccess = (EntityFileAccess<T,?>) this.entities.get(name);
+		EntityFileAccess<T,?,?> fileAccess = (EntityFileAccess<T,?,?>) this.entities.get(name);
 		
 		if(fileAccess == null){
 			throw new EntityFileManagerException("not found: " + name);
@@ -142,7 +142,7 @@ public class EntityFileManagerImp
 	
 	public void truncate(String name) throws EntityFileManagerException {
 		try{
-			EntityFileAccess<?,?> entity = this.entities.get(name);
+			EntityFileAccess<?,?,?> entity = this.entities.get(name);
 			entity.createNewFile();
 		}
 		catch(Throwable e){
@@ -158,9 +158,9 @@ public class EntityFileManagerImp
 
 		private EntityFileTransaction tx;
 		
-		private EntityFileAccess<T,?> entityFileAccess;
+		private EntityFileAccess<T,?,?> entityFileAccess;
 		
-		public EntityFileTX(EntityFileAccess<T,?> entityFileAccess, EntityFileTransaction tx) {
+		public EntityFileTX(EntityFileAccess<T,?,?> entityFileAccess, EntityFileTransaction tx) {
 			this.tx = tx;
 			this.entityFileAccess = entityFileAccess;
 		}

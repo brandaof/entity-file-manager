@@ -2,11 +2,11 @@ package org.brandao.entityfilemanager;
 
 import java.io.IOException;
 
-public interface EntityFileDataHandler<T, R> {
+public interface EntityFileDataHandler<T, R, H> {
 
-	void writeMetaData(DataOutputStream stream) throws IOException;
+	void writeMetaData(DataOutputStream stream, H value) throws IOException;
 	
-	void readMetaData(DataInputStream srteam) throws IOException;
+	H readMetaData(DataInputStream srteam) throws IOException;
 	
 	void writeEOF(DataOutputStream stream) throws IOException;
 	
@@ -18,21 +18,11 @@ public interface EntityFileDataHandler<T, R> {
 	
 	R readRaw(DataInputStream stream) throws IOException;
 	
-	void setRecordLength(int value);
-	
 	int getRecordLength();
-	
-	void setEOFLength(int value);
 	
 	int getEOFLength();
 	
-	void setFirstRecord(int value);
-	
 	int getFirstRecord();
-
-	void setLength(long value);
-	
-	long getLength();
 
 	Class<T> getType();
 	

@@ -10,9 +10,11 @@ import java.lang.reflect.Array;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class AbstractEntityFileAccess<T, R> 
-	implements EntityFileAccess<T, R>{
+public class AbstractEntityFileAccess<T, R, H> 
+	implements EntityFileAccess<T, R, H>{
 
+	protected H metadata;
+	
 	protected long offset;
 	
 	protected File file;
@@ -23,9 +25,11 @@ public class AbstractEntityFileAccess<T, R>
 	
 	protected int batchLength;
 	
-	protected EntityFileDataHandler<T, R> dataHandler;
+	protected EntityFileDataHandler<T, R, H> dataHandler;
 	
-	public AbstractEntityFileAccess(File file, EntityFileDataHandler<T, R> dataHandler){
+	protected long length;
+	
+	public AbstractEntityFileAccess(File file, EntityFileDataHandler<T, R, H> dataHandler){
 		this.file        = file;
 		this.offset      = 0;
 		this.lock        = new ReentrantReadWriteLock();
@@ -33,15 +37,7 @@ public class AbstractEntityFileAccess<T, R>
 		this.dataHandler = dataHandler;
 	}
 	
-	public int getRecordLength() {
-		return this.dataHandler.getRecordLength();
-	}
-
-	public int getFirstRecord() {
-		return this.dataHandler.getFirstRecord();
-	}
-	
-	public EntityFileDataHandler<T, R> getEntityFileDataHandler() {
+	public EntityFileDataHandler<T, R, H> getEntityFileDataHandler() {
 		return this.dataHandler;
 	}
 	
@@ -75,14 +71,14 @@ public class AbstractEntityFileAccess<T, R>
 		this.fileAccess.setLength(0);
 		this.fileAccess.seek(0);
 		this.writeHeader();
-		this.dataHandler.setLength(0);
+		this.setLength(0);
 	}
 	
 	protected void writeHeader() throws IOException{
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getFirstRecord());
 		DataOutputStream dStream     = new DataOutputStream(stream);
 		
-		this.dataHandler.writeMetaData(dStream);
+		this.dataHandler.writeMetaData(dStream, this.metadata);
 		
 		if(stream.size() != this.dataHandler.getFirstRecord())
 			throw new IOException(this.file.getName() + ": " + stream.size() + " <> " + this.dataHandler.getFirstRecord());
@@ -101,6 +97,14 @@ public class AbstractEntityFileAccess<T, R>
 		this.fileAccess = new FileAccess(this.file, new RandomAccessFile(this.file, "rw"));
 		this.readHeader();
 		this.fileAccess.seek(this.dataHandler.getFirstRecord());
+		this.length = 
+				(
+					this.fileAccess.length() - 
+					this.dataHandler.getFirstRecord() - 
+					this.dataHandler.getEOFLength()
+				) /
+					this.dataHandler.getRecordLength(); 
+
 	}
 
 	protected void readHeader() throws IOException{
@@ -112,12 +116,12 @@ public class AbstractEntityFileAccess<T, R>
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
 		DataInputStream dStream     = new DataInputStream(stream);
 		
-		this.dataHandler.readMetaData(dStream);
+		this.metadata = this.dataHandler.readMetaData(dStream);
 	}
 
 	public void seek(long value) throws IOException {
 		
-		if(value > this.dataHandler.getLength())
+		if(value > this.length)
 			throw new IOException(this.file.getName() + ": entry not found: " + value);
 		
 		this.offset = value;
@@ -140,11 +144,11 @@ public class AbstractEntityFileAccess<T, R>
 	}
 
 	@SuppressWarnings("unchecked")
-	private void write(Object entity, boolean raw) throws IOException {
+	protected void write(Object entity, boolean raw) throws IOException {
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength() + this.dataHandler.getEOFLength());
 		DataOutputStream dStream     = new DataOutputStream(stream);
-		long eof                     = this.offset + 1 - this.dataHandler.getLength();
+		long eof                     = this.offset + 1 - this.length;
 		
 		if(raw){
 			this.dataHandler.writeRaw(dStream, (R)entity);
@@ -169,15 +173,12 @@ public class AbstractEntityFileAccess<T, R>
 		this.fileAccess.write(data, 0, data.length);
 		
 		this.offset++;
-		
-		if(eof == 0){
-			this.dataHandler.setLength(this.dataHandler.getLength() + 1);
-		}
+		this.length++;
 		
 	}
 	
 	@SuppressWarnings("unchecked")
-	private void batchWrite(Object[] entities, boolean raw) throws IOException{
+	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
 		
 		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
 		
@@ -188,7 +189,7 @@ public class AbstractEntityFileAccess<T, R>
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(maxlength + this.dataHandler.getEOFLength());
 		DataOutputStream dStream     = new DataOutputStream(stream);
-		long eof                     = this.offset + entities.length - this.dataHandler.getLength();
+		long eof                     = this.offset + entities.length - this.length;
 		
 		for(Object entity: entities){
 			
@@ -227,10 +228,7 @@ public class AbstractEntityFileAccess<T, R>
 		this.fileAccess.write(data, 0, data.length);
 		
 		this.offset += entities.length;
-		
-		if(eof >= 0){
-			this.dataHandler.setLength(this.dataHandler.getLength() + eof + 1);
-		}
+		this.length += eof + 1;
 		
 	}
 	
@@ -254,7 +252,7 @@ public class AbstractEntityFileAccess<T, R>
 		return (R) this.read(false);
 	}
 	
-	private Object read(boolean raw) throws IOException {
+	protected Object read(boolean raw) throws IOException {
 		
 		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
 		
@@ -273,9 +271,9 @@ public class AbstractEntityFileAccess<T, R>
 		return entity;
 	}
 	
-	private Object[] batchRead(boolean raw) throws IOException{
+	protected Object[] batchRead(boolean raw) throws IOException{
 		
-		long maxRead       = this.dataHandler.getLength() - this.offset;
+		long maxRead       = this.length - this.offset;
 		int batch          = maxRead > this.batchLength? this.batchLength : (int)maxRead;
 		int maxlength      = this.dataHandler.getRecordLength()*batch;
 		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
@@ -306,27 +304,35 @@ public class AbstractEntityFileAccess<T, R>
 	}
 	
 	public long length() throws IOException {
-		return this.dataHandler.getLength();
-		//return 
-		//	(this.fileAccess.length() - this.firstRecord) / this.recordLength;
+		return this.length;
 	}
 	
-	public void setLength(int value) throws IOException {
-		this.dataHandler.setLength(value);
-		/*
-		long filePointer = this.dataHandler.getFirstRecord() + value*this.dataHandler.getRecordLength();
+	public void setLength(long value) throws IOException {
 		
-		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.recordLength);
-		DataOutputStream dStream = new DataOutputStream(stream);
+		long op = value - this.length;
 		
-		this.dataHandler.writeEOF(dStream);
+		if(op > 0){
+			this.offset = this.length;
+			this.batchWrite(null, false);
+		}
+		else{
+			op = op*-1;
+			long fileLength = 
+					this.dataHandler.getFirstRecord() + 
+					this.dataHandler.getRecordLength()*op + 
+					this.dataHandler.getEOFLength();
+			
+			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getEOFLength());
+			DataOutputStream dStream     = new DataOutputStream(stream);
+			
+			this.dataHandler.writeEOF(dStream);
+			
+			this.fileAccess.setLength(fileLength);
+			this.fileAccess.seek(this.fileAccess.length() - this.dataHandler.getEOFLength());
+			this.fileAccess.write(stream.toByteArray());
+		}
 		
-		byte[] data = stream.toByteArray();
-		
-		this.fileAccess.setLength(filePointer);
-		this.fileAccess.seek(filePointer);
-		this.fileAccess.write(data, 0, data.length);
-		*/
+		this.length = op;
 	}
 	
 	public void flush() throws IOException {

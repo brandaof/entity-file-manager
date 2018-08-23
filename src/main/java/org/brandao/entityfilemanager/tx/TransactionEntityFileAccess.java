@@ -5,12 +5,12 @@ import java.io.IOException;
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileAccess;
 
-public class TransactionEntityFileAccess<T, R> 
-	extends AbstractEntityFileAccess<TransactionalEntity<T>, RawTransactionEntity<R>> {
+public class TransactionEntityFileAccess<T, R, H> 
+	extends AbstractEntityFileAccess<TransactionalEntity<T>, RawTransactionEntity<R>, TransactionHeader<H>> {
 
-	private EntityFileAccess<T, R> entityFileAccess;
+	private EntityFileAccess<T, R, H> entityFileAccess;
 	
-	private EntityFileTransactionDataHandler<T> entityFileTransactionDataHandler;
+	private EntityFileTransactionDataHandler<T, R, H> entityFileTransactionDataHandler;
 	
 	private int transactionStatusPointer;
 	
@@ -18,14 +18,15 @@ public class TransactionEntityFileAccess<T, R>
 
 	private int transactionIsolationPointer;
 	
-	public TransactionEntityFileAccess(EntityFileAccess<T, R> e, long transactionID, 
+	public TransactionEntityFileAccess(EntityFileAccess<T, R, H> e, long transactionID, 
 			byte transactionIsolation){
 		super(
 			EntityFileTransactionUtil.getTransactionFile(e.getAbsoluteFile(), transactionID), 
-			new EntityFileTransactionDataHandler<T>(e.getEntityFileDataHandler())
+			new EntityFileTransactionDataHandler<T,R,H>(e.getEntityFileDataHandler())
 		);
 
 		this.entityFileAccess                 = e;
+		this.header = new TransactionHeader<H>(e.)
 		this.firstRecord                      = this.entityFileAccess.getFirstRecord() + 10;
 		this.transactionStatusPointer         = this.entityFileAccess.getFirstRecord() + 1;
 		this.transactionIDPointer             = this.transactionStatusPointer + 1; 

@@ -15,7 +15,7 @@ public class LockProviderImp
 		this.entityFileAccessLock = new ConcurrentHashMap<Object, LockProviderImp.LockObject>();
 	}
 	
-	public void lock(EntityFileAccess<?, ?> entityFile)
+	public void lock(EntityFileAccess<?, ?, ?> entityFile)
 			throws LockException {
 		try{
 			this.lockObject(entityFile);
@@ -25,7 +25,7 @@ public class LockProviderImp
 		}
 	}
 
-	public boolean tryLock(EntityFileAccess<?, ?> entityFile, 
+	public boolean tryLock(EntityFileAccess<?, ?, ?> entityFile, 
 			long unit, TimeUnit timeunit) throws LockException {
 		try{
 			return this.lockObject(entityFile, unit, timeunit);
@@ -35,7 +35,7 @@ public class LockProviderImp
 		}
 	}
 	
-	public void unlock(EntityFileAccess<?, ?> entityFile)
+	public void unlock(EntityFileAccess<?, ?, ?> entityFile)
 			throws LockException {
 		try{
 			this.unlockObject(entityFile);
@@ -45,7 +45,7 @@ public class LockProviderImp
 		}
 	}
 
-	public void lock(EntityFileAccess<?, ?> entityFile, long pointer)
+	public void lock(EntityFileAccess<?, ?, ?> entityFile, long pointer)
 			throws LockException {
 		try{
 			this.lockObject(new PointerLock(entityFile, pointer));
@@ -55,7 +55,7 @@ public class LockProviderImp
 		}
 	}
 
-	public boolean tryLock(EntityFileAccess<?, ?> entityFile, 
+	public boolean tryLock(EntityFileAccess<?, ?, ?> entityFile, 
 			long pointer, long unit, TimeUnit timeunit) throws LockException {
 		try{
 			return this.lockObject(new PointerLock(entityFile, pointer), unit, timeunit);
@@ -65,7 +65,7 @@ public class LockProviderImp
 		}
 	}
 	
-	public void unlock(EntityFileAccess<?, ?> entityFile, long pointer)
+	public void unlock(EntityFileAccess<?, ?, ?> entityFile, long pointer)
 			throws LockException {
 		try{
 			this.unlockObject(new PointerLock(entityFile, pointer));
@@ -213,11 +213,11 @@ public class LockProviderImp
 
 	private static class PointerLock {
 		
-		private EntityFileAccess<?, ?> entityFile;
+		private EntityFileAccess<?, ?, ?> entityFile;
 		
 		private long pointer;
 
-		public PointerLock(EntityFileAccess<?, ?> entityFile, long pointer) {
+		public PointerLock(EntityFileAccess<?, ?, ?> entityFile, long pointer) {
 			this.entityFile = entityFile;
 			this.pointer = pointer;
 		}

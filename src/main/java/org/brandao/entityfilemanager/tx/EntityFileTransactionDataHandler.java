@@ -7,10 +7,10 @@ import org.brandao.entityfilemanager.DataInputStream;
 import org.brandao.entityfilemanager.DataOutputStream;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 
-public class EntityFileTransactionDataHandler<T, R> 
-	implements EntityFileDataHandler<TransactionalEntity<T>, RawTransactionEntity<R>>{
+public class EntityFileTransactionDataHandler<T, R, H> 
+	implements EntityFileDataHandler<TransactionalEntity<T>, RawTransactionEntity<R>, TransactionHeader<H>>{
 	
-	private EntityFileDataHandler<T, R> handler;
+	private EntityFileDataHandler<T, R, H> handler;
 	
 	private byte transactionStatus;
 	
@@ -18,21 +18,22 @@ public class EntityFileTransactionDataHandler<T, R>
 	
 	private byte transactionIsolation;
 	
-	public EntityFileTransactionDataHandler(EntityFileDataHandler<T, R> handler){
+	public EntityFileTransactionDataHandler(EntityFileDataHandler<T, R, H> handler){
 		this.handler = handler;
 	}
 	
-	public void writeMetaData(DataOutputStream stream) throws IOException {
-		this.handler.writeMetaData(stream);
+	public void writeMetaData(DataOutputStream stream, TransactionHeader<H> value) throws IOException {
+		this.handler.writeMetaData(stream, value.getParent());
 		stream.writeByte(this.transactionStatus);
 		stream.writeLong(this.transactionID);
 		stream.writeByte(this.transactionIsolation);
 	}
 
-	public void readMetaData(DataInputStream stream) throws IOException {
+	public TransactionHeader<H> readMetaData(DataInputStream stream) throws IOException {
 		this.handler.readMetaData(stream);
 		this.transactionStatus = stream.readByte();
 		this.transactionID = stream.readLong();
+		return null;
 	}
 
 	public void writeEOF(DataOutputStream stream) throws IOException {
