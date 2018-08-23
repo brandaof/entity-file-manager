@@ -26,7 +26,6 @@ public class TransactionEntityFileAccess<T, R, H>
 		);
 
 		this.entityFileAccess                 = e;
-		this.header = new TransactionHeader<H>(e.)
 		this.firstRecord                      = this.entityFileAccess.getFirstRecord() + 10;
 		this.transactionStatusPointer         = this.entityFileAccess.getFirstRecord() + 1;
 		this.transactionIDPointer             = this.transactionStatusPointer + 1; 
@@ -71,7 +70,7 @@ public class TransactionEntityFileAccess<T, R, H>
 		return this.entityFileTransactionDataHandler.getTransactionIsolation();
 	}
 	
-	public EntityFileAccess<T, R> getEntityFileAccess() {
+	public EntityFileAccess<T, R, H> getEntityFileAccess() {
 		return entityFileAccess;
 	}
 	

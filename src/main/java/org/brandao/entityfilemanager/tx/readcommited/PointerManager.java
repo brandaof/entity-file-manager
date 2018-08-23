@@ -9,18 +9,18 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
 
-public class PointerManager<T,R> {
+public class PointerManager<T,R,H> {
 
 	private Set<Long> pointers;
 	
-	private EntityFileAccess<T,R> data;
+	private EntityFileAccess<T,R,H> data;
 	
 	private LockProvider lockProvider;
 
 	private long timeout;
 	
 	public PointerManager(
-			TransactionEntityFileAccess<T, R> tx,
+			TransactionEntityFileAccess<T, R, H> tx,
 			LockProvider lockProvider, long timeout) {
 		this.pointers     = new HashSet<Long>();
 		this.data         = tx.getEntityFileAccess();

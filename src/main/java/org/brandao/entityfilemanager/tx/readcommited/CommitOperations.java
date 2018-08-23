@@ -9,15 +9,15 @@ import org.brandao.entityfilemanager.tx.RawTransactionEntity;
 
 public class CommitOperations {
 
-	public static <T,R> void insert(RawTransactionEntity<R>[] ops, 
-			EntityFileAccess<T,R> data) throws IOException{
+	public static <T,R,H> void insert(RawTransactionEntity<R>[] ops, 
+			EntityFileAccess<T,R, H> data) throws IOException{
 		update(ops, data);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T,R> void update(
+	public static <T,R,H> void update(
 			RawTransactionEntity<R>[] ops, 
-			EntityFileAccess<T,R> data) throws IOException{
+			EntityFileAccess<T,R,H> data) throws IOException{
 		
 		if(ops.length == 0){
 			return;
@@ -62,8 +62,8 @@ public class CommitOperations {
 		}
 	}
 
-	public static <T,R> void delete(RawTransactionEntity<R>[] ops, 
-			EntityFileAccess<T,R> data) throws IOException{
+	public static <T,R,H> void delete(RawTransactionEntity<R>[] ops, 
+			EntityFileAccess<T,R,H> data) throws IOException{
 		update(ops, data);
 	}
 	

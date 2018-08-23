@@ -18,30 +18,30 @@ import org.brandao.entityfilemanager.tx.TransactionException;
 import org.brandao.entityfilemanager.tx.TransactionalEntity;
 import org.brandao.entityfilemanager.tx.TransactionEntity;
 
-public class ReadCommitedTransactionalEntityFile<T, R> 
+public class ReadCommitedTransactionalEntityFile<T, R, H> 
 	implements TransactionEntity<T, R> {
 
-	private EntityFileAccess<T,R> data;
+	private EntityFileAccess<T,R,H> data;
 	
-	private TransactionEntityFileAccess<T,R> tx;
+	private TransactionEntityFileAccess<T,R,H> tx;
 	
-	private PointerManager<T, R> pointerManager;
+	private PointerManager<T, R, H> pointerManager;
 	
 	private int batchOperationLength;
 	
 	private Map<Long,Long> pointerMap;
 	
 	public ReadCommitedTransactionalEntityFile( 
-			TransactionEntityFileAccess<T,R> tx, LockProvider lockProvider, long timeout){
+			TransactionEntityFileAccess<T,R,H> tx, LockProvider lockProvider, long timeout){
 		this(tx, lockProvider, timeout, 100);
 	}
 	
-	public ReadCommitedTransactionalEntityFile(TransactionEntityFileAccess<T,R> tx,
+	public ReadCommitedTransactionalEntityFile(TransactionEntityFileAccess<T,R,H> tx,
 			LockProvider lockProvider, long timeout, int batchOperationLength){
 		this.data 					= tx.getEntityFileAccess();
 		this.tx 					= tx;
 		this.batchOperationLength 	= batchOperationLength;
-		this.pointerManager 		= new PointerManager<T,R>(tx, lockProvider, timeout);
+		this.pointerManager 		= new PointerManager<T,R,H>(tx, lockProvider, timeout);
 		this.pointerMap             = new HashMap<Long, Long>();
 	}
 	
