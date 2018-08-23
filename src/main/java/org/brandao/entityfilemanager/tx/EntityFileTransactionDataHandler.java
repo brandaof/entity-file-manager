@@ -12,28 +12,45 @@ public class EntityFileTransactionDataHandler<T, R, H>
 	
 	private EntityFileDataHandler<T, R, H> handler;
 	
-	private byte transactionStatus;
+	private Class<TransactionalEntity<T>> type;
 	
-	private long transactionID;
+	private Class<RawTransactionEntity<R>> rawType;
+
+	private final long transactionStatusPointer;
 	
-	private byte transactionIsolation;
+	private final long transactionIDPointer;
+	
+	private final long transactionIsolationPointer;
 	
 	public EntityFileTransactionDataHandler(EntityFileDataHandler<T, R, H> handler){
 		this.handler = handler;
+		this.transactionStatusPointer    = this.handler.getFirstRecord();
+		this.transactionIDPointer        = this.handler.getFirstRecord() + 1;
+		this.transactionIsolationPointer = this.handler.getFirstRecord() + 2;
 	}
 	
 	public void writeMetaData(DataOutputStream stream, TransactionHeader<H> value) throws IOException {
 		this.handler.writeMetaData(stream, value.getParent());
-		stream.writeByte(this.transactionStatus);
-		stream.writeLong(this.transactionID);
-		stream.writeByte(this.transactionIsolation);
+		stream.writeByte(value.getTransactionStatus());
+		stream.writeLong(value.getTransactionID());
+		stream.writeByte(value.getTransactionIsolation());
 	}
 
+	@SuppressWarnings("unchecked")
 	public TransactionHeader<H> readMetaData(DataInputStream stream) throws IOException {
-		this.handler.readMetaData(stream);
-		this.transactionStatus = stream.readByte();
-		this.transactionID = stream.readLong();
-		return null;
+		
+		H parent = this.handler.readMetaData(stream);
+		
+		TransactionHeader<H> result = new TransactionHeader<H>(parent);
+		result.setTransactionStatus(stream.readByte());
+		result.setTransactionID(stream.readLong());
+		result.setTransactionIsolation(stream.readByte());
+
+		ParameterizedType ptype = (ParameterizedType)this.getClass().getGenericInterfaces()[0];
+		this.type    = (Class<TransactionalEntity<T>>) ptype.getActualTypeArguments()[0];
+		this.rawType = (Class<RawTransactionEntity<R>>) ptype.getActualTypeArguments()[1];
+		
+		return result;
 	}
 
 	public void writeEOF(DataOutputStream stream) throws IOException {
@@ -56,34 +73,52 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		return new TransactionalEntity<T>(recordID, flags, entity);
 	}
 
-	public byte getTransactionStatus() {
-		return transactionStatus;
+	public void writeRaw(DataOutputStream stream, RawTransactionEntity<R> entity)
+			throws IOException {
+		stream.writeLong(entity.getRecordID());
+		stream.writeByte(entity.getFlags());
+		this.handler.writeRaw(stream, entity.getEntity());
+		
 	}
 
-	public void setTransactionStatus(byte transactionStatus) {
-		this.transactionStatus = transactionStatus;
+	public RawTransactionEntity<R> readRaw(DataInputStream stream)
+			throws IOException {
+		long recordID = stream.readLong();
+		byte flags    = stream.readByte();
+		R entity      = this.handler.readRaw(stream);
+		return new RawTransactionEntity<R>(recordID, flags, entity);
 	}
 
-	public long getTransactionID() {
-		return transactionID;
+	public int getRecordLength() {
+		return this.handler.getRecordLength() + 9;
 	}
 
-	public void setTransactionID(long transactionID) {
-		this.transactionID = transactionID;
+	public int getEOFLength() {
+		return 1;
 	}
 
-	public byte getTransactionIsolation() {
-		return transactionIsolation;
+	public int getFirstRecord() {
+		return this.handler.getFirstRecord() + 10;
 	}
 
-	public void setTransactionIsolation(byte transactionIsolation) {
-		this.transactionIsolation = transactionIsolation;
-	}
-
-	@SuppressWarnings("unchecked")
 	public Class<TransactionalEntity<T>> getType() {
-		return (Class<TransactionalEntity<T>>)((ParameterizedType)this.getClass()
-				.getGenericInterfaces()[0]).getActualTypeArguments()[0];
+		return this.type;
+	}
+
+	public Class<RawTransactionEntity<R>> getRawType() {
+		return this.rawType;
+	}
+
+	public long getTransactionStatusPointer() {
+		return transactionStatusPointer;
+	}
+
+	public long getTransactionIDPointer() {
+		return transactionIDPointer;
+	}
+
+	public long getTransactionIsolationPointer() {
+		return transactionIsolationPointer;
 	}
 
 }

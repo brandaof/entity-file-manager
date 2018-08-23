@@ -185,9 +185,9 @@ public class EntityFileTransactionUtil {
 				Long.parseLong(parts[1], Character.MAX_RADIX));
 	}
 	
-	public static <T,R> TransactionEntityFileAccess<T,R> getTransactionEntityFileAccess( 
-		EntityFileAccess<T,R> entityFile) {
-		return new TransactionEntityFileAccess<T,R>(entityFile, (byte)-1, (byte)-1);
+	public static <T,R,H> TransactionEntityFileAccess<T,R,H> getTransactionEntityFileAccess( 
+		EntityFileAccess<T,R,H> entityFile) {
+		return new TransactionEntityFileAccess<T,R,H>(entityFile, (byte)-1, (byte)-1);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -227,10 +227,10 @@ public class EntityFileTransactionUtil {
 	}
  */	
 	public static byte mergeTransactionStatus(
-			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> map) throws IOException{
+			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> map) throws IOException{
 		int result = 0;
 		
-		for(TransactionEntityFileAccess<?,?> txFile: map.values()){
+		for(TransactionEntityFileAccess<?,?,?> txFile: map.values()){
 			result = result | txFile.getTransactionStatus();
 		}
 		
@@ -238,12 +238,12 @@ public class EntityFileTransactionUtil {
 	}
 
 	public static byte getTransactionIsolation(
-			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> map
+			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> map
 			) throws TransactionException, IOException{
 		
 		byte result = -1;
 		
-		for(TransactionEntityFileAccess<?,?> txFile: map.values()){
+		for(TransactionEntityFileAccess<?,?,?> txFile: map.values()){
 			if(result == -1){
 				result = txFile.getTransactionIsolation();
 			}

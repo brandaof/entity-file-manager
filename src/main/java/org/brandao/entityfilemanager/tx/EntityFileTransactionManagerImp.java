@@ -104,7 +104,7 @@ public class EntityFileTransactionManagerImp
 		EntityFileTransaction tx = 
 			new ReadCommitedEntityFileTransaction(
 				this, this.lockProvider,
-				new HashMap<EntityFileAccess<?,?>, TransactionEntity<?,?>>(), 
+				new HashMap<EntityFileAccess<?,?,?>, TransactionEntity<?,?>>(), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED, 
 				txID, true, false, false, this.timeout);
 		
@@ -156,7 +156,7 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	public EntityFileTransaction load(
-			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> transactionFiles,
+			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
 			boolean rolledBack,	boolean commited) throws TransactionException {
 		
@@ -171,14 +171,14 @@ public class EntityFileTransactionManagerImp
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private EntityFileTransaction loadReadCommitedEntityFileTransaction(
-			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> transactionFiles,
+			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
 			boolean rolledBack,	boolean commited){
 		
-		Map<EntityFileAccess<?,?>, TransactionEntity<?,?>> tf =
-			new HashMap<EntityFileAccess<?,?>, TransactionEntity<?,?>>();
+		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> tf =
+			new HashMap<EntityFileAccess<?,?,?>, TransactionEntity<?,?>>();
 		
-		for(Entry<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> entry: 
+		for(Entry<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> entry: 
 			transactionFiles.entrySet()){
 			
 			tf.put(

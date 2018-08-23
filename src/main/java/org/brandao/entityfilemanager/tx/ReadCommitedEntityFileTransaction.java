@@ -12,7 +12,7 @@ public class ReadCommitedEntityFileTransaction
 	public ReadCommitedEntityFileTransaction(
 			EntityFileTransactionManager entityFileTransactionManager,
 			LockProvider lockProvider,
-			Map<EntityFileAccess<?, ?>, TransactionEntity<?, ?>> transactionFiles,
+			Map<EntityFileAccess<?, ?, ?>, TransactionEntity<?, ?>> transactionFiles,
 			byte status, long transactionID, boolean started,
 			boolean rolledBack, boolean commited, long timeout) {
 		super(entityFileTransactionManager, lockProvider, transactionFiles, status,
@@ -20,10 +20,10 @@ public class ReadCommitedEntityFileTransaction
 				started, rolledBack, commited, timeout);
 	}
 	
-	protected <T,R> TransactionEntity<T,R> createTransactionalEntityFile(
-			EntityFileAccess<T,R> entityFile, TransactionEntityFileAccess<T,R> txFile){
+	protected <T,R, H> TransactionEntity<T,R> createTransactionalEntityFile(
+			EntityFileAccess<T,R,H> entityFile, TransactionEntityFileAccess<T,R,H> txFile){
 		return 
-			new ReadCommitedTransactionalEntityFile<T, R>(
+			new ReadCommitedTransactionalEntityFile<T, R, H>(
 					txFile, this.lockProvider, this.timeout);
 	}
 	

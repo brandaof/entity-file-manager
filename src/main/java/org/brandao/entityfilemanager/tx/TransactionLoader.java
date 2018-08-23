@@ -26,7 +26,7 @@ public class TransactionLoader {
 		
 		Map<Long, List<TransactionFileNameMetadata>> mappedTXFMD = this.groupTransaction(txfmd);
 		
-		Map<Long, Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>>> transactionFiles =
+		Map<Long, Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>> transactionFiles =
 				this.toTransactionalEntityFile(mappedTXFMD, entityFileManager);
 		
 		return toEntityFileTransaction(transactionFiles, 
@@ -81,31 +81,31 @@ public class TransactionLoader {
 		return result;
 	}
 	
-	private Map<Long, Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>>> toTransactionalEntityFile(
+	private Map<Long, Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>> toTransactionalEntityFile(
 			Map<Long, List<TransactionFileNameMetadata>> values, 
 			EntityFileManagerConfigurer entityFileManager) throws TransactionException, IOException{
 		
-		Map<Long, Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>>> result = 
-				new HashMap<Long, Map<EntityFileAccess<?,?>,TransactionEntityFileAccess<?,?>>>();
+		Map<Long, Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>> result = 
+				new HashMap<Long, Map<EntityFileAccess<?,?,?>,TransactionEntityFileAccess<?,?,?>>>();
 		
 		for(Entry<Long, List<TransactionFileNameMetadata>> entry: values.entrySet()){
 			long txID = entry.getKey();
 			
-			Map<EntityFileAccess<?,?>,TransactionEntityFileAccess<?,?>> map = result.get(txID);
+			Map<EntityFileAccess<?,?,?>,TransactionEntityFileAccess<?,?,?>> map = result.get(txID);
 			
 			if(map == null){
-				map = new HashMap<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>>();
+				map = new HashMap<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>();
 				result.put(txID, map);
 			}
 			
 			for(TransactionFileNameMetadata tfmd: entry.getValue()){
-				EntityFileAccess<?,?> efa = entityFileManager.getEntityFile(tfmd.getName());
+				EntityFileAccess<?,?,?> efa = entityFileManager.getEntityFile(tfmd.getName());
 				
 				if(efa == null){
 					throw new TransactionException("entity file not found: " + tfmd.getName());
 				}
 
-				TransactionEntityFileAccess<?, ?> tef = EntityFileTransactionUtil
+				TransactionEntityFileAccess<?, ?, ?> tef = EntityFileTransactionUtil
 						.getTransactionEntityFileAccess(efa);
 				
 				if(tef == null || !tef.exists()){
@@ -123,18 +123,18 @@ public class TransactionLoader {
 	}
 
 	private EntityFileTransaction[] toEntityFileTransaction(
-			Map<Long, Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>>> values,
+			Map<Long, Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>> values,
 			EntityFileTransactionManagerImp transactioManager, EntityFileManagerConfigurer manager) throws IOException, TransactionException{
 
 		EntityFileTransaction[] result = new EntityFileTransaction[values.size()];
 		
 		int i = 0;
 		
-		for(Entry<Long, Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>>> entry: values.entrySet()){
+		for(Entry<Long, Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>> entry: values.entrySet()){
 			
 			long transactionID = entry.getKey();
 			
-			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> transactionFiles =
+			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles =
 					entry.getValue();
 			
 			byte transactionStatus    = this.getCurrentTransactionStatus(transactionFiles);
@@ -155,7 +155,7 @@ public class TransactionLoader {
 	}
 	
 	private byte getCurrentTransactionStatus(
-			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> map
+			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> map
 			) throws IOException, TransactionException{
 		
 		byte mergedTransactionStatus = EntityFileTransactionUtil.mergeTransactionStatus(map);
@@ -174,7 +174,7 @@ public class TransactionLoader {
 	}
 
 	private byte getTransactionIsolation(
-			Map<EntityFileAccess<?,?>, TransactionEntityFileAccess<?,?>> map
+			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> map
 			) throws IOException, TransactionException{
 		
 		return EntityFileTransactionUtil.getTransactionIsolation(map);
