@@ -1,7 +1,94 @@
 # entity-file-manager
 Permite registrar entidades em arquivos estruturados que possuem suporte transacional.
 
+Para usá-lo:
+
+1.  Criar EntityFileDataHandler;
+2.  Crair o header do arquivo;
+3.  Instanciar alguma implementação do EntityFileAccess;
+4.  Iniciar o EntityFileManager e registrar o EntityFileAccess.
+
+
 Exemplo:
+
+### EntityFileDataHandler
+
+```
+public class LongEntityFileAccessHandler 
+	implements EntityFileDataHandler<Long, byte[], LongEntityFileAccessHeader>{
+
+    public void writeMetaData(DataOutputStream stream,
+		LongEntityFileAccessHeader value) throws IOException {
+	}
+	
+	public LongEntityFileAccessHeader readMetaData(DataInputStream srteam)
+			throws IOException {
+		return new LongEntityFileAccessHeader();
+	}
+	
+	public void writeEOF(DataOutputStream stream) throws IOException {
+		stream.writeByte((byte)-1);
+	}
+	
+	public void write(DataOutputStream stream, Long entity) throws IOException {
+		stream.writeLong(entity == null? 0L : entity);
+	}
+	
+	public void writeRaw(DataOutputStream stream, byte[] entity)
+			throws IOException {
+		stream.write(entity);
+	}
+	
+	public Long read(DataInputStream stream) throws IOException {
+		return stream.readLong();
+	}
+	
+	public byte[] readRaw(DataInputStream stream) throws IOException {
+		byte[] b = new byte[8];
+		stream.read(b);
+		return b;
+	}
+	
+	public int getRecordLength() {
+		return 8;
+	}
+	
+	public int getEOFLength() {
+		return 1;
+	}
+	
+	public int getFirstRecord() {
+		return 0;
+	}
+	
+	public Class<Long> getType() {
+		return Long.class;
+	}
+	
+	public Class<byte[]> getRawType() {
+		return byte[].class;
+	}
+	
+}
+```
+### Header
+
+```
+public static class LongEntityFileAccessHeader{
+}
+```
+
+### Instanciando o EntityFileAccess
+
+```
+File longFile = ...;
+EntityFileAccess<Long, byte[], LongEntityFileAccessHeader> longEntityFileAccess =
+    new SimpleEntityFileAccess<Long, byte[], LongEntityFileAccessHeader>(
+        longFile, new LongEntityFileAccessHandler())
+
+``` 
+
+### Iniciando o EntityFileManager
 
 ```
 File path   = new File("./data");
@@ -14,14 +101,14 @@ LockProvider lp = new LockProviderImp();
 EntityFileTransactionManagerConfigurer tm = new EntityFileTransactionManagerImp();
 
 tm.setLockProvider(lp);
-tm.setTimeout(EntityFileTransactionManagerImp.DEFAULY_TIME_OUT);
+tm.setTimeout(EntityFileTransactionManagerImp.DEFAULT_TIMEOUT);
 tm.setTransactionPath(txPath);
 tm.setEntityFileManagerConfigurer(efm);
 
 efm.setEntityFileTransactionManager(tm);
 efm.setLockProvider(lp);
 efm.setPath(path);
-efm.register("long", new LongEntityFileAccess(new File(path, "long")));
+efm.register("long", longEntityFileAccess);
 efm.init();
 
 
