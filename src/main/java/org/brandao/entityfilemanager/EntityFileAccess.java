@@ -10,6 +10,8 @@ public interface EntityFileAccess<T, R, H> {
 	
 	Class<R> getRawType();
 	
+	H getMetadata();
+	
 	EntityFileDataHandler<T,R,H> getEntityFileDataHandler();
 	
 	void setBatchLength(int value);

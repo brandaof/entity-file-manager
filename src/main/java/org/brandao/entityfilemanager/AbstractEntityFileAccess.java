@@ -359,4 +359,8 @@ public class AbstractEntityFileAccess<T, R, H>
 		return this.dataHandler.getRawType();
 	}
 
+	public H getMetadata() {
+		return this.metadata;
+	}
+
 }

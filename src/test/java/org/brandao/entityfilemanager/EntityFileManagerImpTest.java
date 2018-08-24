@@ -15,7 +15,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	private EntityFileManagerConfigurer efm;
 	
 	public void setUp(){
-		File path   = new File("./");
+		File path   = new File("./data");
 		File txPath = new File(path, "tx");
 		
 		EntityFileManagerConfigurer efm = new EntityFileManagerImp();
@@ -32,7 +32,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		efm.setEntityFileTransactionManager(tm);
 		efm.setLockProvider(lp);
 		efm.setPath(path);
-		
+		efm.register("long", new LongEntityFileAccess(new File(path, "long")));
 		efm.init();
 		
 		this.efm = efm;

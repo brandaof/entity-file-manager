@@ -10,7 +10,7 @@ public class ReadCommitedEntityFileTransaction
 	extends AbstractEntityFileTransaction{
 
 	public ReadCommitedEntityFileTransaction(
-			EntityFileTransactionManager entityFileTransactionManager,
+			EntityFileTransactionManagerConfigurer entityFileTransactionManager,
 			LockProvider lockProvider,
 			Map<EntityFileAccess<?, ?, ?>, TransactionEntity<?, ?>> transactionFiles,
 			byte status, long transactionID, boolean started,

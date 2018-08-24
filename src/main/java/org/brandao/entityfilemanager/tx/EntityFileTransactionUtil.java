@@ -167,12 +167,25 @@ public class EntityFileTransactionUtil {
 		
 		return result;
 	}
+
+	public static <T,R,H> TransactionEntityFileAccess<T,R,H> getTransactionEntityFileAccess( 
+		EntityFileAccess<T,R,H> entityFile, long transactionID, byte transactionIsolation, 
+		EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer) {
+		File transactionFile = 
+				getTransactionFile(
+						entityFile.getAbsoluteFile(), 
+						transactionID, 
+						entityFileTransactionManagerConfigurer);
+		return new TransactionEntityFileAccess<T,R,H>(entityFile, transactionFile, transactionID, transactionIsolation);
+	}
 	
-	public static File getTransactionFile(File file, long transactionID){
+	
+	public static File getTransactionFile(File file, long transactionID, 
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer){
 		String name = file.getName();
 		String[] parts = name.split("\\.");
 		return new File(
-			file.getParentFile(), 
+				entityFileTransactionManagerConfigurer.getTransactionPath(), 
 			parts[0] + "-" + Long.toString(transactionID, Character.MAX_RADIX) + ".txa"
 		);
 	}
@@ -184,7 +197,7 @@ public class EntityFileTransactionUtil {
 		return new TransactionFileNameMetadata(nameParts[0], 
 				Long.parseLong(parts[1], Character.MAX_RADIX), file);
 	}
-	
+
 	public static <T,R,H> TransactionEntityFileAccess<T,R,H> getTransactionEntityFileAccess( 
 		EntityFileAccess<T,R,H> entityFile, TransactionFileNameMetadata tfmd) {
 		return new TransactionEntityFileAccess<T,R,H>(entityFile, tfmd.getFile(), (byte)-1, (byte)-1);

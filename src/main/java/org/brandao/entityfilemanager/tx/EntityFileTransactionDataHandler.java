@@ -29,11 +29,19 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		this.transactionIsolationPointer = this.handler.getFirstRecord() + 2;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void writeMetaData(DataOutputStream stream, TransactionHeader<H> value) throws IOException {
 		this.handler.writeMetaData(stream, value.getParent());
 		stream.writeByte(value.getTransactionStatus());
 		stream.writeLong(value.getTransactionID());
 		stream.writeByte(value.getTransactionIsolation());
+
+		/*
+		ParameterizedType ptype = (ParameterizedType)this.getClass().getGenericInterfaces()[0];
+		this.type    = (Class<TransactionalEntity<T>>) ptype.getActualTypeArguments()[0];
+		this.rawType = (Class<RawTransactionEntity<R>>) ptype.getActualTypeArguments()[1];
+		*/
+		
 	}
 
 	@SuppressWarnings("unchecked")
@@ -46,9 +54,11 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		result.setTransactionID(stream.readLong());
 		result.setTransactionIsolation(stream.readByte());
 
+		/*
 		ParameterizedType ptype = (ParameterizedType)this.getClass().getGenericInterfaces()[0];
 		this.type    = (Class<TransactionalEntity<T>>) ptype.getActualTypeArguments()[0];
 		this.rawType = (Class<RawTransactionEntity<R>>) ptype.getActualTypeArguments()[1];
+		*/
 		
 		return result;
 	}

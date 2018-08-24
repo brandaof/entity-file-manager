@@ -12,18 +12,13 @@ public class TransactionEntityFileAccess<T, R, H>
 	private EntityFileAccess<T, R, H> parent;
 	
 	private EntityFileTransactionDataHandler<T,R,H> transactionDataHandler;
-
-	
-	public TransactionEntityFileAccess(EntityFileAccess<T, R, H> e, long transactionID, 
-			byte transactionIsolation){
-		this(e, EntityFileTransactionUtil.getTransactionFile(e.getAbsoluteFile(), transactionID), transactionID, transactionIsolation);
-	}
 	
 	public TransactionEntityFileAccess(EntityFileAccess<T, R, H> e, File file, long transactionID, 
 			byte transactionIsolation){
 		super(file, new EntityFileTransactionDataHandler<T,R,H>(e.getEntityFileDataHandler()));
 		this.parent = e;
 		this.transactionDataHandler = (EntityFileTransactionDataHandler<T,R,H>)super.dataHandler;
+		this.metadata = new TransactionHeader<H>(e.getMetadata());
 	}
 
 	public void setTransactionStatus(byte value) throws IOException{

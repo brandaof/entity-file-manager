@@ -9,7 +9,7 @@ import org.brandao.entityfilemanager.LockProvider;
 public abstract class AbstractEntityFileTransaction 
 	implements EntityFileTransaction{
 
-	protected EntityFileTransactionManager entityFileTransactionManager;
+	protected EntityFileTransactionManagerConfigurer entityFileTransactionManager;
 	
 	protected Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles;
 	
@@ -34,7 +34,7 @@ public abstract class AbstractEntityFileTransaction
 	protected byte transactionIsolation;
 	
 	public AbstractEntityFileTransaction(
-			EntityFileTransactionManager entityFileTransactionManager,
+			EntityFileTransactionManagerConfigurer entityFileTransactionManager,
 			LockProvider lockProvider,
 			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, boolean rolledBack, 
@@ -147,7 +147,7 @@ public abstract class AbstractEntityFileTransaction
 			this.status = EntityFileTransaction.TRANSACTION_STARTED_COMMIT;
 			
 			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.rollback();
+				txFile.commit();
 			}
 			
 			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
@@ -255,8 +255,12 @@ public abstract class AbstractEntityFileTransaction
 			}
 			
 			TransactionEntityFileAccess<T,R,H> txFile = 
-				new TransactionEntityFileAccess<T,R,H>(entityFile, this.transactionID, 
-						this.transactionIsolation);
+					EntityFileTransactionUtil
+						.getTransactionEntityFileAccess(
+								entityFile, 
+								transactionID, 
+								transactionIsolation, this.entityFileTransactionManager);
+			
 			txFile.createNewFile();
 			
 			tx = this.createTransactionalEntityFile(entityFile, txFile);
