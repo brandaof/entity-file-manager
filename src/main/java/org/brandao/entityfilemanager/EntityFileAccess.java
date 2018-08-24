@@ -58,4 +58,6 @@ public interface EntityFileAccess<T, R, H> {
 	
 	void close() throws IOException;
 	
+	void delete() throws IOException;
+	
 }

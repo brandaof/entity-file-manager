@@ -153,10 +153,18 @@ public abstract class AbstractEntityFileTransaction
 			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
 				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
 			}
-			
+
 			this.status     = EntityFileTransaction.TRANSACTION_COMMITED;
 			this.commited   = true;
 			this.rolledBack = false;
+
+			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
+				txFile.close();
+			}
+
+			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
+				txFile.delete();
+			}
 			
 		}
 		catch(Throwable e){

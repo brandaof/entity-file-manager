@@ -582,5 +582,13 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 	public byte getTransactionIsolation() throws IOException {
 		return EntityFileTransaction.TRANSACTION_READ_COMMITED;
 	}
+
+	public void close() throws IOException {
+		this.tx.close();
+	}
+
+	public void delete() throws IOException {
+		this.tx.delete();
+	}
 	
 }

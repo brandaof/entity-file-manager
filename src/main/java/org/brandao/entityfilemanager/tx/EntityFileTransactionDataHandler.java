@@ -1,7 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
 
 import org.brandao.entityfilemanager.DataInputStream;
 import org.brandao.entityfilemanager.DataOutputStream;
@@ -22,6 +21,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 	
 	private final long transactionIsolationPointer;
 	
+	@SuppressWarnings("unchecked")
 	public EntityFileTransactionDataHandler(EntityFileDataHandler<T, R, H> handler){
 		this.handler = handler;
 		this.transactionStatusPointer    = this.handler.getFirstRecord();

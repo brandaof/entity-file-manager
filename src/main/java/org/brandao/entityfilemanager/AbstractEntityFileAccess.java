@@ -228,7 +228,10 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.fileAccess.write(data, 0, data.length);
 		
 		this.offset += entities.length;
-		this.length += eof + 1;
+		
+		if(eof > 0){
+			this.length += eof;
+		}
 		
 	}
 	
@@ -361,6 +364,10 @@ public class AbstractEntityFileAccess<T, R, H>
 
 	public H getMetadata() {
 		return this.metadata;
+	}
+
+	public void delete() throws IOException {
+		this.file.delete();
 	}
 
 }

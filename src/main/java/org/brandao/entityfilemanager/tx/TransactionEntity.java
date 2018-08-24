@@ -19,4 +19,8 @@ public interface TransactionEntity<T, R>
 	
 	void rollback() throws TransactionException;
 
+	void close() throws IOException;
+	
+	void delete() throws IOException;
+	
 }

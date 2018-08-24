@@ -139,6 +139,10 @@ public class FileAccess {
 		this.randomAccessFile.close();
 	}
 	
+	public void delete(){
+		this.file.delete();
+	}
+	
 	public RandomAccessFile getRandomAccessFile(){
 		return this.randomAccessFile;
 	}
