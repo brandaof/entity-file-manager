@@ -34,7 +34,11 @@ public class EntityFileManagerImpTest extends TestCase{
 		efm.setPath(path);
 		efm.register("long", new LongEntityFileAccess(new File(path, "long")));
 		efm.register("string", new StringEntityFileAccess(new File(path, "string")));
+		
 		efm.init();
+		
+		efm.truncate("long");
+		efm.truncate("string");
 		
 		this.efm = efm;
 	}

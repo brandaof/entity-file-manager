@@ -313,19 +313,20 @@ public class AbstractEntityFileAccess<T, R, H>
 		return this.length;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void setLength(long value) throws IOException {
 		
-		long op = value - this.length;
 		
-		if(op > 0){
+		if(value > this.length){
+			int op = (int)(value - this.length);
 			this.offset = this.length;
-			this.batchWrite(null, false);
+			T[] array = (T[])Array.newInstance(this.dataHandler.getType(), op);
+			this.batchWrite(array, false);
 		}
 		else{
-			op = op*-1;
 			long fileLength = 
 					this.dataHandler.getFirstRecord() + 
-					this.dataHandler.getRecordLength()*op + 
+					this.dataHandler.getRecordLength()*value + 
 					this.dataHandler.getEOFLength();
 			
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getEOFLength());
@@ -336,9 +337,11 @@ public class AbstractEntityFileAccess<T, R, H>
 			this.fileAccess.setLength(fileLength);
 			this.fileAccess.seek(this.fileAccess.length() - this.dataHandler.getEOFLength());
 			this.fileAccess.write(stream.toByteArray());
+			
 		}
 		
-		this.length = op;
+		this.length = value;
+		
 	}
 	
 	public void flush() throws IOException {

@@ -20,7 +20,7 @@ public interface EntityFileManagerConfigurer
 	File getPath();
 
 	void register(String name, EntityFileAccess<?,?,?> entityFile) throws EntityFileManagerException;
-	
+
 	void unregister(String name) throws EntityFileManagerException;
 	
 	void truncate(String name) throws EntityFileManagerException;
