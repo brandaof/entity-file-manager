@@ -392,5 +392,6 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.lock   = new ReentrantReadWriteLock();
 		
 		this.open();
-    }	
+    }
+    
 }

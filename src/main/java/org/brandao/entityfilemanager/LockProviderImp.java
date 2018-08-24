@@ -9,6 +9,8 @@ import java.util.concurrent.TimeUnit;
 public class LockProviderImp 
 	implements LockProvider{
 
+	private static final long serialVersionUID = 7756665738231339801L;
+	
 	private ConcurrentMap<Object, LockObject> entityFileAccessLock;
 	
 	public LockProviderImp(){

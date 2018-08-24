@@ -1,8 +1,10 @@
 package org.brandao.entityfilemanager;
 
+import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 
-public interface LockProvider {
+public interface LockProvider 
+	extends Serializable{
 
 	void lock(EntityFileAccess<?, ?, ?> entityFile) throws LockException;
 

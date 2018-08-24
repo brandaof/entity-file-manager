@@ -1,6 +1,8 @@
 package org.brandao.entityfilemanager.tx.readcommited;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
@@ -590,5 +592,22 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 	public void delete() throws IOException {
 		this.tx.delete();
 	}
+
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		stream.writeObject(data);
+		stream.writeObject(tx);
+		stream.writeObject(pointerManager);
+		stream.writeInt(batchOperationLength);
+		stream.writeObject(pointerMap);
+    }
+
+    @SuppressWarnings("unchecked")
+	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+    	data                 = (EntityFileAccess<T, R, H>) stream.readObject();
+    	tx                   = (TransactionEntityFileAccess<T, R, H>) stream.readObject();
+    	pointerManager       = (PointerManager<T, R, H>) stream.readObject();
+    	batchOperationLength = stream.readInt();
+    	pointerMap           = (Map<Long, Long>) stream.readObject();
+    }
 	
 }
