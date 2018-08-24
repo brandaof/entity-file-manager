@@ -1,7 +1,7 @@
 # entity-file-manager
 Permite registrar entidades em arquivos estruturados que possuem suporte transacional.
 
-Example:
+Exemplo:
 
 ```
 File path   = new File("./data");
