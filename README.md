@@ -1,10 +1,10 @@
 # Entity file manager
 Permite registrar entidades em arquivos estruturados que possuem suporte transacional.
 
-Para usá-lo:
+Como usar:
 
-1.  Criar EntityFileDataHandler;
-2.  Crair o header do arquivo;
+1.  Criar a implementação do EntityFileDataHandler;
+2.  Criar o header do arquivo;
 3.  Instanciar alguma implementação do EntityFileAccess;
 4.  Iniciar o EntityFileManager e registrar o EntityFileAccess.
 
