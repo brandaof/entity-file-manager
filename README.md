@@ -1,5 +1,5 @@
 # entity-file-manager
-Persists entities in structured files with transactional support.
+Permite registrar entidades em arquivos estruturados que possuem suporte transacional.
 
 Example:
 

@@ -47,7 +47,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		this.efm.destroy();
 	}
 	
-	public void testCommitOneFile() throws TransactionException, IOException{
+	public void testSimpleCommit() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
 		
