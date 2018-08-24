@@ -424,7 +424,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		this.tx.batchWrite(e);
 		
 		this.data.seek(id);
-		this.data.batchWrite(null);
+		this.data.batchWrite((T[])Array.newInstance(entities.getClass().getComponentType(), entities.length));
 		
 	}
 	

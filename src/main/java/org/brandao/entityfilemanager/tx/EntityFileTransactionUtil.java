@@ -284,8 +284,12 @@ public class EntityFileTransactionUtil {
 		
 		int max = ids.length;
 
-		if(off >= max){
-			return off;
+		//if(off >= max){
+		//	return off;
+		//}
+
+		if(max - off <= 1){
+			return max;
 		}
 		
 		if(ids[off] + 1 != ids[++off]){

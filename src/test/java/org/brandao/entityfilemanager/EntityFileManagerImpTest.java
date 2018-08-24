@@ -47,19 +47,41 @@ public class EntityFileManagerImpTest extends TestCase{
 		this.efm.destroy();
 	}
 	
-	public void testSimpleCommit() throws TransactionException, IOException{
+	public void testSimpleInsert() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
 		
 		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			ef.insert(0L);
+			ef.insert(198563254512664L);
+			assertEquals(198563254512664L, (long)ef.select(0));
+		}
+		finally{
+			tx.commit();
+		}
+		
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			assertEquals(198563254512664L, (long)ef.select(0));
+		}
+		finally{
+			tx.commit();
+		}
+		
+	}
+
+	public void testMultipleInsert() throws TransactionException, IOException{
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 			ef.insert(198563254512664L);
 			ef.insert(152326598598562L);
 			
-			assertEquals(0L, (long)ef.select(0));
-			assertEquals(198563254512664L, (long)ef.select(1));
-			assertEquals(152326598598562L, (long)ef.select(2));
+			assertEquals(198563254512664L, (long)ef.select(0));
+			assertEquals(152326598598562L, (long)ef.select(1));
 			
 		}
 		finally{
@@ -69,9 +91,159 @@ public class EntityFileManagerImpTest extends TestCase{
 		tx = efm.beginTransaction();
 		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			assertEquals(0L, (long)ef.select(0));
-			assertEquals(198563254512664L, (long)ef.select(1));
-			assertEquals(152326598598562L, (long)ef.select(2));
+			assertEquals(198563254512664L, (long)ef.select(0));
+			assertEquals(152326598598562L, (long)ef.select(1));
+		}
+		finally{
+			tx.commit();
+		}
+		
+	}
+
+	public void testInsertAndUpdate() throws TransactionException, IOException{
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef.insert(198563254512664L);
+			ef.insert(152326598598562L);
+			
+			assertEquals(198563254512664L, (long)ef.select(0));
+			assertEquals(152326598598562L, (long)ef.select(1));
+			
+			ef.update(1, 0L);
+			
+			assertEquals(0L, (long)ef.select(1));
+		}
+		finally{
+			tx.commit();
+		}
+		
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			assertEquals(198563254512664L, (long)ef.select(0));
+			assertEquals(0L, (long)ef.select(1));
+		}
+		finally{
+			tx.commit();
+		}
+		
+	}
+
+	public void testBulkInsert() throws TransactionException, IOException{
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef.insert(new Long[]{new Long(1),new Long(2),new Long(3),new Long(4),new Long(5),new Long(6)});
+
+			assertEquals(1L, (long)ef.select(0));
+			assertEquals(2L, (long)ef.select(1));
+			assertEquals(3L, (long)ef.select(2));
+			assertEquals(4L, (long)ef.select(3));
+			assertEquals(5L, (long)ef.select(4));
+			assertEquals(6L, (long)ef.select(5));
+		}
+		finally{
+			tx.commit();
+		}
+		
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			assertEquals(1L, (long)ef.select(0));
+			assertEquals(2L, (long)ef.select(1));
+			assertEquals(3L, (long)ef.select(2));
+			assertEquals(4L, (long)ef.select(3));
+			assertEquals(5L, (long)ef.select(4));
+			assertEquals(6L, (long)ef.select(5));
+		}
+		finally{
+			tx.commit();
+		}
+		
+	}
+
+	public void testBulkUpdate() throws TransactionException, IOException{
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			Long[] values = new Long[]{new Long(1),new Long(2),new Long(3),new Long(4),new Long(5),new Long(6)};
+			ef.insert(values);
+
+			assertEquals(1L, (long)ef.select(0));
+			assertEquals(2L, (long)ef.select(1));
+			assertEquals(3L, (long)ef.select(2));
+			assertEquals(4L, (long)ef.select(3));
+			assertEquals(5L, (long)ef.select(4));
+			assertEquals(6L, (long)ef.select(5));
+		}
+		finally{
+			tx.commit();
+		}
+
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef.update(
+				new long[]{0,3,5}, 
+				new Long[]{new Long(11),new Long(12),new Long(13)});
+			assertEquals(11L, (long)ef.select(0));
+			assertEquals(2L, (long)ef.select(1));
+			assertEquals(3L, (long)ef.select(2));
+			assertEquals(12L, (long)ef.select(3));
+			assertEquals(5L, (long)ef.select(4));
+			assertEquals(13L, (long)ef.select(5));
+		}
+		finally{
+			tx.commit();
+		}
+		
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			assertEquals(11L, (long)ef.select(0));
+			assertEquals(2L, (long)ef.select(1));
+			assertEquals(3L, (long)ef.select(2));
+			assertEquals(12L, (long)ef.select(3));
+			assertEquals(5L, (long)ef.select(4));
+			assertEquals(13L, (long)ef.select(5));
+		}
+		finally{
+			tx.commit();
+		}
+		
+	}
+	
+	public void testConcurrentUpdate() throws TransactionException, IOException{
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef.insert(152326598598562L);
+			
+			assertEquals(198563254512664L, (long)ef.select(0));
+			assertEquals(152326598598562L, (long)ef.select(1));
+			
+			ef.update(1, 0L);
+			
+			assertEquals(0L, (long)ef.select(1));
+		}
+		finally{
+			tx.commit();
+		}
+		
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			assertEquals(198563254512664L, (long)ef.select(0));
+			assertEquals(0L, (long)ef.select(1));
 		}
 		finally{
 			tx.commit();
