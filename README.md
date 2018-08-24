@@ -1,4 +1,4 @@
-# entity-file-manager
+# Entity file manager
 Permite registrar entidades em arquivos estruturados que possuem suporte transacional.
 
 Para usá-lo:
