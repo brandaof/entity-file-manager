@@ -5,6 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Array;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -32,7 +34,6 @@ public class AbstractEntityFileAccess<T, R, H>
 	public AbstractEntityFileAccess(File file, EntityFileDataHandler<T, R, H> dataHandler){
 		this.file        = file;
 		this.offset      = 0;
-		this.lock        = new ReentrantReadWriteLock();
 		this.batchLength = 1000;
 		this.dataHandler = dataHandler;
 	}
@@ -94,6 +95,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		if(!file.exists())
 			throw new FileNotFoundException();
 		
+		this.lock       = new ReentrantReadWriteLock();
 		this.fileAccess = new FileAccess(this.file, new RandomAccessFile(this.file, "rw"));
 		this.readHeader();
 		this.fileAccess.seek(this.dataHandler.getFirstRecord());
@@ -370,4 +372,20 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.file.delete();
 	}
 
+	private void writeObject(ObjectOutputStream stream) throws IOException {
+		stream.writeObject(metadata);
+		stream.writeUTF(file.getName());
+		stream.writeInt(batchLength);
+		stream.writeObject(dataHandler);
+    }
+
+    @SuppressWarnings("unchecked")
+	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+    	metadata    = (H) stream.readObject();
+		file        = new File(stream.readUTF());
+		batchLength = stream.readInt();
+		dataHandler = (EntityFileDataHandler<T, R, H>) stream.readObject();
+		
+		this.open();
+    }	
 }

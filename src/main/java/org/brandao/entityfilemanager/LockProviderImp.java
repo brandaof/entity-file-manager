@@ -80,7 +80,7 @@ public class LockProviderImp
 		LockObject newLockObject = new LockObject();
 		newLockObject.setLocks(new LinkedBlockingQueue<Object>());
 		newLockObject.setCurrentLock(object);
-		
+
 		Object lock = new Object();
 		LockObject lockObject;
 		
