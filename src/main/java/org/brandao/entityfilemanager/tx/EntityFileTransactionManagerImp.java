@@ -20,7 +20,7 @@ public class EntityFileTransactionManagerImp
 
 	public static final String TRANSACTION_PATH = "/tx";
 	
-	public static final long DEFAULY_TIME_OUT = 5*60*1000;
+	public static final long DEFAULT_TIMEOUT = 5*60*1000;
 	
 	private long transactionIDCounter;
 	

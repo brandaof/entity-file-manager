@@ -25,7 +25,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		EntityFileTransactionManagerConfigurer tm = new EntityFileTransactionManagerImp();
 		
 		tm.setLockProvider(lp);
-		tm.setTimeout(EntityFileTransactionManagerImp.DEFAULY_TIME_OUT);
+		tm.setTimeout(EntityFileTransactionManagerImp.DEFAULT_TIMEOUT);
 		tm.setTransactionPath(txPath);
 		tm.setEntityFileManagerConfigurer(efm);
 		
