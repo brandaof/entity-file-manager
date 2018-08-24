@@ -33,6 +33,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		efm.setLockProvider(lp);
 		efm.setPath(path);
 		efm.register("long", new LongEntityFileAccess(new File(path, "long")));
+		efm.register("string", new StringEntityFileAccess(new File(path, "string")));
 		efm.init();
 		
 		this.efm = efm;

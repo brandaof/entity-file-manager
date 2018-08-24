@@ -36,6 +36,8 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.offset      = 0;
 		this.batchLength = 1000;
 		this.dataHandler = dataHandler;
+		this.lock        = new ReentrantReadWriteLock();
+		
 	}
 	
 	public EntityFileDataHandler<T, R, H> getEntityFileDataHandler() {
@@ -95,7 +97,6 @@ public class AbstractEntityFileAccess<T, R, H>
 		if(!file.exists())
 			throw new FileNotFoundException();
 		
-		this.lock       = new ReentrantReadWriteLock();
 		this.fileAccess = new FileAccess(this.file, new RandomAccessFile(this.file, "rw"));
 		this.readHeader();
 		this.fileAccess.seek(this.dataHandler.getFirstRecord());
@@ -385,6 +386,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		file        = new File(stream.readUTF());
 		batchLength = stream.readInt();
 		dataHandler = (EntityFileDataHandler<T, R, H>) stream.readObject();
+		this.lock   = new ReentrantReadWriteLock();
 		
 		this.open();
     }	
