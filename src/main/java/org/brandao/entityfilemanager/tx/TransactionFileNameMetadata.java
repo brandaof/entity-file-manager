@@ -1,15 +1,19 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.File;
+
 public class TransactionFileNameMetadata {
 	
 	private String name;
 	
 	private long transactionID;
 
-	public TransactionFileNameMetadata(String name, long transactionID) {
-		super();
+	private File file;
+	
+	public TransactionFileNameMetadata(String name, long transactionID, File file) {
 		this.name = name;
 		this.transactionID = transactionID;
+		this.file = file;
 	}
 
 	public String getName() {
@@ -26,6 +30,14 @@ public class TransactionFileNameMetadata {
 
 	public void setTransactionID(long transactionID) {
 		this.transactionID = transactionID;
+	}
+
+	public File getFile() {
+		return file;
+	}
+
+	public void setFile(File file) {
+		this.file = file;
 	}
 
 }

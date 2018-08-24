@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
@@ -11,14 +12,16 @@ public class TransactionEntityFileAccess<T, R, H>
 	private EntityFileAccess<T, R, H> parent;
 	
 	private EntityFileTransactionDataHandler<T,R,H> transactionDataHandler;
+
 	
 	public TransactionEntityFileAccess(EntityFileAccess<T, R, H> e, long transactionID, 
 			byte transactionIsolation){
-		super(
-			EntityFileTransactionUtil.getTransactionFile(e.getAbsoluteFile(), transactionID), 
-			new EntityFileTransactionDataHandler<T,R,H>(e.getEntityFileDataHandler())
-		);
-
+		this(e, EntityFileTransactionUtil.getTransactionFile(e.getAbsoluteFile(), transactionID), transactionID, transactionIsolation);
+	}
+	
+	public TransactionEntityFileAccess(EntityFileAccess<T, R, H> e, File file, long transactionID, 
+			byte transactionIsolation){
+		super(file, new EntityFileTransactionDataHandler<T,R,H>(e.getEntityFileDataHandler()));
 		this.parent = e;
 		this.transactionDataHandler = (EntityFileTransactionDataHandler<T,R,H>)super.dataHandler;
 	}

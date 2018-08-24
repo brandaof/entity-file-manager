@@ -182,12 +182,12 @@ public class EntityFileTransactionUtil {
 		String[] parts = name.split("\\.");
 		String[] nameParts = parts[0].split("\\-");
 		return new TransactionFileNameMetadata(nameParts[0], 
-				Long.parseLong(parts[1], Character.MAX_RADIX));
+				Long.parseLong(parts[1], Character.MAX_RADIX), file);
 	}
 	
 	public static <T,R,H> TransactionEntityFileAccess<T,R,H> getTransactionEntityFileAccess( 
-		EntityFileAccess<T,R,H> entityFile) {
-		return new TransactionEntityFileAccess<T,R,H>(entityFile, (byte)-1, (byte)-1);
+		EntityFileAccess<T,R,H> entityFile, TransactionFileNameMetadata tfmd) {
+		return new TransactionEntityFileAccess<T,R,H>(entityFile, tfmd.getFile(), (byte)-1, (byte)-1);
 	}
 	
 	@SuppressWarnings("unchecked")
