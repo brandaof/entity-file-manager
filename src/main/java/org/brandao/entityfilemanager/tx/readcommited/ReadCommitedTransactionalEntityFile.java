@@ -324,6 +324,8 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				
 				RawTransactionEntity<R>[] ops = 
 					this.tx.batchReadRaw(this.batchOperationLength);
+
+				current += ops.length;
 				
 				RawTransactionEntity<R>[][] map = 
 					EntityFileTransactionUtil.mapOperations(ops);
@@ -337,7 +339,6 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				ops = map[TransactionalEntity.DELETE_RECORD];
 				CommitOperations.delete(ops, data);
 
-				current += ops.length;
 			}
 		}
 		catch(Throwable e){

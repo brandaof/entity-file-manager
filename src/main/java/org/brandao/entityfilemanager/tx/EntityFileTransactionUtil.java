@@ -114,7 +114,7 @@ public class EntityFileTransactionUtil {
 			}
 			
 			a[c]          = i;
-			count[opType] = c++;
+			count[opType] = ++c;
 		}
 		
 		for(int i=0;i<OP_TYPE_FILTER;i++){
@@ -147,7 +147,7 @@ public class EntityFileTransactionUtil {
 			}
 			
 			a[c]          = op;
-			count[opType] = c++;
+			count[opType] = ++c;
 		}
 		
 		result[TransactionalEntity.NEW_RECORD] = 
@@ -283,16 +283,20 @@ public class EntityFileTransactionUtil {
 	public static int getLastSequence(long[] ids, int off){
 		
 		int max = ids.length;
-		
-		if(off >= max || (ids[off] + 1 != (ids[off++]))){
-			return off + 1;
+
+		if(off >= max){
+			return off;
 		}
 		
-		int end = ++off;
+		if(ids[off] + 1 != ids[++off]){
+			return off;
+		}
 		
-		while(end < max && (ids[end] + 1) == ids[++end]);
+		max--;
 		
-		return off;
+		while(off < max && (ids[off] + 1) == ids[++off]);
+		
+		return off + 1;
 	}
 
 	@Deprecated

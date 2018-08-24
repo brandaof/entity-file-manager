@@ -27,24 +27,17 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		this.transactionStatusPointer    = this.handler.getFirstRecord();
 		this.transactionIDPointer        = this.handler.getFirstRecord() + 1;
 		this.transactionIsolationPointer = this.handler.getFirstRecord() + 2;
+		this.type = (Class<TransactionalEntity<T>>)new TransactionalEntity<T>(0,(byte)0,null).getClass();
+		this.rawType = (Class<RawTransactionEntity<R>>)new RawTransactionEntity<R>(0,(byte)0,null).getClass();
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void writeMetaData(DataOutputStream stream, TransactionHeader<H> value) throws IOException {
 		this.handler.writeMetaData(stream, value.getParent());
 		stream.writeByte(value.getTransactionStatus());
 		stream.writeLong(value.getTransactionID());
 		stream.writeByte(value.getTransactionIsolation());
-
-		/*
-		ParameterizedType ptype = (ParameterizedType)this.getClass().getGenericInterfaces()[0];
-		this.type    = (Class<TransactionalEntity<T>>) ptype.getActualTypeArguments()[0];
-		this.rawType = (Class<RawTransactionEntity<R>>) ptype.getActualTypeArguments()[1];
-		*/
-		
 	}
 
-	@SuppressWarnings("unchecked")
 	public TransactionHeader<H> readMetaData(DataInputStream stream) throws IOException {
 		
 		H parent = this.handler.readMetaData(stream);
@@ -53,12 +46,6 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		result.setTransactionStatus(stream.readByte());
 		result.setTransactionID(stream.readLong());
 		result.setTransactionIsolation(stream.readByte());
-
-		/*
-		ParameterizedType ptype = (ParameterizedType)this.getClass().getGenericInterfaces()[0];
-		this.type    = (Class<TransactionalEntity<T>>) ptype.getActualTypeArguments()[0];
-		this.rawType = (Class<RawTransactionEntity<R>>) ptype.getActualTypeArguments()[1];
-		*/
 		
 		return result;
 	}

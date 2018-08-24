@@ -1,8 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
-import java.util.Comparator;
-
-public class RawTransactionEntity<R> implements Comparator<RawTransactionEntity<R>>{
+public class RawTransactionEntity<R> implements Comparable<RawTransactionEntity<R>>{
 
 	private long recordID;
 	
@@ -42,6 +40,10 @@ public class RawTransactionEntity<R> implements Comparator<RawTransactionEntity<
 
 	public int compare(RawTransactionEntity<R> o1, RawTransactionEntity<R> o2) {
 		return o1.recordID >= o2.recordID? 1 : -1;
+	}
+
+	public int compareTo(RawTransactionEntity<R> o) {
+		return this.recordID >= o.recordID? 1 : -1;
 	}
 	
 }
