@@ -46,6 +46,7 @@ public abstract class AbstractEntityFileTransaction
 		this.lockProvider                 = lockProvider;
 		this.rolledBack                   = rolledBack;
 		this.commited                     = commited;
+		this.timeout                      = timeout;
 		this.started                      = started;
 		this.status                       = status;
 		this.dirty                        = false;

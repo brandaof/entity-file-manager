@@ -86,7 +86,7 @@ public class LockProviderImp
 		Object lock = new Object();
 		LockObject lockObject;
 		
-		synchronized (this) {
+		synchronized(this) {
 			lockObject = 
 					this.entityFileAccessLock.putIfAbsent(
 							object, 
@@ -124,17 +124,19 @@ public class LockProviderImp
 		Object lock = new Object();
 		LockObject lockObject;
 		
-		lockObject = 
-				this.entityFileAccessLock.putIfAbsent(
-						object, 
-						newLockObject
-				);
-		
-		if(lockObject == null){
-			return true;
+		synchronized(this) {
+			lockObject = 
+					this.entityFileAccessLock.putIfAbsent(
+							object, 
+							newLockObject
+					);
+			
+			if(lockObject == null){
+				return true;
+			}
+			
+			lockObject.getLocks().put(lock);
 		}
-		
-		lockObject.getLocks().put(lock);
 		
 		long maxWaitingTime = timeunit.toMillis(unit);
 		
@@ -150,14 +152,12 @@ public class LockProviderImp
 				}
 				
 				start = System.currentTimeMillis();
-				Thread.currentThread().wait(maxWaitingTime);
+				lock.wait(maxWaitingTime);
 				end = System.currentTimeMillis();
 				maxWaitingTime = maxWaitingTime - (end - start);
 			}
 			
-			lockObject.getLocks().remove(lock);
-			
-			return false;
+			return lockObject.getLocks().remove(lock);
 		}
 		
 	}
@@ -166,7 +166,7 @@ public class LockProviderImp
 		
 		Object next;
 		
-		synchronized (this) {
+		synchronized(this) {
 			LockObject lockObject = 
 					this.entityFileAccessLock.get(object);
 			
@@ -178,13 +178,14 @@ public class LockProviderImp
 			
 			if(next == null){
 				this.entityFileAccessLock.remove(object, lockObject);
+				return;
 			}
 			
 			lockObject.setCurrentLock(next);
 		}
 		
 		synchronized(next){
-			Thread.currentThread().notifyAll();
+			next.notifyAll();
 		}
 		
 	}

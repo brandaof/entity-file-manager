@@ -345,7 +345,10 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
-		}		
+		}
+		finally{
+			this.pointerManager.release();
+		}
 	}
 	
 	public void rollback() throws TransactionException{
@@ -383,6 +386,10 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		catch(Throwable e){
 			throw new TransactionException(e);
 		}
+		finally{
+			this.pointerManager.release();
+		}
+		
 	}
 
 	public long getNextFreePointer(boolean batch) throws IOException{
