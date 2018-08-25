@@ -165,7 +165,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		}
 		
 		
-		if(eof == 0){
+		if(eof > 0){
 			this.dataHandler.writeEOF(dStream);
 		}
 		
@@ -176,7 +176,10 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.fileAccess.write(data, 0, data.length);
 		
 		this.offset++;
-		this.length++;
+		
+		if(eof > 0){
+			this.length++;
+		}
 		
 	}
 	
