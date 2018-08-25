@@ -157,7 +157,7 @@ public class LockProviderImp
 				maxWaitingTime = maxWaitingTime - (end - start);
 			}
 			
-			return lockObject.getLocks().remove(lock);
+			return !lockObject.getLocks().remove(lock);
 		}
 		
 	}
