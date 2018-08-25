@@ -28,6 +28,7 @@ public class PointerManager<T,R,H> {
 		this.pointers     = new HashSet<Long>();
 		this.data         = tx.getEntityFileAccess();
 		this.lockProvider = lockProvider;
+		this.timeout      = timeout;
 	}
 
 	public void managerPointer(long id) throws IOException{
