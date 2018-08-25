@@ -57,48 +57,22 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 
 	public long insert(T entity) throws EntityFileException{
 		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
-		
 		try{
-			long id = this.getNextFreePointer(false);
-			this.pointerManager.managerPointer(id);
-			this.insert(id, entity);
-			return id;
+			return this.insertEntity(entity);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
-		}
-		finally{
-			lock.unlock();
 		}
 		
 	}
 
 	public long[] insert(T[] entity) throws EntityFileException{
 		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
-		lock.lock();
-		
 		try{
-			long id    = this.getNextFreePointer(true);
-			long[] ids = new long[entity.length];
-			
-			for(int i=0;i<ids.length;i++){
-				ids[i] = id + i;
-			}
-			
-			this.pointerManager.managerPointer(ids);
-			this.insert(id, entity);
-			return ids;
+			return this.insertEntity(entity);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
-		}
-		finally{
-			lock.unlock();
 		}
 		
 	}
@@ -398,42 +372,98 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 	
 	/* private */
 	
-	private void insert(long id, T entity) throws IOException{
+	private long insertEntity(T entity) throws IOException{
+
+		long id;
+		long txid;
 		
-		long txid = this.tx.length();
+		ReadWriteLock readWritelock = data.getLock();
+		Lock lock = readWritelock.writeLock();
+		lock.lock();
+		try{
+			id = this.getNextFreePointer(false);
+			
+			this.data.seek(id);
+			this.data.write(null);
+			
+			this.pointerManager.managerPointer(id);
+			
+		}
+		finally{
+			lock.unlock();
+		}
 		
-		this.tx.seek(txid);
-		this.tx.write(new TransactionalEntity<T>(id, TransactionalEntity.UPDATE_RECORD, entity));
 		
-		this.data.seek(id);
-		this.data.write(null);
+		readWritelock = tx.getLock();
+		lock = readWritelock.writeLock();
+		lock.lock();
+		try{
+			txid = this.tx.length();
+			this.tx.seek(txid);
+			this.tx.write(new TransactionalEntity<T>(id, TransactionalEntity.UPDATE_RECORD, entity));
+		}
+		finally{
+			lock.unlock();
+		}
 		
 		this.pointerMap.put(id, txid);
+		return id;
 	}
 
 	@SuppressWarnings("unchecked")
-	private void insert(long id, T[] entities) throws IOException{
+	private long[] insertEntity(T[] entities) throws IOException{
 		
-		TransactionalEntity<T>[] e = new TransactionalEntity[entities.length];
-		int max                    = entities.length;
-		long txid                  = this.tx.length();
+		long id;
+		long txid;
+		int max = entities.length;
+		
+		ReadWriteLock readWritelock = data.getLock();
+		Lock lock = readWritelock.writeLock();
+		lock.lock();
+		try{
+			id = this.getNextFreePointer(false);
+			
+			this.data.seek(id);
+			this.data.batchWrite((T[])Array.newInstance(entities.getClass().getComponentType(), max));
+			
+			for(int i=0;i<max;i++){
+				this.pointerManager.managerPointer(id + i);
+			}
 
-		long eid;
-		long etxid;
-		
-		for(int i=0;i<max;i++){
-			eid = id + i;
-			etxid = txid + i;
-			e[i] = new TransactionalEntity<T>(eid, TransactionalEntity.UPDATE_RECORD, entities[i]);
-			this.pointerMap.put(eid, etxid);
+		}
+		finally{
+			lock.unlock();
 		}
 		
-		this.tx.seek(txid);
-		this.tx.batchWrite(e);
+		long eid;
+		long etxid;
+		long[] ids = new long[max];
+		TransactionalEntity<T>[] e = new TransactionalEntity[max];
 		
-		this.data.seek(id);
-		this.data.batchWrite((T[])Array.newInstance(entities.getClass().getComponentType(), entities.length));
+		readWritelock = tx.getLock();
+		lock = readWritelock.writeLock();
+		lock.lock();
+		try{
+			txid = this.tx.length();
+			
+			for(int i=0;i<max;i++){
+				eid   = id + i;
+				etxid = txid + i;
+				
+				ids[i] = eid;
+				e[i]   = new TransactionalEntity<T>(eid, TransactionalEntity.UPDATE_RECORD, entities[i]);
+				
+				this.pointerMap.put(eid, etxid);
+			}
+			
+			this.tx.seek(txid);
+			this.tx.batchWrite(e);
+		}
+		finally{
+			lock.unlock();
+		}
 		
+		return ids;		
 	}
 	
 	private void updateEntity(long id, T entity, byte status) throws IOException{

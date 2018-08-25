@@ -114,7 +114,7 @@ public class LockProviderImp
 		
 	}
 
-	private boolean lockObject(Object object, 
+	protected boolean lockObject(Object object, 
 			long unit, TimeUnit timeunit) throws InterruptedException {
 		
 		LockObject newLockObject = new LockObject();
@@ -162,7 +162,7 @@ public class LockProviderImp
 		
 	}
 	
-	private void unlockObject(Object object) {
+	protected void unlockObject(Object object) {
 		
 		Object next;
 		
