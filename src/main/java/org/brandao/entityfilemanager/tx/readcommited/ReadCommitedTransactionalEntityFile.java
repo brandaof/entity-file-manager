@@ -363,6 +363,8 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				
 				RawTransactionEntity<R>[] ops = 
 					this.tx.batchReadRaw(this.batchOperationLength);
+
+				current += ops.length;
 				
 				RawTransactionEntity<R>[][] map = 
 					EntityFileTransactionUtil.mapOperations(ops);
@@ -376,7 +378,6 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				ops = map[TransactionalEntity.DELETE_RECORD];
 				RollbackOperations.delete(ops, data);
 
-				current += ops.length;
 			}
 		}
 		catch(Throwable e){
@@ -429,6 +430,10 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 	}
 	
 	private void updateEntity(long id, T entity, byte status) throws IOException{
+		
+		if(id >= this.data.length()){
+			throw new IOException("entity not found: " + id);
+		}
 		
 		Long pointer = this.pointerMap.get(id);
 		

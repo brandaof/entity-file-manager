@@ -220,6 +220,37 @@ public class EntityFileManagerImpTest extends TestCase{
 		
 	}
 	
+	public void testFail() throws TransactionException, IOException{
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			Long[] values = new Long[]{new Long(1),new Long(2),new Long(3),new Long(4),new Long(5),new Long(6)};
+			ef.insert(values);
+			ef.update(1000, new Long(1));
+			tx.commit();
+		}
+		catch(Throwable e){
+			tx.rollback();
+		}
+
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			assertEquals(0L, (long)ef.select(0));
+			assertEquals(0L, (long)ef.select(1));
+			assertEquals(0L, (long)ef.select(2));
+			assertEquals(0L, (long)ef.select(3));
+			assertEquals(0L, (long)ef.select(4));
+			assertEquals(0L, (long)ef.select(5));
+		}
+		finally{
+			tx.commit();
+		}
+		
+	}
+	
 	public void testConcurrentUpdate() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();

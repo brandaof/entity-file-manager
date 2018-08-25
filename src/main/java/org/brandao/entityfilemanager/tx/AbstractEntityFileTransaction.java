@@ -108,6 +108,14 @@ public abstract class AbstractEntityFileTransaction
 				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 			}
 			
+			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
+				txFile.close();
+			}
+
+			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
+				txFile.delete();
+			}
+			
 			this.status = EntityFileTransaction.TRANSACTION_ROLLEDBACK;
 			this.commited   = false;
 			this.rolledBack = true;
@@ -173,73 +181,134 @@ public abstract class AbstractEntityFileTransaction
 		
 	}
 
-	/*
-	public void begin() throws TransactionException {
-		
-		if(this.started){
-			throw new TransactionException("transaction has been started");
-		}
-
-		this.started = true;
-	}
-	*/
-	
 	public void close() throws TransactionException{
 		entityFileTransactionManager.closeTransaction(this);
 	}
 	
 	public <T, R, H> long insert(T entity, EntityFileAccess<T, R, H> entityFileAccess)
 			throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		return tei.insert(entity);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			return tei.insert(entity);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> long[] insert(T[] entity,
 			EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		return tei.insert(entity);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			return tei.insert(entity);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> void update(long id, T entity,
 			EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		tei.update(id, entity);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			tei.update(id, entity);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> void update(long[] id, T[] entity,
 			EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		tei.update(id, entity);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			tei.update(id, entity);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> void delete(long id, EntityFileAccess<T, R, H> entityFileAccess)
 			throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		tei.delete(id);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			tei.delete(id);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> void delete(long[] id, EntityFileAccess<T, R, H> entityFileAccess)
 			throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		tei.delete(id);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			tei.delete(id);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> T select(long id, EntityFileAccess<T, R, H> entityFileAccess)
 			throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		return tei.select(id);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			return tei.select(id);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> T[] select(long[] id, EntityFileAccess<T, R, H> entityFileAccess)
 			throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		return tei.select(id);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			return tei.select(id);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> T select(long id, boolean lock,
 			EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException {
-		TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
-		return tei.select(id, lock);
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			return tei.select(id, lock);
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
 	}
 
 	public <T, R, H> T[] select(long[] id, boolean lock,

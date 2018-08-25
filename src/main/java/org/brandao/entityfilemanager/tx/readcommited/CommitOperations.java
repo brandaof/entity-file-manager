@@ -54,7 +54,7 @@ public class CommitOperations {
 					subEntities[i] = ops[off + i].getEntity();
 				}
 				
-				data.seek(ids[off]);
+				//data.seek(ids[off]);
 				data.batchWriteRaw(subEntities);
 			}
 			
