@@ -103,7 +103,7 @@ public class LockProviderImp
 		synchronized(lock){
 			
 			while(true){
-				Thread.currentThread().wait();
+				lock.wait();
 				
 				if(lockObject.getCurrentLock() == lock){
 					return;
