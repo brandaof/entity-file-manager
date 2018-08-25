@@ -2,6 +2,12 @@ package org.brandao.entityfilemanager;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map.Entry;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 
 import junit.framework.TestCase;
 
@@ -252,7 +258,6 @@ public class EntityFileManagerImpTest extends TestCase{
 	}
 	
 	public void testConcurrentUpdate() throws TransactionException, IOException, InterruptedException{
-		
 		EntityFileTransaction tx = efm.beginTransaction();
 		
 		EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
@@ -289,6 +294,63 @@ public class EntityFileManagerImpTest extends TestCase{
 		assertEquals(152326598598562L, (long)ef.select(1));
 
 		tx.commit();
+		
+	}
+	
+	public void testConcurrentInsert() throws TransactionException, IOException, InterruptedException{
+		final int task = 1000;
+		final int ops = 3;
+		final long sleep = 1000;
+		final AtomicLong totalTime = new AtomicLong(0);
+		final CountDownLatch countDownLatch = new CountDownLatch(task);
+		final Random random = new Random();
+		final ConcurrentMap<Long, Long> values = new ConcurrentHashMap<Long, Long>();
+		for(int i=0;i<task;i++){
+			new Thread(){
+				
+				public void run(){
+					try{
+						EntityFileTransaction tx = efm.beginTransaction();
+						EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+						sleep(2000 + random.nextInt(1000));
+
+						long time = System.currentTimeMillis();
+						for(int i=0;i<ops;i++){
+							long value = random.nextLong();
+							long id = ef.insert(value);
+							values.put(id, value);
+							sleep(sleep);
+						}
+						time = System.currentTimeMillis() - time;
+						
+						tx.commit();
+						
+						totalTime.addAndGet(time);
+					}
+					catch(Throwable e){
+						e.printStackTrace();
+					}
+					finally{
+						countDownLatch.countDown();
+					}
+					
+				}
+				
+			}.start();
+			
+		}
+		
+		countDownLatch.await();
+		
+		double time = totalTime.doubleValue() / (task*ops);
+		assertTrue(time < (1.25*sleep));
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		EntityFile<Long> ef      = efm.getEntityFile("long", tx, Long.class);
+		for(Entry<Long,Long> v: values.entrySet()){
+			long pv = ef.select(v.getKey());
+			assertEquals((long)v.getValue(), pv);
+		}
 		
 	}
 	

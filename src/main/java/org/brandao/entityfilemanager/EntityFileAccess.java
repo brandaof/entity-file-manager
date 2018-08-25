@@ -2,7 +2,7 @@ package org.brandao.entityfilemanager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.Lock;
 
 public interface EntityFileAccess<T, R, H> {
 
@@ -18,7 +18,7 @@ public interface EntityFileAccess<T, R, H> {
 
 	int getBatchLength();
 	
-	ReadWriteLock getLock();
+	Lock getLock();
 	
 	File getAbsoluteFile();
 	

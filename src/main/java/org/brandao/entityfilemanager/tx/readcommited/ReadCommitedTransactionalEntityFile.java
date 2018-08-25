@@ -7,7 +7,6 @@ import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
@@ -211,8 +210,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			throw new EntityFileException(e);
 		}
 		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
+		Lock lock = data.getLock();
 		lock.lock();
 		
 		try{
@@ -242,8 +240,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			throw new EntityFileException(e);
 		}
 		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.readLock();
+		Lock lock = data.getLock();
 		lock.lock();
 		
 		try{
@@ -377,12 +374,11 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		long id;
 		long txid;
 		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
+		Lock lock = data.getLock();
 		lock.lock();
 		try{
 			id = this.getNextFreePointer(false);
-			
+			System.out.println("id: " + id);
 			this.data.seek(id);
 			this.data.write(null);
 			
@@ -394,8 +390,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		}
 		
 		
-		readWritelock = tx.getLock();
-		lock = readWritelock.writeLock();
+		lock = tx.getLock();
 		lock.lock();
 		try{
 			txid = this.tx.length();
@@ -417,8 +412,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		long txid;
 		int max = entities.length;
 		
-		ReadWriteLock readWritelock = data.getLock();
-		Lock lock = readWritelock.writeLock();
+		Lock lock = data.getLock();
 		lock.lock();
 		try{
 			id = this.getNextFreePointer(false);
@@ -440,8 +434,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		long[] ids = new long[max];
 		TransactionalEntity<T>[] e = new TransactionalEntity[max];
 		
-		readWritelock = tx.getLock();
-		lock = readWritelock.writeLock();
+		lock = tx.getLock();
 		lock.lock();
 		try{
 			txid = this.tx.length();

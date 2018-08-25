@@ -9,8 +9,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Array;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class AbstractEntityFileAccess<T, R, H> 
 	implements EntityFileAccess<T, R, H>{
@@ -23,7 +23,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	protected FileAccess fileAccess;
 
-	protected ReadWriteLock lock;
+	protected Lock lock;
 	
 	protected int batchLength;
 	
@@ -36,7 +36,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.offset      = 0;
 		this.batchLength = 1000;
 		this.dataHandler = dataHandler;
-		this.lock        = new ReentrantReadWriteLock();
+		this.lock        = new ReentrantLock();
 		
 	}
 	
@@ -356,7 +356,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		return this.file.exists();
 	}
 	
-	public ReadWriteLock getLock(){
+	public Lock getLock(){
 		return this.lock;
 	}
 
@@ -389,7 +389,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		file        = new File(stream.readUTF());
 		batchLength = stream.readInt();
 		dataHandler = (EntityFileDataHandler<T, R, H>) stream.readObject();
-		this.lock   = new ReentrantReadWriteLock();
+		this.lock   = new ReentrantLock();
 		
 		this.open();
     }

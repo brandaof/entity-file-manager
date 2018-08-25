@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -80,7 +80,7 @@ public class TransactionEntityFileAccess<T, R, H>
 		
 		transactionDataHandler = (EntityFileTransactionDataHandler<T,R,H>)dataHandler;
 		
-		this.lock              = new ReentrantReadWriteLock();
+		this.lock              = new ReentrantLock();
 		
 		this.open();
     }

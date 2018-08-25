@@ -2,6 +2,7 @@ package org.brandao.entityfilemanager.tx.readcommited;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.util.concurrent.locks.Lock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
@@ -42,10 +43,8 @@ public class CommitOperations {
 			int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
 			q = nextOff - off;
 			
-			data.seek(ids[off]);
-			
 			if(q == 1){
-				data.writeRaw(ops[off].getEntity());
+				write(data, ids[off], ops[off].getEntity());
 			}
 			else{
 				R[] subEntities = (R[]) Array.newInstance(data.getRawType(), q);
@@ -54,14 +53,39 @@ public class CommitOperations {
 					subEntities[i] = ops[off + i].getEntity();
 				}
 				
-				//data.seek(ids[off]);
-				data.batchWriteRaw(subEntities);
+				write(data, ids[off], subEntities);
 			}
 			
 			off = nextOff;
 		}
 	}
 
+	private static <T,R,H> void write(EntityFileAccess<T,R,H> data, 
+			long id, R raw) throws IOException{
+		Lock lock = data.getLock();
+		lock.lock();
+		try{
+			data.seek(id);
+			data.writeRaw(raw);
+		}
+		finally{
+			lock.unlock();
+		}
+	}
+	
+	private static <T,R,H> void write(EntityFileAccess<T,R,H> data, 
+			long firstID, R[] raw) throws IOException{
+		Lock lock = data.getLock();
+		lock.lock();
+		try{
+			data.seek(firstID);
+			data.batchWriteRaw(raw);
+		}
+		finally{
+			lock.unlock();
+		}
+	}
+	
 	public static <T,R,H> void delete(RawTransactionEntity<R>[] ops, 
 			EntityFileAccess<T,R,H> data) throws IOException{
 		update(ops, data);
