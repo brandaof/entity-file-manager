@@ -47,7 +47,7 @@ public class PointerManager<T,R,H> {
 			long r = id[i];
 			
 			if(!this.pointers.contains(r)){
-				this.lockProvider.tryLock(this.data, this.timeout, TimeUnit.SECONDS);
+				this.lockProvider.tryLock(this.data, r, this.timeout, TimeUnit.SECONDS);
 				this.pointers.add(r);
 			}
 			
