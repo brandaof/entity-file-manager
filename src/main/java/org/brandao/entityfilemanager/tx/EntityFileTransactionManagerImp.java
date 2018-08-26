@@ -37,11 +37,14 @@ public class EntityFileTransactionManagerImp
 	private EntityFileManagerConfigurer entityFileManagerConfigurer;
 	
 	private LockProvider lockProvider;
+
+	private TransactionLoader transactionLoader;
 	
 	public EntityFileTransactionManagerImp(){
 		this.transactionIDCounter = 0;
 		this.txIDLock             = new ReentrantLock();
 		this.transactions         = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
+		this.transactionLoader    = new TransactionLoader();
 	}
 	
 	private long getNextTransactionID() {
@@ -124,7 +127,14 @@ public class EntityFileTransactionManagerImp
 			return;
 		}
 		
-		tx.rollback();
+		if(tx.getStatus() == EntityFileTransaction.TRANSACTION_STARTED_COMMIT){
+			tx.commit();
+		}
+		else
+		if(tx.getStatus() == EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK){
+			tx.rollback();
+		}
+		
 		tx.setClosed(true);
 		
 		this.transactions.remove(tx.getTransactionID());
@@ -254,7 +264,7 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 	
-	private void executeRollback(ConfigurableEntityFileTransaction transaction, 
+	protected void executeRollback(ConfigurableEntityFileTransaction transaction, 
 			Collection<TransactionEntity<?,?>> transactionEntity) throws IOException, TransactionException{
 		
 		for(TransactionEntity<?,?> txFile: transactionEntity){
@@ -263,7 +273,7 @@ public class EntityFileTransactionManagerImp
 		
 	}
 	
-	private void updateTransactionStatus(ConfigurableEntityFileTransaction transaction, 
+	protected void updateTransactionStatus(ConfigurableEntityFileTransaction transaction, 
 			Collection<TransactionEntity<?,?>> transactionEntity, byte transactionStatus) throws IOException{
 
 		for(TransactionEntity<?,?> txFile: transactionEntity){
@@ -274,20 +284,23 @@ public class EntityFileTransactionManagerImp
 		
 	}
 
-	private void registerTransactionInformation(ConfigurableEntityFileTransaction transaction){
+	protected void registerTransactionInformation(ConfigurableEntityFileTransaction transaction
+			) throws IOException{
+		this.transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
 	}
 
-	private void deleteTransactionInformation(ConfigurableEntityFileTransaction transaction){
+	protected void deleteTransactionInformation(ConfigurableEntityFileTransaction transaction
+			) throws IOException{
+		this.transactionLoader.deleteEntityFileTransaction(transaction, this.transactionPath);
 	}
 	
-	private void logTransaction(ConfigurableEntityFileTransaction transaction){
+	protected void logTransaction(ConfigurableEntityFileTransaction transaction){
 	}
 	
-	private void reloadTransactions() throws EntityFileManagerException{
+	protected void reloadTransactions() throws EntityFileManagerException{
 		try{
-			TransactionLoader txLoader = new TransactionLoader();
 			ConfigurableEntityFileTransaction[] txList = 
-					txLoader.loadTransactions(this.entityFileManagerConfigurer, 
+					transactionLoader.loadTransactions(this.entityFileManagerConfigurer, 
 							this, this.transactionPath);
 			
 			for(ConfigurableEntityFileTransaction tx: txList){

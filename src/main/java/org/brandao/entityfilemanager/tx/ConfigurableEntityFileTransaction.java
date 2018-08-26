@@ -6,6 +6,8 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 
 public interface ConfigurableEntityFileTransaction extends EntityFileTransaction{
 
+	void setEntityFileTransactionManagerConfigurer(EntityFileTransactionManagerConfigurer entityFileTransactionManager);
+	
 	void setStatus(byte value);
 	
 	void setRolledBack(boolean value);

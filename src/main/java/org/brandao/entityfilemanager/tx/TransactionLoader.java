@@ -1,21 +1,37 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 
 public class TransactionLoader {
 
+	private static final String TX_FILE_PATTERN = "^ftx\\-(.*)$";
+	
+	private static final Pattern PATTERN_TX_FILE;
+	
+	static{
+		PATTERN_TX_FILE = Pattern.compile(TX_FILE_PATTERN);
+	}
+	
 	public ConfigurableEntityFileTransaction[] loadTransactions(
 			EntityFileManagerConfigurer entityFileManager, 
-			EntityFileTransactionManagerImp transactionManager, File txPath
+			EntityFileTransactionManagerConfigurer transactionManager, File txPath
 			) throws TransactionException, IOException{
 		
 		File[] files = txPath.listFiles();
@@ -24,6 +40,9 @@ public class TransactionLoader {
 		
 		TransactionFileNameMetadata[] txfmd = this.toTransactionFileNameMetadata(txFiles);
 		
+		return this.toEntityFileTransaction(txfmd, transactionManager);
+		
+		/*
 		Map<Long, List<TransactionFileNameMetadata>> mappedTXFMD = this.groupTransaction(txfmd);
 		
 		Map<Long, Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>> transactionFiles =
@@ -31,6 +50,7 @@ public class TransactionLoader {
 		
 		return toEntityFileTransaction(transactionFiles, 
 				transactionManager, entityFileManager);
+		*/
 	}
 	
 	private File[] getTransactionFiles(File[] value){
@@ -38,7 +58,7 @@ public class TransactionLoader {
 		
 		for(File f: value){
 
-			if(!f.getName().endsWith(EntityFileTransactionUtil.EXTENSION)){
+			if(!f.getName().matches(TX_FILE_PATTERN)){
 				continue;
 			}
 			
@@ -48,15 +68,94 @@ public class TransactionLoader {
 		return tmp.toArray(new File[0]);
 	}
 	
-	private TransactionFileNameMetadata[] toTransactionFileNameMetadata(File[] values){
+	private TransactionFileNameMetadata[] toTransactionFileNameMetadata(File[] values) throws TransactionException{
 		TransactionFileNameMetadata[] result = new TransactionFileNameMetadata[values.length];
 		
 		for(int i=0;i<values.length;i++){
 			File f = values[i];
-			result[i] = EntityFileTransactionUtil.getTransactionFileNameMetadata(f);
+			result[i] = this.getTransactionFileNameMetadata(f);
 		}
 		
 		return result;
+	}
+	
+	private TransactionFileNameMetadata getTransactionFileNameMetadata(File f) throws TransactionException{
+	    Matcher m = PATTERN_TX_FILE.matcher(f.getName());
+	    
+	    if(!m.find()){
+	    	throw new TransactionException("invalid file name: " + f.getName());
+	    }
+	    
+	    String transactionID = m.group(1); 
+		TransactionFileNameMetadata r = 
+				new TransactionFileNameMetadata(
+					"ftx", 
+					Long.parseLong(transactionID, Character.MAX_RADIX), f);
+		
+		return r;
+	}
+	
+	private ConfigurableEntityFileTransaction[] toEntityFileTransaction(
+			TransactionFileNameMetadata[] files, 
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer) throws TransactionException{
+		
+		ConfigurableEntityFileTransaction[] r = new ConfigurableEntityFileTransaction[files.length];
+		int i = 0;
+		for(TransactionFileNameMetadata f: files){
+			try{
+				r[i] = this.toEntityFileTransaction(f);
+				r[i].setEntityFileTransactionManagerConfigurer(entityFileTransactionManagerConfigurer);
+				i++;
+			}
+			catch(Throwable e){
+				throw new TransactionException("fail load transaction: " + f.getTransactionID(), e);
+			}
+		}
+		
+		return r;
+	}
+
+	public void writeEntityFileTransaction(
+			ConfigurableEntityFileTransaction t, File path) throws IOException{
+		
+		File f = new File(path, "ftx-" + Long.toString(t.getTransactionID(), Character.MAX_RADIX));
+		
+		FileOutputStream fout = null;
+		ObjectOutput out = null;
+		try{
+			fout = new FileOutputStream(f);
+			out  = new ObjectOutputStream(fout);
+			out.writeObject(t);
+		}
+		finally{
+			if(fout != null){
+				fout.close();
+			}
+		}
+		
+	}
+
+	public void deleteEntityFileTransaction(
+			ConfigurableEntityFileTransaction t, File path) throws IOException{
+		File f = new File(path, "ftx-" + Long.toString(t.getTransactionID(), Character.MAX_RADIX));
+		f.delete();
+	}
+	
+	private ConfigurableEntityFileTransaction toEntityFileTransaction(TransactionFileNameMetadata f
+			) throws IOException, ClassNotFoundException{
+		FileInputStream fin = null;
+		ObjectInput in = null;
+		try{
+			fin = new FileInputStream(f.getFile());
+			in = new ObjectInputStream(fin);
+			return (ConfigurableEntityFileTransaction) in.readObject();
+		}
+		finally{
+			if(fin != null){
+				fin.close();
+			}
+		}
+		
 	}
 	
 	private Map<Long, List<TransactionFileNameMetadata>> groupTransaction(

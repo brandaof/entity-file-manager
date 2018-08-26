@@ -276,7 +276,7 @@ public class EntityFileManagerImpTest extends TestCase{
 					tx.commit();
 				}
 				catch(Throwable e){
-					
+					e.printStackTrace();
 				}
 				
 			}

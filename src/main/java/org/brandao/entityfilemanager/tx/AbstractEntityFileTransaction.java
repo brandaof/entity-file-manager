@@ -11,7 +11,7 @@ public abstract class AbstractEntityFileTransaction
 
 	private static final long serialVersionUID = 7555768592401042353L;
 
-	protected EntityFileTransactionManagerConfigurer entityFileTransactionManager;
+	protected transient EntityFileTransactionManagerConfigurer entityFileTransactionManager;
 	
 	protected Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles;
 	
@@ -303,6 +303,11 @@ public abstract class AbstractEntityFileTransaction
 	
 	public void setStarted(boolean value) {
 		this.started = value;
+	}
+
+	public void setEntityFileTransactionManagerConfigurer(
+			EntityFileTransactionManagerConfigurer entityFileTransactionManager){
+		this.entityFileTransactionManager = entityFileTransactionManager;
 	}
 	
 	protected void finalize() throws Throwable{

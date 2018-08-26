@@ -12,9 +12,9 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 public class TransactionEntityFileAccess<T, R, H> 
 	extends AbstractEntityFileAccess<TransactionalEntity<T>, RawTransactionEntity<R>, TransactionHeader<H>> {
 
-	private EntityFileAccess<T, R, H> parent;
+	protected EntityFileAccess<T, R, H> parent;
 	
-	private EntityFileTransactionDataHandler<T,R,H> transactionDataHandler;
+	protected EntityFileTransactionDataHandler<T,R,H> transactionDataHandler;
 	
 	public TransactionEntityFileAccess(EntityFileAccess<T, R, H> e, File file, long transactionID, 
 			byte transactionIsolation){
