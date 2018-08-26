@@ -7,7 +7,7 @@ import org.brandao.entityfilemanager.EntityFileException;
 import org.brandao.entityfilemanager.LockProvider;
 
 public abstract class AbstractEntityFileTransaction 
-	implements EntityFileTransaction{
+	implements ConfigurableEntityFileTransaction{
 
 	protected EntityFileTransactionManagerConfigurer entityFileTransactionManager;
 	
@@ -343,13 +343,9 @@ public abstract class AbstractEntityFileTransaction
 			txFile.createNewFile();
 			*/
 
-			TransactionEntityFileAccess<T,R,H> txFile = this
-					.createTransactionEntityFileAccess(
-							entityFile, 
-							transactionID, 
-							transactionIsolation, this.entityFileTransactionManager);
-			
-			tx = this.createTransactionalEntityFile(entityFile, txFile);
+			tx = this.createTransactionalEntityFile(
+					entityFile, transactionID, transactionIsolation, 
+					this.entityFileTransactionManager);
 			
 			this.transactionFiles.put(entityFile, tx);
 			return tx;
@@ -359,12 +355,9 @@ public abstract class AbstractEntityFileTransaction
 		}
 	}
 
-	protected abstract <T,R,H> TransactionEntityFileAccess<T,R,H> createTransactionEntityFileAccess(
-			EntityFileAccess<T,R,H> entityFile, long transactionID, byte transactionIsolation, 
-			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer);
-	
 	protected abstract <T,R,H> TransactionEntity<T,R> createTransactionalEntityFile(
-			EntityFileAccess<T,R,H> entityFile, TransactionEntityFileAccess<T,R,H> txFile);
+			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation,
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer);
 	
 	/* restrict methods */
 	
@@ -386,6 +379,22 @@ public abstract class AbstractEntityFileTransaction
 	
 	public boolean isDirty(){
 		return this.dirty;
+	}
+	
+	public void setStatus(byte value){
+		this.status = value;
+	}
+	
+	public void setRolledBack(boolean value){
+		this.rolledBack = value;
+	}
+	
+	public void setCommited(boolean value){
+		this.commited = value;
+	}
+	
+	public void setStarted(boolean value) {
+		this.started = value;
 	}
 	
 	protected void finalize() throws Throwable{

@@ -13,7 +13,7 @@ import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 
 public class TransactionLoader {
 
-	public EntityFileTransaction[] loadTransactions(
+	public ConfigurableEntityFileTransaction[] loadTransactions(
 			EntityFileManagerConfigurer entityFileManager, 
 			EntityFileTransactionManagerImp transactionManager, File txPath
 			) throws TransactionException, IOException{
@@ -122,11 +122,11 @@ public class TransactionLoader {
 		return result;
 	}
 
-	private EntityFileTransaction[] toEntityFileTransaction(
+	private ConfigurableEntityFileTransaction[] toEntityFileTransaction(
 			Map<Long, Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>> values,
 			EntityFileTransactionManagerImp transactioManager, EntityFileManagerConfigurer manager) throws IOException, TransactionException{
 
-		EntityFileTransaction[] result = new EntityFileTransaction[values.size()];
+		ConfigurableEntityFileTransaction[] result = new ConfigurableEntityFileTransaction[values.size()];
 		
 		int i = 0;
 		
@@ -143,7 +143,7 @@ public class TransactionLoader {
 			boolean rolledBack        = (transactionStatus & EntityFileTransaction.TRANSACTION_ROLLEDBACK) != 0;
 			boolean commited          = (transactionStatus & EntityFileTransaction.TRANSACTION_COMMITED) != 0;
 			
-			EntityFileTransaction eft = 
+			ConfigurableEntityFileTransaction eft = 
 				transactioManager.load(transactionFiles, transactionStatus, 
 						transactionID, transactionIsolation, started, rolledBack, commited);
 			

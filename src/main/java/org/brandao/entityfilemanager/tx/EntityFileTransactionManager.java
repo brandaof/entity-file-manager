@@ -8,6 +8,10 @@ public interface EntityFileTransactionManager {
 	
 	EntityFileTransaction openTransaction() throws TransactionException;
 
-	void closeTransaction(EntityFileTransaction tx) throws TransactionException;
+	void closeTransaction(ConfigurableEntityFileTransaction tx) throws TransactionException;
+	
+	void commitTransaction(ConfigurableEntityFileTransaction tx) throws TransactionException;
+	
+	void rollbackTransaction(ConfigurableEntityFileTransaction tx) throws TransactionException;
 	
 }

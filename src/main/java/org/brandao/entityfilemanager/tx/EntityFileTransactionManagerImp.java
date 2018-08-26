@@ -26,7 +26,7 @@ public class EntityFileTransactionManagerImp
 	
 	private Lock txIDLock;
 	
-	private ConcurrentMap<Long, EntityFileTransaction> transactions;
+	private ConcurrentMap<Long, ConfigurableEntityFileTransaction> transactions;
 	
 	private long timeout;
 	
@@ -39,7 +39,7 @@ public class EntityFileTransactionManagerImp
 	public EntityFileTransactionManagerImp(){
 		this.transactionIDCounter = 0;
 		this.txIDLock             = new ReentrantLock();
-		this.transactions         = new ConcurrentHashMap<Long, EntityFileTransaction>();
+		this.transactions         = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
 	}
 	
 	private long getNextTransactionID() {
@@ -102,7 +102,7 @@ public class EntityFileTransactionManagerImp
 	
 	public EntityFileTransaction openTransaction() throws TransactionException {
 		long txID = this.getNextTransactionID();
-		EntityFileTransaction tx = 
+		ConfigurableEntityFileTransaction tx = 
 			new ReadCommitedEntityFileTransaction(
 				this, this.lockProvider,
 				new HashMap<EntityFileAccess<?,?,?>, TransactionEntity<?,?>>(), 
@@ -114,9 +114,9 @@ public class EntityFileTransactionManagerImp
 		return tx;
 	}
 
-	public void closeTransaction(EntityFileTransaction transaction) throws TransactionException {
+	public void closeTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException {
 		
-		AbstractEntityFileTransaction tx = (AbstractEntityFileTransaction)transaction;
+		ConfigurableEntityFileTransaction tx = (ConfigurableEntityFileTransaction)transaction;
 		
 		if(tx.isCommited() || tx.isRolledBack() || tx.isClosed() || !tx.isStarted()){
 			return;
@@ -128,14 +128,22 @@ public class EntityFileTransactionManagerImp
 		this.transactions.remove(tx.getTransactionID());
 	}
 
+	public void commitTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException {
+		
+	}
+
+	public void rollbackTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException {
+		
+	}
+	
 	private void reloadTransactions() throws EntityFileManagerException{
 		try{
 			TransactionLoader txLoader = new TransactionLoader();
-			EntityFileTransaction[] txList = 
+			ConfigurableEntityFileTransaction[] txList = 
 					txLoader.loadTransactions(this.entityFileManagerConfigurer, 
 							this, this.transactionPath);
 			
-			for(EntityFileTransaction tx: txList){
+			for(ConfigurableEntityFileTransaction tx: txList){
 				this.closeTransaction(tx);
 			}
 			
@@ -147,7 +155,7 @@ public class EntityFileTransactionManagerImp
 
 	private void closeAllTransactions() throws EntityFileManagerException{
 		try{
-			for(EntityFileTransaction tx: this.transactions.values()){
+			for(ConfigurableEntityFileTransaction tx: this.transactions.values()){
 				this.closeTransaction(tx);
 			}
 		}
@@ -156,7 +164,7 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 	
-	public EntityFileTransaction load(
+	public ConfigurableEntityFileTransaction load(
 			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
 			boolean rolledBack,	boolean commited) throws TransactionException {
@@ -171,7 +179,7 @@ public class EntityFileTransactionManagerImp
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private EntityFileTransaction loadReadCommitedEntityFileTransaction(
+	private ConfigurableEntityFileTransaction loadReadCommitedEntityFileTransaction(
 			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
 			boolean rolledBack,	boolean commited){

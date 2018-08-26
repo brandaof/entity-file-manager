@@ -21,21 +21,16 @@ public class ReadCommitedEntityFileTransaction
 	}
 	
 	protected <T,R, H> TransactionEntity<T,R> createTransactionalEntityFile(
-			EntityFileAccess<T,R,H> entityFile, TransactionEntityFileAccess<T,R,H> txFile){
+			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation,
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer){
+		
+		TransientTransactionEntityFileAccess<T, R, H> txFile = 
+				new TransientTransactionEntityFileAccess<T, R, H>(
+						entityFile, null, transactionID, transactionIsolation);
+		
 		return 
 			new ReadCommitedTransactionalEntityFile<T, R, H>(
 					txFile, this.lockProvider, this.timeout);
 	}
 
-	@Override
-	protected <T, R, H> TransactionEntityFileAccess<T, R, H> createTransactionEntityFileAccess(
-			EntityFileAccess<T, R, H> entityFile,
-			long transactionID,
-			byte transactionIsolation,
-			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer) {
-		
-		return new TransientTransactionEntityFileAccess<T, R, H>(entityFile, null, 
-				transactionID, transactionIsolation);
-	}
-	
 }
