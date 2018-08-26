@@ -9,6 +9,8 @@ import org.brandao.entityfilemanager.LockProvider;
 public abstract class AbstractEntityFileTransaction 
 	implements ConfigurableEntityFileTransaction{
 
+	private static final long serialVersionUID = 7555768592401042353L;
+
 	protected EntityFileTransactionManagerConfigurer entityFileTransactionManager;
 	
 	protected Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles;
@@ -77,109 +79,11 @@ public abstract class AbstractEntityFileTransaction
 	}
 
 	public void rollback() throws TransactionException {
-		
-		if(this.closed){
-			throw new TransactionException("transaction has been closed");
-		}
-		
-		if(this.rolledBack){
-			throw new TransactionException("transaction has been rolled back");
-		}
-
-		if(this.commited){
-			throw new TransactionException("transaction has been commited");
-		}
-		
-		if(!started){
-			throw new TransactionException("transaction not started");
-		}
-		
-		try{
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
-			}
-			
-			this.status = EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK;
-			
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.rollback();
-			}
-			
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_ROLLEDBACK);
-			}
-			
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.close();
-			}
-
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.delete();
-			}
-			
-			this.status = EntityFileTransaction.TRANSACTION_ROLLEDBACK;
-			this.commited   = false;
-			this.rolledBack = true;
-		}
-		catch(Throwable e){
-			throw new TransactionException(e);
-		}
+		entityFileTransactionManager.rollbackTransaction(this);
 	}
 
 	public void commit() throws TransactionException {
-		
-		if(this.dirty){
-			throw new TransactionException("transaction rollback is needed");
-		}
-		
-		if(this.rolledBack){
-			throw new TransactionException("transaction has been rolled back");
-		}
-		
-		if(this.commited){
-			throw new TransactionException("transaction has been commited");
-		}
-
-		if(this.closed){
-			throw new TransactionException("transaction has been closed");
-		}
-		
-		if(!started){
-			throw new TransactionException("transaction not started");
-		}
-		
-		try{
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
-			}
-
-			this.status = EntityFileTransaction.TRANSACTION_STARTED_COMMIT;
-			
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.commit();
-			}
-			
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.setTransactionStatus(EntityFileTransaction.TRANSACTION_COMMITED);
-			}
-
-			this.status     = EntityFileTransaction.TRANSACTION_COMMITED;
-			this.commited   = true;
-			this.rolledBack = false;
-
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.close();
-			}
-
-			for(TransactionEntity<?,?> txFile: this.transactionFiles.values()){
-				txFile.delete();
-			}
-			
-		}
-		catch(Throwable e){
-			throw new TransactionException(e);
-		}
-		
+		entityFileTransactionManager.commitTransaction(this);
 	}
 
 	public void close() throws TransactionException{
@@ -362,6 +266,10 @@ public abstract class AbstractEntityFileTransaction
 	/* restrict methods */
 	
 	public Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> getTransactionalEntityFile(){
+		return this.transactionFiles;
+	}
+	
+	public Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> getTransactionFiles(){
 		return this.transactionFiles;
 	}
 	

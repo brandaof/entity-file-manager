@@ -1,9 +1,11 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.Serializable;
+
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileException;
 
-public interface EntityFileTransaction {
+public interface EntityFileTransaction extends Serializable{
 
 	/* Transaction isolation */
 	

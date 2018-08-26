@@ -1,7 +1,10 @@
 package org.brandao.entityfilemanager.tx;
 
-public interface ConfigurableEntityFileTransaction 
-	extends EntityFileTransaction{
+import java.util.Map;
+
+import org.brandao.entityfilemanager.EntityFileAccess;
+
+public interface ConfigurableEntityFileTransaction extends EntityFileTransaction{
 
 	void setStatus(byte value);
 	
@@ -13,8 +16,12 @@ public interface ConfigurableEntityFileTransaction
 	
 	void setStarted(boolean value);
 	
+	boolean isDirty();
+	
 	boolean isStarted();
 
 	long getTransactionID();
+	
+	Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> getTransactionFiles();
 	
 }

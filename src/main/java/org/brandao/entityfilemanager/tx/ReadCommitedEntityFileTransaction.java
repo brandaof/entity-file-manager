@@ -9,6 +9,8 @@ import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEn
 public class ReadCommitedEntityFileTransaction 
 	extends AbstractEntityFileTransaction{
 
+	private static final long serialVersionUID = 2522451551205283541L;
+
 	public ReadCommitedEntityFileTransaction(
 			EntityFileTransactionManagerConfigurer entityFileTransactionManager,
 			LockProvider lockProvider,

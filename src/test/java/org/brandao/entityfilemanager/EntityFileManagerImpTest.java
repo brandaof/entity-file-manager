@@ -300,7 +300,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	}
 	
 	public void testConcurrentInsert() throws Throwable{
-		final int task                         = 2000;
+		final int task                         = 100;
 		final int ops                          = 3;
 		final long sleep                       = 1000;
 		final AtomicLong totalTime             = new AtomicLong(0);
