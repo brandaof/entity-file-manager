@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
+import org.brandao.entityfilemanager.LockProvider;
 
 public class TransactionLoader {
 
@@ -30,6 +31,7 @@ public class TransactionLoader {
 	}
 	
 	public ConfigurableEntityFileTransaction[] loadTransactions(
+			LockProvider lockProvider,
 			EntityFileManagerConfigurer entityFileManager, 
 			EntityFileTransactionManagerConfigurer transactionManager, File txPath
 			) throws TransactionException, IOException{
@@ -40,7 +42,7 @@ public class TransactionLoader {
 		
 		TransactionFileNameMetadata[] txfmd = this.toTransactionFileNameMetadata(txFiles);
 		
-		return this.toEntityFileTransaction(txfmd, transactionManager);
+		return this.toEntityFileTransaction(txfmd, transactionManager, lockProvider);
 		
 		/*
 		Map<Long, List<TransactionFileNameMetadata>> mappedTXFMD = this.groupTransaction(txfmd);
@@ -97,15 +99,17 @@ public class TransactionLoader {
 	
 	private ConfigurableEntityFileTransaction[] toEntityFileTransaction(
 			TransactionFileNameMetadata[] files, 
-			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer) throws TransactionException{
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer,
+			LockProvider lockProvider) throws TransactionException{
 		
 		ConfigurableEntityFileTransaction[] r = new ConfigurableEntityFileTransaction[files.length];
 		int i = 0;
 		for(TransactionFileNameMetadata f: files){
 			try{
-				r[i] = this.toEntityFileTransaction(f);
-				r[i].setEntityFileTransactionManagerConfigurer(entityFileTransactionManagerConfigurer);
-				i++;
+				ConfigurableEntityFileTransaction c = this.toEntityFileTransaction(f);
+				c.setEntityFileTransactionManagerConfigurer(entityFileTransactionManagerConfigurer);
+				c.setLockProvider(lockProvider);
+				r[i++] = c;
 			}
 			catch(Throwable e){
 				throw new TransactionException("fail load transaction: " + f.getTransactionID(), e);

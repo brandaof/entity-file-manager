@@ -3,10 +3,13 @@ package org.brandao.entityfilemanager.tx;
 import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.LockProvider;
 
 public interface ConfigurableEntityFileTransaction extends EntityFileTransaction{
 
 	void setEntityFileTransactionManagerConfigurer(EntityFileTransactionManagerConfigurer entityFileTransactionManager);
+	
+	void setLockProvider(LockProvider lockProvider);
 	
 	void setStatus(byte value);
 	

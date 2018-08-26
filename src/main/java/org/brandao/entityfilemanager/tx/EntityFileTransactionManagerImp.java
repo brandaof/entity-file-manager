@@ -300,7 +300,9 @@ public class EntityFileTransactionManagerImp
 	protected void reloadTransactions() throws EntityFileManagerException{
 		try{
 			ConfigurableEntityFileTransaction[] txList = 
-					transactionLoader.loadTransactions(this.entityFileManagerConfigurer, 
+					transactionLoader.loadTransactions(
+							this.lockProvider,
+							this.entityFileManagerConfigurer, 
 							this, this.transactionPath);
 			
 			for(ConfigurableEntityFileTransaction tx: txList){

@@ -15,7 +15,7 @@ public abstract class AbstractEntityFileTransaction
 	
 	protected Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles;
 	
-	protected LockProvider lockProvider;
+	protected transient LockProvider lockProvider;
 	
 	protected long transactionID;
 	
@@ -308,6 +308,10 @@ public abstract class AbstractEntityFileTransaction
 	public void setEntityFileTransactionManagerConfigurer(
 			EntityFileTransactionManagerConfigurer entityFileTransactionManager){
 		this.entityFileTransactionManager = entityFileTransactionManager;
+	}
+	
+	public void setLockProvider(LockProvider lockProvider){
+		this.lockProvider = lockProvider;
 	}
 	
 	protected void finalize() throws Throwable{
