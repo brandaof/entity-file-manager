@@ -201,7 +201,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 		stream.writeUTF(file.getName());
 		stream.writeInt(batchLength);
 		stream.writeObject(dataHandler);
-		stream.writeObject(parent);
+		//stream.writeObject(parent);
 		stream.writeObject(this.values);
     }
 
@@ -211,7 +211,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 		file                   = new File(stream.readUTF());
 		batchLength            = stream.readInt();
 		dataHandler            = (EntityFileTransactionDataHandler<T,R,H>) stream.readObject();
-		parent                 = (EntityFileAccess<T, R, H>)stream.readObject();
+		//parent                 = (EntityFileAccess<T, R, H>)stream.readObject();
 		values                 = (Map<Long, T>) stream.readObject();
 		
 		transactionDataHandler = (EntityFileTransactionDataHandler<T,R,H>)dataHandler;

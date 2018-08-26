@@ -340,7 +340,18 @@ public class EntityFileTransactionManagerImp
 				started, rolledBack, commited);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public <T,R, H> TransactionEntity<T,R> createTransactionalEntityFile(
+			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation){
+		
+		TransientTransactionEntityFileAccess<T, R, H> txFile = 
+				new TransientTransactionEntityFileAccess<T, R, H>(
+						entityFile, null, transactionID, transactionIsolation);
+		
+		return 
+			new ReadCommitedTransactionalEntityFile<T, R, H>(
+					txFile, this.lockProvider, this.timeout);
+	}
+	
 	private ConfigurableEntityFileTransaction loadReadCommitedEntityFileTransaction(
 			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
@@ -354,8 +365,7 @@ public class EntityFileTransactionManagerImp
 			
 			tf.put(
 				entry.getKey(), 
-				new ReadCommitedTransactionalEntityFile(
-						entry.getValue(), this.lockProvider, this.timeout)
+				this.createTransactionalEntityFile(entry.getValue(), transactionID, transactionIsolation)
 			);
 			
 		}

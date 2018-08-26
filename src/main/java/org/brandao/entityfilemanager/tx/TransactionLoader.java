@@ -20,6 +20,7 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.LockProvider;
 
+@SuppressWarnings("unused")
 public class TransactionLoader {
 
 	private static final String TX_FILE_PATTERN = "^ftx\\-(.*)$";
