@@ -2,6 +2,8 @@ package org.brandao.entityfilemanager;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -297,14 +299,16 @@ public class EntityFileManagerImpTest extends TestCase{
 		
 	}
 	
-	public void testConcurrentInsert() throws TransactionException, IOException, InterruptedException{
-		final int task = 1000;
-		final int ops = 3;
-		final long sleep = 1000;
-		final AtomicLong totalTime = new AtomicLong(0);
-		final CountDownLatch countDownLatch = new CountDownLatch(task);
-		final Random random = new Random();
+	public void testConcurrentInsert() throws Throwable{
+		final int task                         = 1000;
+		final int ops                          = 3;
+		final long sleep                       = 1000;
+		final AtomicLong totalTime             = new AtomicLong(0);
+		final CountDownLatch countDownLatch    = new CountDownLatch(task);
+		final Random random                    = new Random();
 		final ConcurrentMap<Long, Long> values = new ConcurrentHashMap<Long, Long>();
+		final List<Throwable> ex               = new ArrayList<Throwable>();
+		
 		for(int i=0;i<task;i++){
 			new Thread(){
 				
@@ -312,23 +316,43 @@ public class EntityFileManagerImpTest extends TestCase{
 					try{
 						EntityFileTransaction tx = efm.beginTransaction();
 						EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+						
 						sleep(2000 + random.nextInt(1000));
 
+						long[] ids  = new long[ops];
+						Long[] vals = new Long[ops];
+						
+						for(int i=0;i<ops;i++){
+							vals[i] = new Long(random.nextLong());
+						}
+						
 						long time = System.currentTimeMillis();
 						for(int i=0;i<ops;i++){
-							long value = random.nextLong();
-							long id = ef.insert(value);
-							values.put(id, value);
+							ids[i] = ef.insert(vals[i]);
+							values.put(ids[i], vals[i]);
 							sleep(sleep);
 						}
 						time = System.currentTimeMillis() - time;
+
+						totalTime.addAndGet(time);
+						
+						for(int i=0;i<ops;i++){
+							assertEquals(vals[i], ef.select(ids[i]));
+						}
 						
 						tx.commit();
 						
-						totalTime.addAndGet(time);
+						tx = efm.beginTransaction();
+						ef = efm.getEntityFile("long", tx, Long.class);
+						
+						for(int i=0;i<ops;i++){
+							assertEquals(vals[i], ef.select(ids[i]));
+						}
+						tx.commit();
+						
 					}
 					catch(Throwable e){
-						e.printStackTrace();
+						ex.add(e);
 					}
 					finally{
 						countDownLatch.countDown();
@@ -342,14 +366,19 @@ public class EntityFileManagerImpTest extends TestCase{
 		
 		countDownLatch.await();
 		
+		if(!ex.isEmpty()){
+			throw ex.get(0);
+		}
+		
 		double time = totalTime.doubleValue() / (task*ops);
 		assertTrue(time < (1.25*sleep));
 		
 		EntityFileTransaction tx = efm.beginTransaction();
 		EntityFile<Long> ef      = efm.getEntityFile("long", tx, Long.class);
+		
 		for(Entry<Long,Long> v: values.entrySet()){
 			long pv = ef.select(v.getKey());
-			assertEquals((long)v.getValue(), pv);
+			assertEquals("id: " + v.getKey() + " value: " + pv + " expected: " + v.getValue(), (long)v.getValue(), pv);
 		}
 		
 	}

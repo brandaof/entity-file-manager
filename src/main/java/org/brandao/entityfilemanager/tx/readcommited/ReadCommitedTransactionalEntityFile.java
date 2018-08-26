@@ -437,24 +437,33 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 		Long pointer = this.pointerMap.get(id);
 		
-		Lock lock = tx.getLock();
-		lock.lock();
-		try{
-			if(pointer == null){
-				long txID = this.tx.length();
+		if(pointer == null){
+			long txID;
+			
+			Lock lock = tx.getLock();
+			lock.lock();
+			try{
+				txID = this.tx.length();
 				
 				this.tx.seek(txID);
 				this.tx.write(new TransactionalEntity<T>(id, status, entity));
-				
-				this.pointerMap.put(id, txID);
 			}
-			else{
+			finally{
+				lock.unlock();
+			}
+			
+			this.pointerMap.put(id, txID);
+		}
+		else{
+			Lock lock = tx.getLock();
+			lock.lock();
+			try{
 				this.tx.seek(pointer);
 				this.tx.write(new TransactionalEntity<T>(id, status, entity));
 			}
-		}
-		finally{
-			lock.unlock();
+			finally{
+				lock.unlock();
+			}
 		}
 	}
 	
