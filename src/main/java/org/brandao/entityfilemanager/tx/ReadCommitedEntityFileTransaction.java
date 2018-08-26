@@ -26,5 +26,16 @@ public class ReadCommitedEntityFileTransaction
 			new ReadCommitedTransactionalEntityFile<T, R, H>(
 					txFile, this.lockProvider, this.timeout);
 	}
+
+	@Override
+	protected <T, R, H> TransactionEntityFileAccess<T, R, H> createTransactionEntityFileAccess(
+			EntityFileAccess<T, R, H> entityFile,
+			long transactionID,
+			byte transactionIsolation,
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer) {
+		
+		return new TransientTransactionEntityFileAccess<T, R, H>(entityFile, null, 
+				transactionID, transactionIsolation);
+	}
 	
 }

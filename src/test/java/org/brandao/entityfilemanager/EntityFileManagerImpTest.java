@@ -300,7 +300,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	}
 	
 	public void testConcurrentInsert() throws Throwable{
-		final int task                         = 1000;
+		final int task                         = 2000;
 		final int ops                          = 3;
 		final long sleep                       = 1000;
 		final AtomicLong totalTime             = new AtomicLong(0);
@@ -383,7 +383,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		
 	}
 	
-	public void testCommitMoreFile() throws TransactionException, IOException{
+	public void testCommitMultipleFiles() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
 		

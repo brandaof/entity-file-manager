@@ -332,6 +332,7 @@ public abstract class AbstractEntityFileTransaction
 				return tx;
 			}
 			
+			/*
 			TransactionEntityFileAccess<T,R,H> txFile = 
 					EntityFileTransactionUtil
 						.getTransactionEntityFileAccess(
@@ -340,6 +341,13 @@ public abstract class AbstractEntityFileTransaction
 								transactionIsolation, this.entityFileTransactionManager);
 			
 			txFile.createNewFile();
+			*/
+
+			TransactionEntityFileAccess<T,R,H> txFile = this
+					.createTransactionEntityFileAccess(
+							entityFile, 
+							transactionID, 
+							transactionIsolation, this.entityFileTransactionManager);
 			
 			tx = this.createTransactionalEntityFile(entityFile, txFile);
 			
@@ -351,6 +359,10 @@ public abstract class AbstractEntityFileTransaction
 		}
 	}
 
+	protected abstract <T,R,H> TransactionEntityFileAccess<T,R,H> createTransactionEntityFileAccess(
+			EntityFileAccess<T,R,H> entityFile, long transactionID, byte transactionIsolation, 
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer);
+	
 	protected abstract <T,R,H> TransactionEntity<T,R> createTransactionalEntityFile(
 			EntityFileAccess<T,R,H> entityFile, TransactionEntityFileAccess<T,R,H> txFile);
 	

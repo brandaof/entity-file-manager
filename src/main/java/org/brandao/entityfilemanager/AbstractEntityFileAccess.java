@@ -243,7 +243,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	@SuppressWarnings("unchecked")
 	public T[] batchRead(int len) throws IOException {
-		return (T[]) this.batchRead(false);
+		return (T[]) this.batchRead(len, false);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -253,7 +253,7 @@ public class AbstractEntityFileAccess<T, R, H>
 
 	@SuppressWarnings("unchecked")
 	public R[] batchReadRaw(int len) throws IOException {
-		return (R[])this.batchRead(true);
+		return (R[])this.batchRead(len, true);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -280,10 +280,10 @@ public class AbstractEntityFileAccess<T, R, H>
 		return entity;
 	}
 	
-	protected Object[] batchRead(boolean raw) throws IOException{
+	protected Object[] batchRead(int len, boolean raw) throws IOException{
 		
 		long maxRead       = this.length - this.offset;
-		int batch          = maxRead > this.batchLength? this.batchLength : (int)maxRead;
+		int batch          = maxRead > len? len : (int)maxRead;
 		int maxlength      = this.dataHandler.getRecordLength()*batch;
 		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
 		
