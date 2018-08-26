@@ -151,7 +151,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength() + this.dataHandler.getEOFLength());
 		DataOutputStream dStream     = new DataOutputStream(stream);
-		long eof                     = this.offset + 1 - this.length;
+		long newOffset               = this.offset + 1;
 		
 		if(raw){
 			this.dataHandler.writeRaw(dStream, (R)entity);
@@ -165,19 +165,19 @@ public class AbstractEntityFileAccess<T, R, H>
 		}
 		
 		
-		if(eof > 0){
+		if(newOffset >= this.length){
 			this.dataHandler.writeEOF(dStream);
 		}
 		
 		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
 		byte[] data        = stream.toByteArray();
-		
+
 		this.fileAccess.seek(pointerOffset);
 		this.fileAccess.write(data, 0, data.length);
 		
-		this.offset++;
+		this.offset = newOffset;
 		
-		if(eof > 0){
+		if(newOffset >= this.length){
 			this.length++;
 		}
 		
@@ -195,7 +195,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		ByteArrayOutputStream stream = new ByteArrayOutputStream(maxlength + this.dataHandler.getEOFLength());
 		DataOutputStream dStream     = new DataOutputStream(stream);
-		long eof                     = this.offset + entities.length - this.length;
+		long newOffset               = this.offset + entities.length;
 		
 		for(Object entity: entities){
 			
@@ -225,7 +225,7 @@ public class AbstractEntityFileAccess<T, R, H>
 			
 		}
 		
-		if(eof >= 0){
+		if(newOffset >= this.length){
 			this.dataHandler.writeEOF(dStream);
 		}
 		
@@ -233,10 +233,10 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.fileAccess.seek(pointerOffset);
 		this.fileAccess.write(data, 0, data.length);
 		
-		this.offset += entities.length;
+		this.offset = newOffset;
 		
-		if(eof > 0){
-			this.length += eof;
+		if(newOffset >= this.length){
+			this.length = newOffset;
 		}
 		
 	}
@@ -258,7 +258,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	@SuppressWarnings("unchecked")
 	public R readRaw() throws IOException {
-		return (R) this.read(false);
+		return (R) this.read(true);
 	}
 	
 	protected Object read(boolean raw) throws IOException {

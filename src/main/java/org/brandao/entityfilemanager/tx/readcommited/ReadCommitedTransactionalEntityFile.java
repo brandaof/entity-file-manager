@@ -80,18 +80,11 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 		try{
 			this.pointerManager.managerPointer(id);
-		}
-		catch(Throwable e){
-			throw new EntityFileException(e);
-		}
-		
-		try{
 			this.updateEntity(id, entity, TransactionalEntity.UPDATE_RECORD);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
 		}
-		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -141,12 +134,6 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 		try{
 			this.pointerManager.managerPointer(id);
-		}
-		catch(Throwable e){
-			throw new EntityFileException(e);
-		}
-		
-		try{
 			this.updateEntity(id, (T)null, TransactionalEntity.DELETE_RECORD);
 		}
 		catch(Throwable e){
@@ -205,23 +192,12 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			if(forUpdate){
 				this.pointerManager.managerPointer(id);
 			}
-		}
-		catch(Throwable e){
-			throw new EntityFileException(e);
-		}
-		
-		Lock lock = data.getLock();
-		lock.lock();
-		
-		try{
 			return this.selectEntity(id);
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
 		}
-		finally{
-			lock.unlock();
-		}
+		
 	}
 
 	public T[] select(long[] id){
@@ -240,9 +216,6 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			throw new EntityFileException(e);
 		}
 		
-		Lock lock = data.getLock();
-		lock.lock();
-		
 		try{
 			T[] result = (T[]) Array.newInstance(this.data.getType(), ids.length);			
 			int off    = 0;
@@ -257,9 +230,6 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		}
 		catch(Throwable e){
 			throw new EntityFileException(e);
-		}
-		finally{
-			lock.unlock();
 		}
 		
 	}
@@ -378,12 +348,11 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		lock.lock();
 		try{
 			id = this.getNextFreePointer(false);
-			System.out.println("id: " + id);
+			
 			this.data.seek(id);
 			this.data.write(null);
 			
 			this.pointerManager.managerPointer(id);
-			
 		}
 		finally{
 			lock.unlock();
@@ -402,6 +371,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		}
 		
 		this.pointerMap.put(id, txid);
+		
 		return id;
 	}
 
@@ -467,17 +437,24 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 		Long pointer = this.pointerMap.get(id);
 		
-		if(pointer == null){
-			long txID = this.tx.length();
-			
-			this.tx.seek(txID);
-			this.tx.write(new TransactionalEntity<T>(id, status, entity));
-			
-			this.pointerMap.put(id, txID);
+		Lock lock = tx.getLock();
+		lock.lock();
+		try{
+			if(pointer == null){
+				long txID = this.tx.length();
+				
+				this.tx.seek(txID);
+				this.tx.write(new TransactionalEntity<T>(id, status, entity));
+				
+				this.pointerMap.put(id, txID);
+			}
+			else{
+				this.tx.seek(pointer);
+				this.tx.write(new TransactionalEntity<T>(id, status, entity));
+			}
 		}
-		else{
-			this.tx.seek(pointer);
-			this.tx.write(new TransactionalEntity<T>(id, status, entity));
+		finally{
+			lock.unlock();
 		}
 	}
 	
@@ -496,29 +473,45 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		int[] subIds               = opsArray[TransactionalEntity.NEW_RECORD];
 		TransactionalEntity<T>[] e = new TransactionalEntity[subIds.length];
 		int max                    = subIds.length;
-		long txID                  = this.tx.length();
 		long id;
 		
-		for(int i=0;i<max;i++){
-			id = ids[subIds[i]];
-			e[i] = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
-			this.pointerMap.put(id, txID + i);
+		Lock lock = this.tx.getLock();
+		lock.lock();
+		try{
+			
+			long txID = this.tx.length();
+			
+			for(int i=0;i<max;i++){
+				id   = ids[subIds[i]];
+				e[i] = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
+				this.pointerMap.put(id, txID + i);
+			}
+			
+			this.tx.seek(txID);
+			this.tx.batchWrite(e);
 		}
-		
-		this.tx.seek(txID);
-		this.tx.batchWrite(e);
+		finally{
+			lock.unlock();
+		}
 
 		subIds = opsArray[TransactionalEntity.UPDATE_RECORD];
 		max    = subIds.length;
-		txID   = this.tx.length();
 		TransactionalEntity<T> en;
 		
 		for(int i=0;i<max;i++){
 			id = ids[subIds[i]];
 			Long pm = this.pointerMap.get(id);
 			en = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
-			this.tx.seek(pm);
-			this.tx.write(en);
+			
+			lock.lock();
+			try{
+				this.tx.seek(pm);
+				this.tx.write(en);
+			}
+			finally{
+				lock.unlock();
+			}
+			
 		}
 		
 	}
@@ -528,13 +521,27 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		Long pointer = this.pointerMap.get(id);
 		
 		if(pointer == null){
-			this.data.seek(id);
-			return this.data.read();
+			Lock lock = this.data.getLock();
+			lock.lock();
+			try{
+				this.data.seek(id);
+				return this.data.read();
+			}
+			finally{
+				lock.unlock();
+			}
 		}
 		else{
-			this.tx.seek(pointer);
-			TransactionalEntity<T> e = this.tx.read();
-			return e == null? null : e.getEntity();
+			Lock lock = this.tx.getLock();
+			lock.lock();
+			try{
+				this.tx.seek(pointer);
+				TransactionalEntity<T> e = this.tx.read();
+				return e == null? null : e.getEntity();
+			}
+			finally{
+				lock.unlock();
+			}
 		}
 	}
 
@@ -552,20 +559,36 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		int[] subRefIds = opsArray[TransactionalEntity.NEW_RECORD];
 		T[] e           = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
 		long[] subIds   = EntityFileTransactionUtil.refToId(ids, subRefIds);
+		Lock lock       = this.data.getLock();
 		int pos         = 0;
 		int q;
+		T[] data;
 		while(pos < subIds.length){
 			
 			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
 			q = nextPos - pos;
 			
-			this.data.seek(subIds[pos]);
 			
 			if(q == 1){
-				e[pos] = this.data.read();
+				lock.lock();
+				try{
+					this.data.seek(subIds[pos]);
+					e[pos] = this.data.read();
+				}
+				finally{
+					lock.unlock();
+				}
 			}
 			else{
-				T[] data = this.data.batchRead(q);
+				lock.lock();
+				try{
+					this.data.seek(subIds[pos]);
+					data = this.data.batchRead(q);
+				}
+				finally{
+					lock.unlock();
+				}
+				
 				System.arraycopy(data, 0, e, pos, q);
 			}
 			
@@ -580,23 +603,38 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		e         = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
 		subIds    = EntityFileTransactionUtil.refToId(ids, subRefIds);
 		subIds    = EntityFileTransactionUtil.getTXId(subIds, this.pointerMap);
+		lock      = this.tx.getLock();
 		pos       = 0;
+		TransactionalEntity<T>[] rs;
 		
 		while(pos < subIds.length){
 			
 			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
 			q = nextPos - pos;
 			
-			this.tx.seek(subIds[pos]);
-			
 			if(q == 1){
 				TransactionalEntity<T> r = this.tx.read();
 				if(r != null){
-					e[pos] = r.getEntity();
+					lock.lock();
+					try{
+						this.tx.seek(subIds[pos]);
+						e[pos] = r.getEntity();
+					}
+					finally{
+						lock.unlock();
+					}
 				}
 			}
 			else{
-				TransactionalEntity<T>[] rs = this.tx.batchRead(q);
+				lock.lock();
+				try{
+					this.tx.seek(subIds[pos]);
+					rs = this.tx.batchRead(q);
+				}
+				finally{
+					lock.unlock();
+				}
+				
 				if(rs != null){
 					for(int i=0;i<rs.length;i++){
 						TransactionalEntity<T> r = rs[i];

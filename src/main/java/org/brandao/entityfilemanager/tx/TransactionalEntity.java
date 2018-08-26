@@ -40,4 +40,36 @@ public class TransactionalEntity<T> {
 		return flags;
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((entity == null) ? 0 : entity.hashCode());
+		result = prime * result + flags;
+		result = prime * result + (int) (recordID ^ (recordID >>> 32));
+		return result;
+	}
+
+	@SuppressWarnings("rawtypes")
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		TransactionalEntity other = (TransactionalEntity) obj;
+		if (entity == null) {
+			if (other.entity != null)
+				return false;
+		} else if (!entity.equals(other.entity))
+			return false;
+		if (flags != other.flags)
+			return false;
+		if (recordID != other.recordID)
+			return false;
+		return true;
+	}
+
 }

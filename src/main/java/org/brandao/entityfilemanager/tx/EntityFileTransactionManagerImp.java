@@ -28,8 +28,6 @@ public class EntityFileTransactionManagerImp
 	
 	private ConcurrentMap<Long, EntityFileTransaction> transactions;
 	
-	private long currentTransactionID;
-
 	private long timeout;
 	
 	private File transactionPath;
@@ -45,6 +43,9 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	private long getNextTransactionID() {
+		
+		long currentTransactionID;
+		
 		this.txIDLock.lock();
 		try{
 			currentTransactionID = this.transactionIDCounter++;
