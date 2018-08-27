@@ -39,8 +39,8 @@ public class TransactionWritter {
 			fa.writeInt(name.length());
 			fa.writeString(name, name.length() + 2);
 			
-			SubtransactionEntityFileAccess stf = 
-					new SubtransactionEntityFileAccess(
+			InnerEntityFileAccess stf = 
+					new InnerEntityFileAccess(
 							fa.getFilePointer(),
 							transactionFile,
 							tefa);

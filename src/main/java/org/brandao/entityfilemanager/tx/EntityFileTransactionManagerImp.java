@@ -112,7 +112,7 @@ public class EntityFileTransactionManagerImp
 				this, this.lockProvider,
 				new HashMap<EntityFileAccess<?,?,?>, TransactionEntity<?,?>>(), 
 				EntityFileTransaction.TRANSACTION_NOT_STARTED, 
-				txID, true, false, false, this.timeout);
+				txID, true, false, false, this.timeout, false);
 		
 		this.transactions.put(txID, tx);
 		
@@ -172,7 +172,7 @@ public class EntityFileTransactionManagerImp
 			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
 
 			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction);
+			this.registerTransactionInformation(transaction, false);
 			
 			//Registra a transação no log de transações
 			this.logTransaction(transaction);
@@ -184,7 +184,7 @@ public class EntityFileTransactionManagerImp
 			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_COMMITED);
 			
 			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction);
+			this.registerTransactionInformation(transaction, true);
 			
 			//apaga os dados da transação.
 			this.deleteTransactionInformation(transaction);
@@ -239,7 +239,7 @@ public class EntityFileTransactionManagerImp
 			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
 			
 			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction);
+			this.registerTransactionInformation(transaction, false);
 			
 			//executa o rollback
 			this.executeRollback(transaction, transactionEntity);
@@ -248,7 +248,7 @@ public class EntityFileTransactionManagerImp
 			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 			
 			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction);
+			this.registerTransactionInformation(transaction, true);
 			
 			//apaga os dados da transação.
 			this.deleteTransactionInformation(transaction);
@@ -284,9 +284,11 @@ public class EntityFileTransactionManagerImp
 		
 	}
 
-	protected void registerTransactionInformation(ConfigurableEntityFileTransaction transaction
-			) throws IOException{
-		this.transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
+	protected void registerTransactionInformation(
+			ConfigurableEntityFileTransaction transaction, boolean override) throws IOException{
+		if(override || !transaction.isRecoveredTransaction()){
+			this.transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
+		}
 	}
 
 	protected void deleteTransactionInformation(ConfigurableEntityFileTransaction transaction
@@ -402,7 +404,7 @@ public class EntityFileTransactionManagerImp
 				this, this.lockProvider,
 				tf, 
 				status, 
-				transactionID, started, rolledBack, commited, this.timeout);
+				transactionID, started, rolledBack, commited, timeout, true);
 		
 	}
 	

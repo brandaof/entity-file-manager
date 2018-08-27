@@ -15,10 +15,10 @@ public class ReadCommitedEntityFileTransaction
 			LockProvider lockProvider,
 			Map<EntityFileAccess<?, ?, ?>, TransactionEntity<?, ?>> transactionFiles,
 			byte status, long transactionID, boolean started,
-			boolean rolledBack, boolean commited, long timeout) {
+			boolean rolledBack, boolean commited, long timeout, boolean recoveredTransaction) {
 		super(entityFileTransactionManager, lockProvider, transactionFiles, status,
 				transactionID, EntityFileTransaction.TRANSACTION_READ_COMMITED, 
-				started, rolledBack, commited, timeout);
+				started, rolledBack, commited, timeout, recoveredTransaction);
 	}
 
 }

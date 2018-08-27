@@ -50,8 +50,8 @@ public class TransactionReader {
 					entityFileTransactionManagerConfigurer
 						.createTransactionEntityFileAccess(efa, transactionID, transactionIsolation);
 			
-			SubtransactionEntityFileAccess<?,?,?> stf = 
-					new SubtransactionEntityFileAccess(
+			InnerEntityFileAccess<?,?,?> stf = 
+					new InnerEntityFileAccess(
 							fa.getFilePointer(),
 							transactionFile,
 							tef);

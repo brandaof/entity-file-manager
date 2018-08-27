@@ -35,13 +35,16 @@ public abstract class AbstractEntityFileTransaction
 	
 	protected byte transactionIsolation;
 	
+	protected boolean recoveredTransaction;
+	
 	public AbstractEntityFileTransaction(
 			EntityFileTransactionManagerConfigurer entityFileTransactionManager,
 			LockProvider lockProvider,
 			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, boolean rolledBack, 
-			boolean commited, long timeout) {
+			boolean commited, long timeout, boolean recoveredTransaction) {
 		this.entityFileTransactionManager = entityFileTransactionManager;
+		this.recoveredTransaction         = recoveredTransaction;
 		this.transactionIsolation         = transactionIsolation;
 		this.transactionFiles             = transactionFiles;
 		this.transactionID                = transactionID;
@@ -306,6 +309,10 @@ public abstract class AbstractEntityFileTransaction
 		this.dirty = value;
 	}
 
+	public boolean isRecoveredTransaction(){
+		return this.recoveredTransaction;
+	}
+	
 	public byte getTransactionIsolation() {
 		return this.transactionIsolation;
 	}

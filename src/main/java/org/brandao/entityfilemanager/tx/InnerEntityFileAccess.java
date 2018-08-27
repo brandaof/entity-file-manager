@@ -9,12 +9,12 @@ import org.brandao.entityfilemanager.DataOutputStream;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 import org.brandao.entityfilemanager.FileAccess;
-import org.brandao.entityfilemanager.tx.SubtransactionEntityFileAccess.*;
+import org.brandao.entityfilemanager.tx.InnerEntityFileAccess.*;
 
-public class SubtransactionEntityFileAccess<T, R, H> 
+public class InnerEntityFileAccess<T, R, H> 
 	extends AbstractEntityFileAccess<T, R, SubtransactionHeader<H>>{
 
-	public SubtransactionEntityFileAccess(
+	public InnerEntityFileAccess(
 			long pointer, RandomAccessFile transactionFile, 
 			EntityFileAccess<T, R, H> efa) throws IOException {
 		
@@ -97,6 +97,7 @@ public class SubtransactionEntityFileAccess<T, R, H>
 		
 		public DataHandler(long firstPointer, EntityFileDataHandler<T, R, H> dataHandler){
 			this.dataHandler = dataHandler;
+			this.firstPointer = firstPointer;
 		}
 		
 		public void writeMetaData(DataOutputStream stream, SubtransactionHeader<H> value)
