@@ -10,10 +10,14 @@ public interface EntityFileTransactionManager {
 	
 	EntityFileTransaction openTransaction() throws TransactionException;
 
-	<T,R,H> TransactionEntity<T,R> createTransactionalEntityFile(
+	<T,R,H> TransactionEntity<T,R> createTransactionalEntity(
 			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation
 			) throws TransactionException;
 			
+	<T,R, H> TransactionEntity<T,R> createTransactionalEntity(
+			TransactionEntityFileAccess<T,R,H> transactionEntityFile, long transactionID,
+			byte transactionIsolation) throws TransactionException;
+	
 	void closeTransaction(ConfigurableEntityFileTransaction tx) throws TransactionException;
 	
 	void commitTransaction(ConfigurableEntityFileTransaction tx) throws TransactionException;

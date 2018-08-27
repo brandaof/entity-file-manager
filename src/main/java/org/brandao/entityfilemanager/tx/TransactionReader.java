@@ -35,35 +35,31 @@ public class TransactionReader {
 		boolean rolledBack = (flags &  8) != 0;
 		boolean started    = (flags & 16) != 0;
 		
-		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = 
-				new HashMap<EntityFileAccess<?,?,?>, TransactionEntity<?,?>>();
+		Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> m = 
+				new HashMap<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>();
 		
-		Collection<TransactionEntity<?,?>> list = m.values();
+		Collection<TransactionEntityFileAccess<?,?,?>> list = m.values();
 		
 		while(fa.readByte() == 0){
 			
 			int nameLen = fa.readInt();
 			String name = fa.readString(nameLen + 2);
 			
-			EntityFileAccess efa = entityFileManagerConfigurer.getEntityFile(name);
+			EntityFileAccess<?,?,?> efa = entityFileManagerConfigurer.getEntityFile(name);
 			
 			if(efa == null){
 				throw new TransactionException("entity file access not found: " + name);
 			}
 			
-			TransactionEntityFileAccess tefa = 
-					entityFileTransactionManagerConfigurer
-			.createTransactionalEntityFile(efa, transactionID, transactionIsolation);
-			
-			SubtransactionEntityFileAccess stf = 
+			SubtransactionEntityFileAccess<?,?,?> stf = 
 					new SubtransactionEntityFileAccess(
 							fa.getFilePointer(),
 							transactionFile,
-							tefa);
+							efa);
 			
 			stf.open();
 			
-			m.put(efa, tefa);
+			m.put(efa, stf);
 		}
 	}
 	

@@ -326,6 +326,37 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 	
+	public <T,R, H> TransactionEntity<T,R> createTransactionalEntity(
+			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation) throws TransactionException{
+		
+		if(transactionIsolation != EntityFileTransaction.TRANSACTION_READ_COMMITED){
+			throw new TransactionException("transaction not supported: " + transactionIsolation);
+		}
+		
+		TransactionEntityFileAccess<T, R, H> txFile = 
+				new TransientTransactionEntityFileAccess<T, R, H>(
+						entityFile, 
+						new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
+						transactionID, 
+						transactionIsolation);
+		
+		return 
+			new ReadCommitedTransactionalEntityFile<T, R, H>(
+					txFile, this.lockProvider, this.timeout);
+	}
+
+	public <T,R,H> TransactionEntity<T,R> createTransactionalEntity(
+			TransactionEntityFileAccess<T,R,H> transactionEntityFile, long transactionID,
+			byte transactionIsolation) throws TransactionException{
+		
+		if(transactionIsolation != EntityFileTransaction.TRANSACTION_READ_COMMITED){
+			throw new TransactionException("transaction not supported: " + transactionIsolation);
+		}
+		
+		return new ReadCommitedTransactionalEntityFile<T, R, H>(
+					transactionEntityFile, this.lockProvider, this.timeout);
+	}
+
 	public ConfigurableEntityFileTransaction load(
 			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
@@ -339,31 +370,11 @@ public class EntityFileTransactionManagerImp
 				transactionFiles, status, transactionID, transactionIsolation, 
 				started, rolledBack, commited);
 	}
-
-	public <T,R, H> TransactionEntity<T,R> createTransactionalEntityFile(
-			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation){
-		
-		TransactionEntityFileAccess<T, R, H> txFile = 
-				this.createTransactionEntityFileAccess(entityFile, transactionID, transactionIsolation);
-		
-		return 
-			new ReadCommitedTransactionalEntityFile<T, R, H>(
-					txFile, this.lockProvider, this.timeout);
-	}
-
-	public <T,R, H> TransactionEntityFileAccess<T,R,H> createTransactionEntityFileAccess(
-			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation){
-		return new TransientTransactionEntityFileAccess<T, R, H>(
-				entityFile, 
-				new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
-				transactionID, 
-				transactionIsolation);
-	}
 	
 	private ConfigurableEntityFileTransaction loadReadCommitedEntityFileTransaction(
 			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
 			byte status, long transactionID, byte transactionIsolation, boolean started, 
-			boolean rolledBack,	boolean commited){
+			boolean rolledBack,	boolean commited) throws TransactionException{
 		
 		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> tf =
 			new HashMap<EntityFileAccess<?,?,?>, TransactionEntity<?,?>>();
@@ -373,7 +384,7 @@ public class EntityFileTransactionManagerImp
 			
 			tf.put(
 				entry.getKey(), 
-				this.createTransactionalEntityFile(entry.getValue(), transactionID, transactionIsolation)
+				this.createTransactionalEntity(entry.getValue(), transactionID, transactionIsolation)
 			);
 			
 		}

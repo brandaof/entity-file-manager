@@ -236,20 +236,8 @@ public abstract class AbstractEntityFileTransaction
 				return tx;
 			}
 			
-			/*
-			TransactionEntityFileAccess<T,R,H> txFile = 
-					EntityFileTransactionUtil
-						.getTransactionEntityFileAccess(
-								entityFile, 
-								transactionID, 
-								transactionIsolation, this.entityFileTransactionManager);
-			
-			txFile.createNewFile();
-			*/
-
 			tx = this.entityFileTransactionManager
-					.createTransactionalEntityFile(
-							entityFile, transactionID, transactionIsolation);
+					.createTransactionalEntity(entityFile, transactionID, transactionIsolation);
 			
 			this.transactionFiles.put(entityFile, tx);
 			return tx;
@@ -308,6 +296,18 @@ public abstract class AbstractEntityFileTransaction
 	
 	public void setLockProvider(LockProvider lockProvider){
 		this.lockProvider = lockProvider;
+	}
+
+	public void setTransactionID(byte value) {
+		this.transactionIsolation = value;
+	}
+
+	public void setDirty(boolean value) {
+		this.dirty = value;
+	}
+
+	public byte getTransactionIsolation() {
+		return this.transactionIsolation;
 	}
 	
 	protected void finalize() throws Throwable{
