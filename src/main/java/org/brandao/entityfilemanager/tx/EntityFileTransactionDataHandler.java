@@ -94,7 +94,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		return 1;
 	}
 
-	public int getFirstRecord() {
+	public long getFirstRecord() {
 		return this.handler.getFirstRecord() + 10;
 	}
 
@@ -116,6 +116,10 @@ public class EntityFileTransactionDataHandler<T, R, H>
 
 	public long getTransactionIsolationPointer() {
 		return transactionIsolationPointer;
+	}
+
+	public int getHeaderLength() {
+		return (int)this.getFirstRecord();
 	}
 
 }

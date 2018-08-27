@@ -5,9 +5,9 @@ import java.io.File;
 public class SimpleEntityFileAccess<T, R, H> 
 	extends AbstractEntityFileAccess<T, R, H>{
 
-	public SimpleEntityFileAccess(File file,
+	public SimpleEntityFileAccess(String name, File file,
 			EntityFileDataHandler<T, R, H> dataHandler) {
-		super(file, dataHandler);
+		super(name, file, dataHandler);
 	}
 
 }

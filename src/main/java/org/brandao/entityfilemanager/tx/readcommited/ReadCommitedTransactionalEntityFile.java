@@ -663,6 +663,14 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 	}
 
+	public TransactionEntityFileAccess<T,R,H> getTransactionEntityFileAccess(){
+		return tx;
+	}
+	
+	public EntityFileAccess<T,R,H> getEntityFileAccess(){
+		return data;
+	}
+	
 	public byte getTransactionIsolation() throws IOException {
 		return EntityFileTransaction.TRANSACTION_READ_COMMITED;
 	}

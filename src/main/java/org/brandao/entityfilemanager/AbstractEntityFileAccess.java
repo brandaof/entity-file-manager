@@ -15,6 +15,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class AbstractEntityFileAccess<T, R, H> 
 	implements EntityFileAccess<T, R, H>{
 
+	protected String name;
+	
 	protected H metadata;
 	
 	protected long offset;
@@ -31,12 +33,16 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	protected long length;
 	
-	public AbstractEntityFileAccess(File file, EntityFileDataHandler<T, R, H> dataHandler){
-		this.file        = file;
-		this.offset      = 0;
-		this.batchLength = 1000;
-		this.dataHandler = dataHandler;
-		this.lock        = new ReentrantLock();
+	protected long firstPointer;
+	
+	public AbstractEntityFileAccess(String name, File file, EntityFileDataHandler<T, R, H> dataHandler){
+		this.name         = name;
+		this.file         = file;
+		this.offset       = 0;
+		this.batchLength  = 1000;
+		this.dataHandler  = dataHandler;
+		this.lock         = new ReentrantLock();
+		this.firstPointer = 0;
 		
 	}
 	
@@ -49,7 +55,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	}
 
 	public String getName() {
-		return this.file.getName();
+		return this.name;
 	}
 	
 	public void setBatchLength(int value){
@@ -78,7 +84,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	}
 	
 	protected void writeHeader() throws IOException{
-		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getFirstRecord());
+		ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getHeaderLength());
 		DataOutputStream dStream     = new DataOutputStream(stream);
 		
 		this.dataHandler.writeMetaData(dStream, this.metadata);
@@ -88,7 +94,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		byte[] data = stream.toByteArray();
 		
-		this.fileAccess.seek(0);
+		this.fileAccess.seek(this.firstPointer);
 		this.fileAccess.write(data, 0, data.length);
 	}
 
@@ -111,9 +117,9 @@ public class AbstractEntityFileAccess<T, R, H>
 	}
 
 	protected void readHeader() throws IOException{
-		byte[] buffer = new byte[this.dataHandler.getFirstRecord()];
+		byte[] buffer = new byte[this.dataHandler.getHeaderLength()];
 		
-		this.fileAccess.seek(0);
+		this.fileAccess.seek(this.firstPointer);
 		this.fileAccess.read(buffer);
 		
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
