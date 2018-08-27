@@ -2,6 +2,7 @@ package org.brandao.entityfilemanager.tx;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -108,7 +109,8 @@ public class TransactionLoader {
 		int i = 0;
 		for(TransactionFileNameMetadata f: files){
 			try{
-				ConfigurableEntityFileTransaction c = this.toEntityFileTransaction(f);
+				ConfigurableEntityFileTransaction c = this.toEntityFileTransaction(
+						entityFileTransactionManagerConfigurer, f);
 				c.setEntityFileTransactionManagerConfigurer(entityFileTransactionManagerConfigurer);
 				c.setLockProvider(lockProvider);
 				r[i++] = c;
@@ -160,8 +162,23 @@ public class TransactionLoader {
 		f.delete();
 	}
 	
-	private ConfigurableEntityFileTransaction toEntityFileTransaction(TransactionFileNameMetadata f
-			) throws IOException, ClassNotFoundException{
+	private ConfigurableEntityFileTransaction toEntityFileTransaction(
+			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer,
+			TransactionFileNameMetadata f) throws IOException, TransactionException {
+		
+		RandomAccessFile raf = null;
+		TransactionReader r = new TransactionReader();
+		try{
+			raf = new RandomAccessFile(f.getFile(), "rw");
+			return r.read(entityFileTransactionManagerConfigurer, raf);
+		}
+		finally{
+			if(raf != null){
+				raf.close();
+			}
+		}
+		
+		/*
 		FileInputStream fin = null;
 		ObjectInput in = null;
 		try{
@@ -174,7 +191,7 @@ public class TransactionLoader {
 				fin.close();
 			}
 		}
-		
+		*/
 	}
 	
 	private Map<Long, List<TransactionFileNameMetadata>> groupTransaction(
@@ -263,7 +280,7 @@ public class TransactionLoader {
 			
 			ConfigurableEntityFileTransaction eft = 
 				transactioManager.load(transactionFiles, transactionStatus, 
-						transactionID, transactionIsolation, started, rolledBack, commited);
+						transactionID, transactionIsolation, started, rolledBack, commited, -1);
 			
 			result[i++] = eft;
 		}

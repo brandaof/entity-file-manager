@@ -21,11 +21,9 @@ public class TransactionWritter {
 		fa.writeByte(t.getTransactionIsolation());
 		
 		fa.writeByte((byte)(
-				(t.isClosed()?      1 : 0) |
-				(t.isCommited()?    2 : 0) |
-				(t.isDirty()?       4 : 0) |
-				(t.isRolledBack()?  8 : 0) |
-				(t.isStarted()?    16 : 0)));
+				(t.isCommited()?   1 : 0) |
+				(t.isRolledBack()? 2 : 0) |
+				(t.isStarted()?    4 : 0)));
 		
 		
 		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = t.getTransactionFiles();

@@ -35,8 +35,13 @@ public class SubtransactionEntityFileAccess<T, R, H>
 		this.fileAccess.seek(this.firstPointer);
 		this.readHeader();
 		
-		long maxPointer = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*maxLength;
+		long maxPointer =
+				this.firstPointer +
+				this.dataHandler.getFirstRecord() + 
+				this.dataHandler.getRecordLength()*maxLength;
+		
 		long currentMaxPointer = this.fileAccess.length();
+		
 		this.length = 
 				currentMaxPointer > maxPointer? 
 						this.maxLength : 

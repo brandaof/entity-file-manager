@@ -2,7 +2,6 @@ package org.brandao.entityfilemanager.tx;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,16 +28,12 @@ public class TransactionReader {
 		
 		byte flags = fa.readByte();
 		
-		boolean closed     = (flags &  1) != 0;
-		boolean commited   = (flags &  2) != 0;
-		boolean dirty      = (flags &  4) != 0;
-		boolean rolledBack = (flags &  8) != 0;
-		boolean started    = (flags & 16) != 0;
+		boolean commited   = (flags & 1) != 0;
+		boolean rolledBack = (flags & 2) != 0;
+		boolean started    = (flags & 4) != 0;
 		
 		Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> m = 
 				new HashMap<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>>();
-		
-		Collection<TransactionEntityFileAccess<?,?,?>> list = m.values();
 		
 		while(fa.readByte() == 0){
 			
@@ -51,16 +46,35 @@ public class TransactionReader {
 				throw new TransactionException("entity file access not found: " + name);
 			}
 			
+			TransactionEntityFileAccess tef = 
+					entityFileTransactionManagerConfigurer
+						.createTransactionEntityFileAccess(efa, transactionID, transactionIsolation);
+			
 			SubtransactionEntityFileAccess<?,?,?> stf = 
 					new SubtransactionEntityFileAccess(
 							fa.getFilePointer(),
 							transactionFile,
 							efa);
-			
+
 			stf.open();
+			stf.seek(0);
 			
-			m.put(efa, stf);
+			long count = 0;
+			long max   = stf.length();
+			long len   = tef.getBatchLength();
+			
+			while(count < max){
+				Object[] tmp = stf.batchRead((int)len);
+				tef.batchWrite(tmp);
+				count += tmp.length;
+			}
+			
+			m.put(efa, tef);
 		}
+		
+		return entityFileTransactionManagerConfigurer
+				.load(m, status, transactionID, transactionIsolation, 
+						started, rolledBack, commited, timeout);
 	}
 	
 }
