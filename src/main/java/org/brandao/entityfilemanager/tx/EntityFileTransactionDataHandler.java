@@ -122,4 +122,8 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		return (int)this.getFirstRecord();
 	}
 
+	public long getFirstPointer() {
+		return 0;
+	}
+
 }

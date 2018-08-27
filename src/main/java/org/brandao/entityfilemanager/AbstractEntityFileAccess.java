@@ -33,8 +33,6 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	protected long length;
 	
-	protected long firstPointer;
-	
 	public AbstractEntityFileAccess(String name, File file, EntityFileDataHandler<T, R, H> dataHandler){
 		this.name         = name;
 		this.file         = file;
@@ -42,8 +40,6 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.batchLength  = 1000;
 		this.dataHandler  = dataHandler;
 		this.lock         = new ReentrantLock();
-		this.firstPointer = 0;
-		
 	}
 	
 	public EntityFileDataHandler<T, R, H> getEntityFileDataHandler() {
@@ -94,7 +90,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		byte[] data = stream.toByteArray();
 		
-		this.fileAccess.seek(this.firstPointer);
+		this.fileAccess.seek(this.dataHandler.getFirstPointer());
 		this.fileAccess.write(data, 0, data.length);
 	}
 
@@ -119,7 +115,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	protected void readHeader() throws IOException{
 		byte[] buffer = new byte[this.dataHandler.getHeaderLength()];
 		
-		this.fileAccess.seek(this.firstPointer);
+		this.fileAccess.seek(this.dataHandler.getFirstPointer());
 		this.fileAccess.read(buffer);
 		
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
@@ -176,7 +172,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		}
 		
 		long pointerOffset = 
-				this.firstPointer +
+				this.dataHandler.getFirstPointer() +
 				this.dataHandler.getFirstRecord() + 
 				this.dataHandler.getRecordLength()*this.offset;
 		
@@ -197,7 +193,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
 		
 		long pointerOffset =
-				this.firstPointer +
+				this.dataHandler.getFirstPointer() +
 				this.dataHandler.getFirstRecord() + 
 				this.dataHandler.getRecordLength()*this.offset;
 		
@@ -277,7 +273,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	protected Object read(boolean raw) throws IOException {
 		
 		long pointerOffset = 
-				this.firstPointer +
+				this.dataHandler.getFirstPointer() +
 				this.dataHandler.getFirstRecord() + 
 				this.dataHandler.getRecordLength()*this.offset;
 		
@@ -302,7 +298,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		int batch          = maxRead > len? len : (int)maxRead;
 		int maxlength      = this.dataHandler.getRecordLength()*batch;
 		long pointerOffset = 
-				this.firstPointer +
+				this.dataHandler.getFirstPointer() +
 				this.dataHandler.getFirstRecord() + 
 				this.dataHandler.getRecordLength()*this.offset;
 		
@@ -347,7 +343,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		}
 		else{
 			long fileLength = 
-					this.firstPointer +
+					this.dataHandler.getFirstPointer() +
 					this.dataHandler.getFirstRecord() + 
 					this.dataHandler.getRecordLength()*value + 
 					this.dataHandler.getEOFLength();

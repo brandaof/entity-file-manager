@@ -19,25 +19,24 @@ public class SubtransactionEntityFileAccess<T, R, H>
 			EntityFileAccess<T, R, H> efa) throws IOException {
 		
 		super(efa.getName(), efa.getAbsoluteFile(), 
-				new DataHandler<T, R, H>(efa.getEntityFileDataHandler()));
+				new DataHandler<T, R, H>(pointer, efa.getEntityFileDataHandler()));
 		
 		this.metadata     = new SubtransactionHeader<H>(efa.length(), efa.getMetadata());
 		this.fileAccess   = new FileAccess(this.file, transactionFile);
-		this.firstPointer = pointer;
 	}
 
 	public void createNewFile() throws IOException {
-		this.fileAccess.seek(this.firstPointer);
+		this.fileAccess.seek(this.dataHandler.getFirstPointer());
 		this.writeHeader();
 		this.setLength(0);
 	}
 
 	public void open() throws IOException {
-		this.fileAccess.seek(this.firstPointer);
+		this.fileAccess.seek(this.dataHandler.getFirstPointer());
 		this.readHeader();
 		
 		long maxPointer =
-				this.firstPointer +
+				this.dataHandler.getFirstPointer() +
 				this.dataHandler.getFirstRecord() + 
 				this.dataHandler.getRecordLength()*this.metadata.getMaxLength();
 		
@@ -46,7 +45,7 @@ public class SubtransactionEntityFileAccess<T, R, H>
 		this.length = 
 				currentMaxPointer > maxPointer? 
 						this.metadata.getMaxLength() : 
-						(currentMaxPointer - this.firstPointer) / this.dataHandler.getRecordLength(); 
+						(currentMaxPointer - this.dataHandler.getFirstPointer()) / this.dataHandler.getRecordLength(); 
 	}
 	
 	public void setLength(long value) throws IOException{
@@ -94,7 +93,9 @@ public class SubtransactionEntityFileAccess<T, R, H>
 
 		private EntityFileDataHandler<T, R, H> dataHandler;
 		
-		public DataHandler(EntityFileDataHandler<T, R, H> dataHandler){
+		private long firstPointer;
+		
+		public DataHandler(long firstPointer, EntityFileDataHandler<T, R, H> dataHandler){
 			this.dataHandler = dataHandler;
 		}
 		
@@ -153,6 +154,10 @@ public class SubtransactionEntityFileAccess<T, R, H>
 
 		public int getHeaderLength() {
 			return this.getFirstRecord();
+		}
+
+		public long getFirstPointer() {
+			return this.firstPointer;
 		}
 		
 	}

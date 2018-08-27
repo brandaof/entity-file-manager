@@ -71,6 +71,10 @@ public class LongEntityFileAccess
 		public int getHeaderLength() {
 			return (int) this.getFirstRecord();
 		}
+
+		public long getFirstPointer() {
+			return 0;
+		}
 	
 	}
 

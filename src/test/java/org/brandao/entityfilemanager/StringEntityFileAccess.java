@@ -72,6 +72,10 @@ public class StringEntityFileAccess
 			// TODO Auto-generated method stub
 			return 0;
 		}
+
+		public long getFirstPointer() {
+			return 0;
+		}
 	
 	}
 
