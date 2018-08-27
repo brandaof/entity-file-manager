@@ -8,8 +8,8 @@ import org.brandao.entityfilemanager.LongEntityFileAccess.*;
 public class LongEntityFileAccess 
 	extends SimpleEntityFileAccess<Long, byte[], LongEntityFileAccessHeader>{
 
-	public LongEntityFileAccess(File file) {
-		super(file, new LongEntityFileAccessHandler());
+	public LongEntityFileAccess(String name, File file) {
+		super(name, file, new LongEntityFileAccessHandler());
 		this.metadata = new LongEntityFileAccessHeader();
 	}
 
@@ -66,6 +66,10 @@ public class LongEntityFileAccess
 	
 		public Class<byte[]> getRawType() {
 			return byte[].class;
+		}
+
+		public int getHeaderLength() {
+			return (int) this.getFirstRecord();
 		}
 	
 	}

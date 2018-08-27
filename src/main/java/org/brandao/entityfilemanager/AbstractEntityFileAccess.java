@@ -63,15 +63,15 @@ public class AbstractEntityFileAccess<T, R, H>
 	}
 
 	public int getBatchLength(){
-		return this.batchLength;
+		return batchLength;
 	}
 	
 	public File getAbsoluteFile() {
-		return this.file.getAbsoluteFile();
+		return file == null? null : file.getAbsoluteFile();
 	}
 
 	public String getAbsolutePath() {
-		return this.file.getAbsolutePath();
+		return file == null? null : file.getAbsolutePath();
 	}
 
 	public void createNewFile() throws IOException {
@@ -175,7 +175,11 @@ public class AbstractEntityFileAccess<T, R, H>
 			this.dataHandler.writeEOF(dStream);
 		}
 		
-		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
+		long pointerOffset = 
+				this.firstPointer +
+				this.dataHandler.getFirstRecord() + 
+				this.dataHandler.getRecordLength()*this.offset;
+		
 		byte[] data        = stream.toByteArray();
 
 		this.fileAccess.seek(pointerOffset);
@@ -192,7 +196,10 @@ public class AbstractEntityFileAccess<T, R, H>
 	@SuppressWarnings("unchecked")
 	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
 		
-		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
+		long pointerOffset =
+				this.firstPointer +
+				this.dataHandler.getFirstRecord() + 
+				this.dataHandler.getRecordLength()*this.offset;
 		
 		int maxlength = 
 				entities.length > this.batchLength?
@@ -362,7 +369,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	}
 
 	public boolean exists() {
-		return this.file.exists();
+		return file == null? false : file.exists();
 	}
 	
 	public Lock getLock(){

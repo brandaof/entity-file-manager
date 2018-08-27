@@ -343,13 +343,21 @@ public class EntityFileTransactionManagerImp
 	public <T,R, H> TransactionEntity<T,R> createTransactionalEntityFile(
 			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation){
 		
-		TransientTransactionEntityFileAccess<T, R, H> txFile = 
-				new TransientTransactionEntityFileAccess<T, R, H>(
-						entityFile, null, transactionID, transactionIsolation);
+		TransactionEntityFileAccess<T, R, H> txFile = 
+				this.createTransactionEntityFileAccess(entityFile, transactionID, transactionIsolation);
 		
 		return 
 			new ReadCommitedTransactionalEntityFile<T, R, H>(
 					txFile, this.lockProvider, this.timeout);
+	}
+
+	public <T,R, H> TransactionEntityFileAccess<T,R,H> createTransactionEntityFileAccess(
+			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation){
+		return new TransientTransactionEntityFileAccess<T, R, H>(
+				entityFile, 
+				new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
+				transactionID, 
+				transactionIsolation);
 	}
 	
 	private ConfigurableEntityFileTransaction loadReadCommitedEntityFileTransaction(

@@ -8,6 +8,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -124,7 +125,19 @@ public class TransactionLoader {
 			ConfigurableEntityFileTransaction t, File path) throws IOException{
 		
 		File f = new File(path, "ftx-" + Long.toString(t.getTransactionID(), Character.MAX_RADIX));
+		RandomAccessFile raf = null;
+		TransactionWritter w = new TransactionWritter();
+		try{
+			raf = new RandomAccessFile(f, "rw");
+			w.write(t, raf);
+		}
+		finally{
+			if(raf != null){
+				raf.close();
+			}
+		}
 		
+		/*
 		FileOutputStream fout = null;
 		ObjectOutput out = null;
 		try{
@@ -137,6 +150,7 @@ public class TransactionLoader {
 				fout.close();
 			}
 		}
+		*/
 		
 	}
 

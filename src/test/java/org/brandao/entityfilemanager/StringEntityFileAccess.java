@@ -8,8 +8,8 @@ import org.brandao.entityfilemanager.StringEntityFileAccess.*;
 public class StringEntityFileAccess 
 	extends SimpleEntityFileAccess<String, byte[], StringEntityFileAccessHeader>{
 
-	public StringEntityFileAccess(File file) {
-		super(file, new StringEntityFileAccessHandler());
+	public StringEntityFileAccess(String name, File file) {
+		super(name, file, new StringEntityFileAccessHandler());
 		this.metadata = new StringEntityFileAccessHeader();
 	}
 
@@ -66,6 +66,11 @@ public class StringEntityFileAccess
 	
 		public Class<byte[]> getRawType() {
 			return byte[].class;
+		}
+
+		public int getHeaderLength() {
+			// TODO Auto-generated method stub
+			return 0;
 		}
 	
 	}

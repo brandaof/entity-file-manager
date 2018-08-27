@@ -40,8 +40,8 @@ public class EntityFileManagerImpTest extends TestCase{
 		efm.setEntityFileTransactionManager(tm);
 		efm.setLockProvider(lp);
 		efm.setPath(path);
-		efm.register("long", new LongEntityFileAccess(new File(path, "long")));
-		efm.register("string", new StringEntityFileAccess(new File(path, "string")));
+		efm.register("long", new LongEntityFileAccess("long", new File(path, "long")));
+		efm.register("string", new StringEntityFileAccess("string", new File(path, "string")));
 		
 		efm.init();
 		

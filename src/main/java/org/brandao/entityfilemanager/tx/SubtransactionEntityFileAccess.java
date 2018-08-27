@@ -15,23 +15,41 @@ public class SubtransactionEntityFileAccess<T, R, H>
 
 	private long maxLength;
 	
-	public SubtransactionEntityFileAccess(long pointer, long maxLength, 
-			RandomAccessFile transactionFile, EntityFileAccess<T, R, H> efa) {
+	public SubtransactionEntityFileAccess(
+			long pointer, RandomAccessFile transactionFile, EntityFileAccess<T, R, H> efa) throws IOException {
 		super(efa.getName(), efa.getAbsoluteFile(), 
-				new DataHandler<T, R, H>(pointer, efa.getEntityFileDataHandler()));
-		this.maxLength    = maxLength;
-		this.fileAccess   = new FileAccess(file, transactionFile);
+				new DataHandler<T, R, H>(efa.getEntityFileDataHandler()));
+		this.maxLength    = efa.length();
+		this.fileAccess   = new FileAccess(this.file, transactionFile);
 		this.firstPointer = pointer;
+		this.metadata     = efa.getMetadata();
 	}
 
 	public void createNewFile() throws IOException {
+		this.fileAccess.seek(this.firstPointer);
+		this.writeHeader();
+		this.setLength(0);
 	}
 
 	public void open() throws IOException {
+		this.fileAccess.seek(this.firstPointer);
+		this.readHeader();
+		
+		long maxPointer = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*maxLength;
+		long currentMaxPointer = this.fileAccess.length();
+		this.length = 
+				currentMaxPointer > maxPointer? 
+						this.maxLength : 
+						(currentMaxPointer - this.firstPointer) / this.dataHandler.getRecordLength(); 
 	}
 	
-	public void setLength(long value){
-		throw new UnsupportedOperationException();
+	public void setLength(long value) throws IOException{
+		
+		if(length > this.maxLength){
+			throw new IOException(value + " > " + maxLength);
+		}
+		
+		this.length = value;
 	}
 
 	public void delete() throws IOException {
@@ -42,10 +60,7 @@ public class SubtransactionEntityFileAccess<T, R, H>
 
 		private EntityFileDataHandler<T, R, H> dataHandler;
 		
-		private long pointer;
-		
-		public DataHandler(long pointer, EntityFileDataHandler<T, R, H> dataHandler){
-			this.pointer = pointer;
+		public DataHandler(EntityFileDataHandler<T, R, H> dataHandler){
 			this.dataHandler = dataHandler;
 		}
 		
@@ -87,8 +102,8 @@ public class SubtransactionEntityFileAccess<T, R, H>
 			return dataHandler.getEOFLength();
 		}
 
-		public long getFirstRecord() {
-			return pointer + dataHandler.getFirstRecord();
+		public int getFirstRecord() {
+			return dataHandler.getFirstRecord();
 		}
 
 		public Class<T> getType() {

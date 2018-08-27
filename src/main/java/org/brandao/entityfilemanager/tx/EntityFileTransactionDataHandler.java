@@ -94,7 +94,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		return 1;
 	}
 
-	public long getFirstRecord() {
+	public int getFirstRecord() {
 		return this.handler.getFirstRecord() + 10;
 	}
 

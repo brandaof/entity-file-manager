@@ -51,6 +51,8 @@ public interface EntityFileTransaction extends Serializable{
 	
 	byte getStatus();
 	
+	byte getTransactionIsolation();
+	
 	boolean isRolledBack();
 	
 	boolean isCommited();

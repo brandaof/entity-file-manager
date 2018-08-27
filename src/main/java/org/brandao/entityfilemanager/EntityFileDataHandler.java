@@ -24,7 +24,7 @@ public interface EntityFileDataHandler<T, R, H> {
 	
 	int getEOFLength();
 	
-	long getFirstRecord();
+	int getFirstRecord();
 
 	Class<T> getType();
 	

@@ -21,6 +21,10 @@ public interface ConfigurableEntityFileTransaction extends EntityFileTransaction
 	
 	void setStarted(boolean value);
 	
+	void setTransactionID(long value);
+	
+	void setDirty(boolean value);
+	
 	boolean isDirty();
 	
 	boolean isStarted();
