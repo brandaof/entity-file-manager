@@ -135,9 +135,18 @@ public class EntityFileTransactionManagerImp
 			tx.rollback();
 		}
 		
-		tx.setClosed(true);
+		try{
+			//apaga os dados da transação.
+			this.deleteTransactionInformation(transaction);
+
+			tx.setClosed(true);
+			
+			this.transactions.remove(tx.getTransactionID());
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}	
 		
-		this.transactions.remove(tx.getTransactionID());
 	}
 
 	public void commitTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException {
@@ -174,21 +183,18 @@ public class EntityFileTransactionManagerImp
 			//salva a transação em mídia persistente para possível recuperação pós-falha.
 			this.registerTransactionInformation(transaction, false);
 			
-			//Registra a transação no log de transações
-			this.logTransaction(transaction);
-			
 			//executa o rollback
 			this.executeCommit(transaction, transactionEntity);
 			
 			//atualiza o status da transação para finalizada.
 			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_COMMITED);
 			
-			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction, true);
+			//Registra a transação no log de transações
+			this.logTransaction(transaction);
 			
 			//apaga os dados da transação.
 			this.deleteTransactionInformation(transaction);
-
+			
 			transaction.setCommited(true);
 			transaction.setRolledBack(false);
 		}
@@ -247,8 +253,8 @@ public class EntityFileTransactionManagerImp
 			//atualiza o status da transação para finalizada.
 			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_ROLLEDBACK);
 			
-			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction, true);
+			//Registra a transação no log de transações
+			this.logTransaction(transaction);
 			
 			//apaga os dados da transação.
 			this.deleteTransactionInformation(transaction);
