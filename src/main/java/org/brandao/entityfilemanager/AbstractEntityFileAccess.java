@@ -276,7 +276,10 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	protected Object read(boolean raw) throws IOException {
 		
-		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
+		long pointerOffset = 
+				this.firstPointer +
+				this.dataHandler.getFirstRecord() + 
+				this.dataHandler.getRecordLength()*this.offset;
 		
 		byte[] buffer = new byte[this.dataHandler.getRecordLength()];
 		
@@ -298,7 +301,10 @@ public class AbstractEntityFileAccess<T, R, H>
 		long maxRead       = this.length - this.offset;
 		int batch          = maxRead > len? len : (int)maxRead;
 		int maxlength      = this.dataHandler.getRecordLength()*batch;
-		long pointerOffset = this.dataHandler.getFirstRecord() + this.dataHandler.getRecordLength()*this.offset;
+		long pointerOffset = 
+				this.firstPointer +
+				this.dataHandler.getFirstRecord() + 
+				this.dataHandler.getRecordLength()*this.offset;
 		
 		byte[] buffer = new byte[maxlength];
 				
@@ -341,6 +347,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		}
 		else{
 			long fileLength = 
+					this.firstPointer +
 					this.dataHandler.getFirstRecord() + 
 					this.dataHandler.getRecordLength()*value + 
 					this.dataHandler.getEOFLength();

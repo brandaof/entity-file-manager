@@ -54,7 +54,7 @@ public class TransactionReader {
 					new SubtransactionEntityFileAccess(
 							fa.getFilePointer(),
 							transactionFile,
-							efa);
+							tef);
 
 			stf.open();
 			stf.seek(0);

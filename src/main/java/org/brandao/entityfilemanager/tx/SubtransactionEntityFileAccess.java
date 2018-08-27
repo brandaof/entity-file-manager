@@ -9,20 +9,21 @@ import org.brandao.entityfilemanager.DataOutputStream;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 import org.brandao.entityfilemanager.FileAccess;
+import org.brandao.entityfilemanager.tx.SubtransactionEntityFileAccess.*;
 
 public class SubtransactionEntityFileAccess<T, R, H> 
-	extends AbstractEntityFileAccess<T, R, H>{
+	extends AbstractEntityFileAccess<T, R, SubtransactionHeader<H>>{
 
-	private long maxLength;
-	
 	public SubtransactionEntityFileAccess(
-			long pointer, RandomAccessFile transactionFile, EntityFileAccess<T, R, H> efa) throws IOException {
+			long pointer, RandomAccessFile transactionFile, 
+			EntityFileAccess<T, R, H> efa) throws IOException {
+		
 		super(efa.getName(), efa.getAbsoluteFile(), 
 				new DataHandler<T, R, H>(efa.getEntityFileDataHandler()));
-		this.maxLength    = efa.length();
+		
+		this.metadata     = new SubtransactionHeader<H>(efa.length(), efa.getMetadata());
 		this.fileAccess   = new FileAccess(this.file, transactionFile);
 		this.firstPointer = pointer;
-		this.metadata     = efa.getMetadata();
 	}
 
 	public void createNewFile() throws IOException {
@@ -38,20 +39,20 @@ public class SubtransactionEntityFileAccess<T, R, H>
 		long maxPointer =
 				this.firstPointer +
 				this.dataHandler.getFirstRecord() + 
-				this.dataHandler.getRecordLength()*maxLength;
+				this.dataHandler.getRecordLength()*this.metadata.getMaxLength();
 		
 		long currentMaxPointer = this.fileAccess.length();
 		
 		this.length = 
 				currentMaxPointer > maxPointer? 
-						this.maxLength : 
+						this.metadata.getMaxLength() : 
 						(currentMaxPointer - this.firstPointer) / this.dataHandler.getRecordLength(); 
 	}
 	
 	public void setLength(long value) throws IOException{
 		
-		if(length > this.maxLength){
-			throw new IOException(value + " > " + maxLength);
+		if(length > this.metadata.getMaxLength()){
+			throw new IOException(value + " > " + this.metadata.getMaxLength());
 		}
 		
 		this.length = value;
@@ -60,8 +61,36 @@ public class SubtransactionEntityFileAccess<T, R, H>
 	public void delete() throws IOException {
 	}
 	
+	public static class SubtransactionHeader<H>{
+		
+		private long maxLength;
+
+		private H parent;
+		
+		public SubtransactionHeader(long maxLength, H parent){
+			this.parent = parent;
+			this.maxLength = maxLength;
+		}
+		public long getMaxLength() {
+			return maxLength;
+		}
+
+		public void setMaxLength(long maxLength) {
+			this.maxLength = maxLength;
+		}
+		
+		public H getParent() {
+			return parent;
+		}
+		
+		public void setParent(H parent) {
+			this.parent = parent;
+		}
+		
+	}
+	
 	private static class DataHandler<T, R, H> 
-		implements EntityFileDataHandler<T, R, H>{
+		implements EntityFileDataHandler<T, R, SubtransactionHeader<H>>{
 
 		private EntityFileDataHandler<T, R, H> dataHandler;
 		
@@ -69,13 +98,16 @@ public class SubtransactionEntityFileAccess<T, R, H>
 			this.dataHandler = dataHandler;
 		}
 		
-		public void writeMetaData(DataOutputStream stream, H value)
+		public void writeMetaData(DataOutputStream stream, SubtransactionHeader<H> value)
 				throws IOException {
-			dataHandler.writeMetaData(stream, value);
+			dataHandler.writeMetaData(stream, value.getParent());
+			stream.writeLong(value.getMaxLength());
 		}
 
-		public H readMetaData(DataInputStream srteam) throws IOException {
-			return dataHandler.readMetaData(srteam);
+		public SubtransactionHeader<H> readMetaData(DataInputStream stream) throws IOException {
+			H parent       = dataHandler.readMetaData(stream);
+			long maxLength = stream.readLong();
+			return new SubtransactionHeader<H>(maxLength, parent);
 		}
 
 		public void writeEOF(DataOutputStream stream) throws IOException {
@@ -108,7 +140,7 @@ public class SubtransactionEntityFileAccess<T, R, H>
 		}
 
 		public int getFirstRecord() {
-			return dataHandler.getFirstRecord();
+			return dataHandler.getFirstRecord() + 8;
 		}
 
 		public Class<T> getType() {
@@ -120,7 +152,7 @@ public class SubtransactionEntityFileAccess<T, R, H>
 		}
 
 		public int getHeaderLength() {
-			return dataHandler.getHeaderLength();
+			return this.getFirstRecord();
 		}
 		
 	}
