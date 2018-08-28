@@ -314,7 +314,6 @@ public class EntityFileManagerImpTest extends TestCase{
 		
 	}
 	
-	/* erro */
 	public void testConcurrentInsert() throws Throwable{
 		final int task                         = 100;
 		final int ops                          = 3;

@@ -280,17 +280,17 @@ public class EntityFileTransactionUtil {
 		return 0;
 	}
 	
-	public static int getLastSequence(long[] ids, int off){
+	public static int getLenNextSequenceGroup(long[] ids, int off){
 		
 		int max = ids.length - 1;
 		
 		for(int i=off;i<max;i++){
 			if(ids[i] + 1 != ids[i + 1]){
-				return i + 1;
+				return i - off + 1;
 			}
 		}
 
-		return max + 1;
+		return ids.length - off;
 		
 	}
 

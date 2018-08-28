@@ -36,11 +36,12 @@ public class CommitOperations {
 		}
 		
 		int off = 0;
+		int nextOff;
 		int q;
 		
 		while(off < ids.length){
-			int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
-			q = nextOff - off;
+			q = EntityFileTransactionUtil.getLenNextSequenceGroup(ids, off);
+			nextOff = off + q;
 			
 			if(q == 1){
 				write(data, ids[off], ops[off].getEntity());

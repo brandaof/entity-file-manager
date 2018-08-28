@@ -98,11 +98,12 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		try{
 			
 			int off = 0;
+			int nextOff;
 			int q;
 			while(off < ids.length){
 				
-				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
-				q           = nextOff - off;
+				q       = EntityFileTransactionUtil.getLenNextSequenceGroup(ids, off);
+				nextOff = off + q;
 				
 				if(q == 1){
 					this.update(ids[off], entities[off]);
@@ -151,12 +152,13 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 		try{
 			int off = 0;
+			int nextOff;
 			int q;
 			
 			while(off < ids.length){
 				
-				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
-				q           = nextOff - off;
+				q = EntityFileTransactionUtil.getLenNextSequenceGroup(ids, off);
+				nextOff = off + q;
 				
 				if(q == 1){
 					this.update(ids[off], null);
@@ -217,11 +219,12 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		try{
 			T[] result = (T[]) Array.newInstance(this.data.getType(), ids.length);			
 			int off    = 0;
+			int q;
 			
 			while(off < ids.length){
-				int nextOff = EntityFileTransactionUtil.getLastSequence(ids, off);
-				this.selectEntity(ids, result, off, nextOff - off);
-				off = nextOff;
+				q = EntityFileTransactionUtil.getLenNextSequenceGroup(ids, off);
+				this.selectEntity(ids, result, off, q);
+				off = off + q;
 			}
 			
 			return result;
@@ -575,13 +578,13 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		long[] subIds   = EntityFileTransactionUtil.refToId(ids, subRefIds);
 		Lock lock       = data.getLock();
 		int pos         = 0;
+		int nextPos;
 		int q;
 		T[] es;
 		while(pos < subIds.length){
 			
-			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
-			q = nextPos - pos;
-			
+			q = EntityFileTransactionUtil.getLenNextSequenceGroup(ids, pos);
+			nextPos = pos + q;
 			
 			if(q == 1){
 				lock.lock();
@@ -623,8 +626,8 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 		while(pos < subIds.length){
 			
-			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
-			q = nextPos - pos;
+			q = EntityFileTransactionUtil.getLenNextSequenceGroup(ids, pos);
+			nextPos = pos + q;
 			
 			if(q == 1){
 				lock.lock();
