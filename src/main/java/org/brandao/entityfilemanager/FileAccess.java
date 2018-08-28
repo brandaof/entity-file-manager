@@ -159,7 +159,7 @@ public class FileAccess {
 	
 	public void write(byte[] b) throws IOException{
 		//this.randomAccessFile.write(b);
-		writebytes(b);
+		writebytes(b, 0, b.length);
 	}
 	
 	public void write(byte[] b, int off, int len) throws IOException{
@@ -237,21 +237,6 @@ public class FileAccess {
 		return i;
 	}
 
-	private int readFully(byte[] b) throws IOException{
-		resyncBuffer(READ);
-		int i = in.read(b, 0, b.length);
-		
-		if(i > 0){
-			pointer += i;
-		}
-		
-		if(i != b.length){
-			throw new EOFException();
-		}
-		
-		return i;
-	}
-	
 	private int readFully(byte[] b, int off, int len) throws IOException{
 		resyncBuffer(READ);
 		int i = in.read(b, off, len);
@@ -267,12 +252,6 @@ public class FileAccess {
 		return i;
 	}
 
-	private void writebytes(byte[] b) throws IOException{
-		resyncBuffer(WRITE);
-		out.write(b);
-		pointer += b.length;
-	}
-	
 	private void writebytes(byte[] b, int off, int len) throws IOException{
 		resyncBuffer(WRITE);
 		out.write(b, off, len);

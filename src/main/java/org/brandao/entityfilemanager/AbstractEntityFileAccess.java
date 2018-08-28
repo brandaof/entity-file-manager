@@ -5,8 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.lang.reflect.Array;
 import java.util.concurrent.locks.Lock;
@@ -101,10 +99,11 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		this.fileAccess = new FileAccess(this.file, new RandomAccessFile(this.file, "rw"));
 		this.readHeader();
-		this.fileAccess.seek(this.dataHandler.getFirstRecord());
+		this.fileAccess.seek(this.dataHandler.getFirstPointer() + this.dataHandler.getFirstRecord());
 		this.length = 
 				(
 					this.fileAccess.length() - 
+					this.dataHandler.getFirstPointer() -
 					this.dataHandler.getFirstRecord() - 
 					this.dataHandler.getEOFLength()
 				) /
@@ -191,7 +190,6 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	@SuppressWarnings("unchecked")
 	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
-		
 		long pointerOffset =
 				this.dataHandler.getFirstPointer() +
 				this.dataHandler.getFirstRecord() + 
@@ -247,7 +245,6 @@ public class AbstractEntityFileAccess<T, R, H>
 		if(newOffset >= this.length){
 			this.length = newOffset;
 		}
-		
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -344,7 +341,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		else{
 			long fileLength = 
 					this.dataHandler.getFirstPointer() +
-					this.dataHandler.getFirstRecord() + 
+					this.dataHandler.getHeaderLength() + 
 					this.dataHandler.getRecordLength()*value + 
 					this.dataHandler.getEOFLength();
 			
@@ -354,7 +351,7 @@ public class AbstractEntityFileAccess<T, R, H>
 			this.dataHandler.writeEOF(dStream);
 			
 			this.fileAccess.setLength(fileLength);
-			this.fileAccess.seek(this.fileAccess.length() - this.dataHandler.getEOFLength());
+			this.fileAccess.seek(fileLength - this.dataHandler.getEOFLength());
 			this.fileAccess.write(stream.toByteArray());
 			
 		}
@@ -395,23 +392,5 @@ public class AbstractEntityFileAccess<T, R, H>
 	public void delete() throws IOException {
 		this.file.delete();
 	}
-
-	private void writeObject(ObjectOutputStream stream) throws IOException {
-		stream.writeObject(metadata);
-		stream.writeUTF(file.getName());
-		stream.writeInt(batchLength);
-		stream.writeObject(dataHandler);
-    }
-
-    @SuppressWarnings("unchecked")
-	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-    	metadata    = (H) stream.readObject();
-		file        = new File(stream.readUTF());
-		batchLength = stream.readInt();
-		dataHandler = (EntityFileDataHandler<T, R, H>) stream.readObject();
-		this.lock   = new ReentrantLock();
-		
-		this.open();
-    }
     
 }

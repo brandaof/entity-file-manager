@@ -282,25 +282,16 @@ public class EntityFileTransactionUtil {
 	
 	public static int getLastSequence(long[] ids, int off){
 		
-		int max = ids.length;
-
-		//if(off >= max){
-		//	return off;
-		//}
-
-		if(max - off <= 1){
-			return max;
+		int max = ids.length - 1;
+		
+		for(int i=off;i<max;i++){
+			if(ids[i] + 1 != ids[i + 1]){
+				return i + 1;
+			}
 		}
+
+		return max + 1;
 		
-		if(ids[off] + 1 != ids[++off]){
-			return off;
-		}
-		
-		max--;
-		
-		while(off < max && (ids[off] + 1) == ids[++off]);
-		
-		return off + 1;
 	}
 
 	@Deprecated

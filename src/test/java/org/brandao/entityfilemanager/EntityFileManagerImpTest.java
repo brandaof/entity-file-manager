@@ -87,10 +87,22 @@ public class EntityFileManagerImpTest extends TestCase{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 			ef.insert(198563254512664L);
 			ef.insert(152326598598562L);
+			ef.insert(123L);
 			
 			assertEquals(198563254512664L, (long)ef.select(0));
 			assertEquals(152326598598562L, (long)ef.select(1));
+			assertEquals(123L            , (long)ef.select(2));
 			
+		}
+		finally{
+			tx.commit();
+		}
+
+		tx = efm.beginTransaction();
+		try{
+			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			assertEquals(152326598598562L, (long)ef.select(1));
+			ef.update(0, 1L);
 		}
 		finally{
 			tx.commit();
@@ -99,8 +111,9 @@ public class EntityFileManagerImpTest extends TestCase{
 		tx = efm.beginTransaction();
 		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			assertEquals(198563254512664L, (long)ef.select(0));
+			assertEquals(1L              , (long)ef.select(0));
 			assertEquals(152326598598562L, (long)ef.select(1));
+			assertEquals(123L            , (long)ef.select(2));
 		}
 		finally{
 			tx.commit();
@@ -301,10 +314,10 @@ public class EntityFileManagerImpTest extends TestCase{
 		
 	}
 	
+	/* erro */
 	public void testConcurrentInsert() throws Throwable{
 		final int task                         = 100;
 		final int ops                          = 3;
-		final long sleep                       = 1000;
 		final AtomicLong totalTime             = new AtomicLong(0);
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
 		final Random random                    = new Random();
@@ -348,6 +361,94 @@ public class EntityFileManagerImpTest extends TestCase{
 						ef = efm.getEntityFile("long", tx, Long.class);
 						
 						for(int i=0;i<ops;i++){
+							try{
+								assertEquals(vals[i], ef.select(ids[i]));
+							}
+							catch(Throwable e){
+								assertEquals(vals[i], ef.select(ids[i]));
+							}
+						}
+						tx.commit();
+						
+					}
+					catch(Throwable e){
+						ex.add(e);
+					}
+					finally{
+						countDownLatch.countDown();
+					}
+					
+				}
+				
+			}.start();
+			
+		}
+		
+		countDownLatch.await();
+		
+		if(!ex.isEmpty()){
+			throw ex.get(0);
+		}
+		
+		//double time = totalTime.doubleValue() / (task*ops);
+		//assertTrue(time < (1.25*sleep));
+		
+		EntityFileTransaction tx = efm.beginTransaction();
+		EntityFile<Long> ef      = efm.getEntityFile("long", tx, Long.class);
+		
+		for(Entry<Long,Long> v: values.entrySet()){
+			long pv = ef.select(v.getKey());
+			assertEquals("id: " + v.getKey() + " value: " + pv + " expected: " + v.getValue(), (long)v.getValue(), pv);
+		}
+		
+	}
+	
+	public void testConcurrentBulkInsert() throws Throwable{
+		final int task                         = 1000;
+		final int ops                          = 3;
+		final AtomicLong totalTime             = new AtomicLong(0);
+		final CountDownLatch countDownLatch    = new CountDownLatch(task);
+		final Random random                    = new Random();
+		final ConcurrentMap<Long, Long> values = new ConcurrentHashMap<Long, Long>();
+		final List<Throwable> ex               = new ArrayList<Throwable>();
+		
+		for(int i=0;i<task;i++){
+			new Thread(){
+				
+				public void run(){
+					try{
+						EntityFileTransaction tx = efm.beginTransaction();
+						EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+						
+						sleep(2000 + random.nextInt(1000));
+
+						long[] ids;
+						Long[] vals = new Long[ops];
+						
+						for(int i=0;i<ops;i++){
+							vals[i] = new Long(random.nextLong());
+						}
+						
+						long time = System.currentTimeMillis();
+						ids = ef.insert(vals);
+						time = System.currentTimeMillis() - time;
+
+						for(int i=0;i<ops;i++){
+							values.put(ids[i], vals[i]);
+						}
+						
+						totalTime.addAndGet(time);
+						
+						for(int i=0;i<ops;i++){
+							assertEquals(vals[i], ef.select(ids[i]));
+						}
+						
+						tx.commit();
+						
+						tx = efm.beginTransaction();
+						ef = efm.getEntityFile("long", tx, Long.class);
+						
+						for(int i=0;i<ops;i++){
 							assertEquals(vals[i], ef.select(ids[i]));
 						}
 						tx.commit();
@@ -372,8 +473,7 @@ public class EntityFileManagerImpTest extends TestCase{
 			throw ex.get(0);
 		}
 		
-		double time = totalTime.doubleValue() / (task*ops);
-		assertTrue(time < (1.25*sleep));
+		//double time = totalTime.doubleValue() / (task*ops);
 		
 		EntityFileTransaction tx = efm.beginTransaction();
 		EntityFile<Long> ef      = efm.getEntityFile("long", tx, Long.class);

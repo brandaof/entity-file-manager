@@ -23,10 +23,9 @@ public class CommitOperations {
 		if(ops.length == 0){
 			return;
 		}
-		
+
 		if(ops.length == 1){
-			data.seek(ops[0].getRecordID());
-			data.writeRaw(ops[0].getEntity());
+			write(data, ops[0].getRecordID(), ops[0].getEntity());
 			return;
 		}
 		
@@ -58,6 +57,7 @@ public class CommitOperations {
 			
 			off = nextOff;
 		}
+		
 	}
 
 	private static <T,R,H> void write(EntityFileAccess<T,R,H> data, 
@@ -67,6 +67,7 @@ public class CommitOperations {
 		try{
 			data.seek(id);
 			data.writeRaw(raw);
+			data.flush();
 		}
 		finally{
 			lock.unlock();
@@ -80,6 +81,7 @@ public class CommitOperations {
 		try{
 			data.seek(firstID);
 			data.batchWriteRaw(raw);
+			data.flush();
 		}
 		finally{
 			lock.unlock();

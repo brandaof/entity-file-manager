@@ -352,12 +352,22 @@ public class EntityFileTransactionManagerImp
 
 	public <T,R,H> TransactionEntityFileAccess<T, R, H> createTransactionEntityFileAccess(
 			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation) throws TransactionException{
-		return
-			new TransientTransactionEntityFileAccess<T, R, H>(
-					entityFile, 
-					new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
-					transactionID, 
-					transactionIsolation);
+		
+		try{
+			TransactionEntityFileAccess<T, R, H> tefa =
+				new TransientTransactionEntityFileAccess<T, R, H>(
+				//new TransactionEntityFileAccess<T, R, H>(
+						entityFile, 
+						new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
+						transactionID, 
+						transactionIsolation);
+			
+			tefa.createNewFile();
+			return tefa;
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
 	}
 	
 	public <T,R,H> TransactionEntity<T,R> createTransactionalEntity(

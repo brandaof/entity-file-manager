@@ -279,11 +279,8 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				
 				ops = map[TransactionalEntity.DELETE_RECORD];
 				CommitOperations.delete(ops, data);
-
 			}
 			
-			tx.flush();
-			data.flush();
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -324,9 +321,6 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				RollbackOperations.delete(ops, data);
 
 			}
-			
-			tx.flush();
-			data.flush();
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -552,7 +546,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			}
 		}
 		else{
-			Lock lock = this.tx.getLock();
+			Lock lock = tx.getLock();
 			lock.lock();
 			try{
 				tx.seek(pointer);
@@ -579,7 +573,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		int[] subRefIds = opsArray[TransactionalEntity.NEW_RECORD];
 		T[] e           = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
 		long[] subIds   = EntityFileTransactionUtil.refToId(ids, subRefIds);
-		Lock lock       = this.data.getLock();
+		Lock lock       = data.getLock();
 		int pos         = 0;
 		int q;
 		T[] es;
@@ -623,7 +617,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		e         = (T[]) Array.newInstance(values.getClass().getComponentType(), subRefIds.length);
 		subIds    = EntityFileTransactionUtil.refToId(ids, subRefIds);
 		subIds    = EntityFileTransactionUtil.getTXId(subIds, this.pointerMap);
-		lock      = this.tx.getLock();
+		lock      = tx.getLock();
 		pos       = 0;
 		TransactionalEntity<T>[] rs;
 		
