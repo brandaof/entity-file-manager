@@ -332,7 +332,7 @@ public class EntityFileManagerImpTest extends TestCase{
 						for(int i=0;i<ops;i++){
 							ids[i] = ef.insert(vals[i]);
 							values.put(ids[i], vals[i]);
-							sleep(sleep);
+							//sleep(sleep);
 						}
 						time = System.currentTimeMillis() - time;
 

@@ -633,16 +633,14 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			q = nextPos - pos;
 			
 			if(q == 1){
-				TransactionalEntity<T> r = tx.read();
-				if(r != null){
-					lock.lock();
-					try{
-						tx.seek(subIds[pos]);
-						e[pos] = r.getEntity();
-					}
-					finally{
-						lock.unlock();
-					}
+				lock.lock();
+				try{
+					tx.seek(subIds[pos]);
+					TransactionalEntity<T> r = tx.read();
+					e[pos] = r == null? null : r.getEntity();
+				}
+				finally{
+					lock.unlock();
 				}
 			}
 			else{
