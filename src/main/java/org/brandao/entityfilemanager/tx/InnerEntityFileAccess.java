@@ -1,7 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
 import org.brandao.entityfilemanager.DataInputStream;
@@ -15,14 +14,14 @@ public class InnerEntityFileAccess<T, R, H>
 	extends AbstractEntityFileAccess<T, R, SubtransactionHeader<H>>{
 
 	public InnerEntityFileAccess(
-			long pointer, RandomAccessFile transactionFile, 
+			long pointer, FileAccess fileAccess, 
 			EntityFileAccess<T, R, H> efa) throws IOException {
 		
 		super(efa.getName(), efa.getAbsoluteFile(), 
 				new DataHandler<T, R, H>(pointer, efa.getEntityFileDataHandler()));
 		
 		this.metadata     = new SubtransactionHeader<H>(efa.length(), efa.getMetadata());
-		this.fileAccess   = new FileAccess(this.file, transactionFile);
+		this.fileAccess   = fileAccess;
 	}
 
 	public void createNewFile() throws IOException {

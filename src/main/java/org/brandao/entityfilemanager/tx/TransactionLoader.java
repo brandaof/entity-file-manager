@@ -127,17 +127,8 @@ public class TransactionLoader {
 			ConfigurableEntityFileTransaction t, File path) throws IOException{
 		
 		File f = new File(path, "ftx-" + Long.toString(t.getTransactionID(), Character.MAX_RADIX));
-		RandomAccessFile raf = null;
 		TransactionWritter w = new TransactionWritter();
-		try{
-			raf = new RandomAccessFile(f, "rw");
-			w.write(t, raf);
-		}
-		finally{
-			if(raf != null){
-				raf.close();
-			}
-		}
+		w.write(t, f);
 		
 		/*
 		FileOutputStream fout = null;
@@ -166,17 +157,8 @@ public class TransactionLoader {
 			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer,
 			TransactionFileNameMetadata f) throws IOException, TransactionException {
 		
-		RandomAccessFile raf = null;
 		TransactionReader r = new TransactionReader();
-		try{
-			raf = new RandomAccessFile(f.getFile(), "rw");
-			return r.read(entityFileTransactionManagerConfigurer, raf);
-		}
-		finally{
-			if(raf != null){
-				raf.close();
-			}
-		}
+		return r.read(entityFileTransactionManagerConfigurer, f.getFile());
 		
 		/*
 		FileInputStream fin = null;

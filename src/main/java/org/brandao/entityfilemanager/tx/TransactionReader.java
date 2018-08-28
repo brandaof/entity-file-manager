@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashMap;
@@ -11,15 +12,27 @@ import org.brandao.entityfilemanager.FileAccess;
 
 public class TransactionReader {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public ConfigurableEntityFileTransaction read(
-			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer,
-			RandomAccessFile transactionFile) throws IOException, TransactionException{
+			EntityFileTransactionManagerConfigurer eftmc, File f) throws IOException, TransactionException{
+		RandomAccessFile tf = new RandomAccessFile(f, "rw");
+		try{
+			return this.read(eftmc, tf, f);
+		}
+		finally{
+			tf.close();
+		}
+		
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private ConfigurableEntityFileTransaction read(
+			EntityFileTransactionManagerConfigurer eftmc,
+			RandomAccessFile tf, File f) throws IOException, TransactionException{
 
 		EntityFileManagerConfigurer entityFileManagerConfigurer = 
-				entityFileTransactionManagerConfigurer.getEntityFileManagerConfigurer();
+				eftmc.getEntityFileManagerConfigurer();
 		
-		FileAccess fa = new FileAccess(null, transactionFile);
+		FileAccess fa = new FileAccess(f, tf);
 		
 		byte status               = fa.readByte();
 		long timeout              = fa.readLong();
@@ -47,13 +60,13 @@ public class TransactionReader {
 			}
 			
 			TransactionEntityFileAccess tef = 
-					entityFileTransactionManagerConfigurer
+					eftmc
 						.createTransactionEntityFileAccess(efa, transactionID, transactionIsolation);
 			
 			InnerEntityFileAccess<?,?,?> stf = 
 					new InnerEntityFileAccess(
 							fa.getFilePointer(),
-							transactionFile,
+							fa,
 							tef);
 
 			stf.open();
@@ -72,7 +85,7 @@ public class TransactionReader {
 			m.put(efa, tef);
 		}
 		
-		return entityFileTransactionManagerConfigurer
+		return eftmc
 				.load(m, status, transactionID, transactionIsolation, 
 						started, rolledBack, commited, timeout);
 	}

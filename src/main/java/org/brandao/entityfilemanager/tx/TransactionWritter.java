@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Collection;
@@ -10,23 +11,36 @@ import org.brandao.entityfilemanager.FileAccess;
 
 public class TransactionWritter {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public void write(ConfigurableEntityFileTransaction t, RandomAccessFile transactionFile) throws IOException{
-
-		FileAccess fa = new FileAccess(null, transactionFile);
+	
+	public void write(ConfigurableEntityFileTransaction ceft, File f) throws IOException{
+		RandomAccessFile tf = new RandomAccessFile(f, "rw");
+		try{
+			this.write(ceft, tf, f);
+		}
+		finally{
+			tf.close();
+		}
 		
-		fa.writeByte(t.getStatus());
-		fa.writeLong(t.getTimeout());
-		fa.writeLong(t.getTransactionID());
-		fa.writeByte(t.getTransactionIsolation());
+	}
+	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private void write(ConfigurableEntityFileTransaction ceft, 
+			RandomAccessFile tf, File f) throws IOException{
+
+		FileAccess fa = new FileAccess(f, tf);
+		
+		fa.writeByte(ceft.getStatus());
+		fa.writeLong(ceft.getTimeout());
+		fa.writeLong(ceft.getTransactionID());
+		fa.writeByte(ceft.getTransactionIsolation());
 		
 		fa.writeByte((byte)(
-				(t.isCommited()?   1 : 0) |
-				(t.isRolledBack()? 2 : 0) |
-				(t.isStarted()?    4 : 0)));
+				(ceft.isCommited()?   1 : 0) |
+				(ceft.isRolledBack()? 2 : 0) |
+				(ceft.isStarted()?    4 : 0)));
 		
 		
-		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = t.getTransactionFiles();
+		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = ceft.getTransactionFiles();
 		Collection<TransactionEntity<?,?>> list = m.values();
 		
 		for(TransactionEntity<?,?> tt: list){
@@ -42,7 +56,7 @@ public class TransactionWritter {
 			InnerEntityFileAccess stf = 
 					new InnerEntityFileAccess(
 							fa.getFilePointer(),
-							transactionFile,
+							fa,
 							tefa);
 			
 			long count = 0;
@@ -63,6 +77,7 @@ public class TransactionWritter {
 
 		fa.writeByte((byte)0xff);
 		
+		fa.flush();
 	}
 	
 }
