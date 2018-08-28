@@ -217,11 +217,15 @@ public class FileAccess {
 			if(lastOP == WRITE){
 				out.flush();
 				in.clear();
-				randomAccessFile.seek(pointer + writeCount);
+				pointer   += writeCount;
+				writeCount = 0;
 			}
 			else{
-				randomAccessFile.seek(pointer + readCount);
+				pointer  += readCount;
+				readCount = 0;
 			}
+			
+			randomAccessFile.seek(pointer);
 		}
 		
 		lastOP = type;
