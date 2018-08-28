@@ -27,10 +27,6 @@ public class FileAccess {
 	
 	private long pointer;
 	
-	private long readCount;
-
-	private long writeCount;
-	
 	public FileAccess(File file, RandomAccessFile randomAccessFile) throws IOException{
 		this(file, randomAccessFile, 8192, 8192);
 	}
@@ -40,8 +36,6 @@ public class FileAccess {
 		this.randomAccessFile = randomAccessFile;
 		this.file = file;
 		this.lastOP = 0;
-		this.readCount = 0;
-		this.writeCount = 0;
 		this.in = new BufferedInputStream(readCapacity, new FileInputStream(randomAccessFile.getFD()));
 		this.out = new BufferedOutputStream(writeCapacity, new FileOutputStream(randomAccessFile.getFD()));
 		this.pointer = randomAccessFile.getFilePointer();
@@ -150,8 +144,6 @@ public class FileAccess {
 		this.randomAccessFile.seek(pos);
 		out.flush();
 		in.clear();
-		readCount = 0;
-		writeCount = 0;
 		pointer = pos;
 	}
 	
@@ -176,9 +168,7 @@ public class FileAccess {
 	}
 	
 	public long getFilePointer() throws IOException{
-		return lastOP == READ? 
-				pointer + readCount : 
-				(lastOP == WRITE? pointer + writeCount : this.randomAccessFile.getFilePointer());
+		return pointer;
 	}
 
 	public long length() throws IOException{
@@ -217,12 +207,6 @@ public class FileAccess {
 			if(lastOP == WRITE){
 				out.flush();
 				in.clear();
-				pointer   += writeCount;
-				writeCount = 0;
-			}
-			else{
-				pointer  += readCount;
-				readCount = 0;
 			}
 			
 			randomAccessFile.seek(pointer);
@@ -236,7 +220,7 @@ public class FileAccess {
 		int i = in.read(b);
 
 		if(i > 0){
-			readCount += i;
+			pointer += i;
 		}
 		
 		return i;
@@ -247,7 +231,7 @@ public class FileAccess {
 		int i = in.read(b, off, len);
 
 		if(i > 0){
-			readCount += i;
+			pointer += i;
 		}
 		
 		return i;
@@ -258,7 +242,7 @@ public class FileAccess {
 		int i = in.read(b, 0, b.length);
 		
 		if(i > 0){
-			readCount += i;
+			pointer += i;
 		}
 		
 		if(i != b.length){
@@ -273,7 +257,7 @@ public class FileAccess {
 		int i = in.read(b, off, len);
 		
 		if(i > 0){
-			readCount += i;
+			pointer += i;
 		}
 		
 		if(i != len){
@@ -286,13 +270,13 @@ public class FileAccess {
 	private void writebytes(byte[] b) throws IOException{
 		resyncBuffer(WRITE);
 		out.write(b);
-		writeCount += b.length;
+		pointer += b.length;
 	}
 	
 	private void writebytes(byte[] b, int off, int len) throws IOException{
 		resyncBuffer(WRITE);
 		out.write(b, off, len);
-		writeCount += len;
+		pointer += len;
 	}
 	
 }
