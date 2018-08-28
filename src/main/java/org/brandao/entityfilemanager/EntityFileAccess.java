@@ -56,6 +56,8 @@ public interface EntityFileAccess<T, R, H> {
 	
 	boolean exists();
 	
+	void flush() throws IOException ;
+	
 	void close() throws IOException;
 	
 	void delete() throws IOException;

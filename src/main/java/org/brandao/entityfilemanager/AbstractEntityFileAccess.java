@@ -77,7 +77,6 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.fileAccess.seek(0);
 		this.writeHeader();
 		this.setLength(0);
-		this.fileAccess.flush();
 	}
 	
 	protected void writeHeader() throws IOException{
@@ -93,7 +92,6 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		this.fileAccess.seek(this.dataHandler.getFirstPointer());
 		this.fileAccess.write(data, 0, data.length);
-		this.fileAccess.flush();
 	}
 
 	public void open() throws IOException {
@@ -182,7 +180,6 @@ public class AbstractEntityFileAccess<T, R, H>
 
 		this.fileAccess.seek(pointerOffset);
 		this.fileAccess.write(data, 0, data.length);
-		this.fileAccess.flush();
 		
 		this.offset = newOffset;
 		
@@ -244,7 +241,6 @@ public class AbstractEntityFileAccess<T, R, H>
 		byte[] data = stream.toByteArray();
 		this.fileAccess.seek(pointerOffset);
 		this.fileAccess.write(data, 0, data.length);
-		this.fileAccess.flush();
 		
 		this.offset = newOffset;
 		
@@ -360,7 +356,6 @@ public class AbstractEntityFileAccess<T, R, H>
 			this.fileAccess.setLength(fileLength);
 			this.fileAccess.seek(this.fileAccess.length() - this.dataHandler.getEOFLength());
 			this.fileAccess.write(stream.toByteArray());
-			this.fileAccess.flush();
 			
 		}
 		
@@ -369,6 +364,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	}
 	
 	public void flush() throws IOException {
+		this.fileAccess.flush();
 	}
 
 	public void close() throws IOException {

@@ -2,9 +2,6 @@ package org.brandao.entityfilemanager.tx;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -66,28 +63,5 @@ public class TransactionEntityFileAccess<T, R, H>
 	public EntityFileAccess<T, R, H> getEntityFileAccess() {
 		return parent;
 	}
-	
-	private void writeObject(ObjectOutputStream stream) throws IOException {
-		stream.writeObject(metadata);
-		stream.writeUTF(file.getName());
-		stream.writeInt(batchLength);
-		stream.writeObject(dataHandler);
-		stream.writeObject(parent);
-    }
-
-    @SuppressWarnings("unchecked")
-	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-    	metadata               = (TransactionHeader<H>) stream.readObject();
-		file                   = new File(stream.readUTF());
-		batchLength            = stream.readInt();
-		dataHandler            = (EntityFileTransactionDataHandler<T,R,H>) stream.readObject();
-		parent                 = (EntityFileAccess<T, R, H>)stream.readObject();
-		
-		transactionDataHandler = (EntityFileTransactionDataHandler<T,R,H>)dataHandler;
-		
-		this.lock              = new ReentrantLock();
-		
-		this.open();
-    }
 	
 }

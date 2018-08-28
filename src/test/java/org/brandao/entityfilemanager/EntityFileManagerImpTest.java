@@ -143,17 +143,22 @@ public class EntityFileManagerImpTest extends TestCase{
 	public void testBulkInsert() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
-		
+		Long[] values;
+		long[] ids;
+		int len = 10000;
 		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			ef.insert(new Long[]{new Long(1),new Long(2),new Long(3),new Long(4),new Long(5),new Long(6)});
-
-			assertEquals(1L, (long)ef.select(0));
-			assertEquals(2L, (long)ef.select(1));
-			assertEquals(3L, (long)ef.select(2));
-			assertEquals(4L, (long)ef.select(3));
-			assertEquals(5L, (long)ef.select(4));
-			assertEquals(6L, (long)ef.select(5));
+			values = new Long[len];
+			
+			for(int i=0;i<len;i++){
+				values[i] = new Long(i);
+			}
+			
+			ids = ef.insert(values);
+			
+			for(int i=0;i<len;i++){
+				assertEquals((long)values[i], (long)ef.select(ids[i]));
+			}
 		}
 		finally{
 			tx.commit();
@@ -162,12 +167,9 @@ public class EntityFileManagerImpTest extends TestCase{
 		tx = efm.beginTransaction();
 		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			assertEquals(1L, (long)ef.select(0));
-			assertEquals(2L, (long)ef.select(1));
-			assertEquals(3L, (long)ef.select(2));
-			assertEquals(4L, (long)ef.select(3));
-			assertEquals(5L, (long)ef.select(4));
-			assertEquals(6L, (long)ef.select(5));
+			for(int i=0;i<len;i++){
+				assertEquals((long)values[i], (long)ef.select(ids[i]));
+			}
 		}
 		finally{
 			tx.commit();

@@ -1,8 +1,6 @@
 package org.brandao.entityfilemanager.tx.readcommited;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
@@ -263,10 +261,10 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			
 			while(current < max){
 				
-				this.tx.seek(current);
+				tx.seek(current);
 				
 				RawTransactionEntity<R>[] ops = 
-					this.tx.batchReadRaw(this.batchOperationLength);
+					tx.batchReadRaw(this.batchOperationLength);
 
 				current += ops.length;
 				
@@ -283,6 +281,9 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				CommitOperations.delete(ops, data);
 
 			}
+			
+			tx.flush();
+			data.flush();
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -299,14 +300,14 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			}
 			
 			long current = 0;
-			long max     = this.tx.length();
+			long max     = tx.length();
 			
 			while(current < max){
 				
-				this.tx.seek(current);
+				tx.seek(current);
 				
 				RawTransactionEntity<R>[] ops = 
-					this.tx.batchReadRaw(this.batchOperationLength);
+					tx.batchReadRaw(this.batchOperationLength);
 
 				current += ops.length;
 				
@@ -323,6 +324,9 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				RollbackOperations.delete(ops, data);
 
 			}
+			
+			tx.flush();
+			data.flush();
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -349,7 +353,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		try{
 			id = this.getNextFreePointer(false);
 			
-			this.data.seek(id);
+			data.seek(id);
 			this.data.write(null);
 			
 			this.pointerManager.managerPointer(id);
@@ -362,9 +366,10 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		lock = tx.getLock();
 		lock.lock();
 		try{
-			txid = this.tx.length();
-			this.tx.seek(txid);
-			this.tx.write(new TransactionalEntity<T>(id, TransactionalEntity.UPDATE_RECORD, entity));
+			txid = tx.length();
+			tx.seek(txid);
+			tx.write(new TransactionalEntity<T>(id, TransactionalEntity.UPDATE_RECORD, entity));
+			tx.flush();
 		}
 		finally{
 			lock.unlock();
@@ -385,10 +390,11 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		Lock lock = data.getLock();
 		lock.lock();
 		try{
-			id = this.getNextFreePointer(false);
+			id = getNextFreePointer(false);
 			
-			this.data.seek(id);
+			data.seek(id);
 			this.data.batchWrite((T[])Array.newInstance(entities.getClass().getComponentType(), max));
+			data.flush();
 			
 			for(int i=0;i<max;i++){
 				this.pointerManager.managerPointer(id + i);
@@ -407,7 +413,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		lock = tx.getLock();
 		lock.lock();
 		try{
-			txid = this.tx.length();
+			txid = tx.length();
 			
 			for(int i=0;i<max;i++){
 				eid   = id + i;
@@ -416,11 +422,12 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 				ids[i] = eid;
 				e[i]   = new TransactionalEntity<T>(eid, TransactionalEntity.UPDATE_RECORD, entities[i]);
 				
-				this.pointerMap.put(eid, etxid);
+				pointerMap.put(eid, etxid);
 			}
 			
-			this.tx.seek(txid);
-			this.tx.batchWrite(e);
+			tx.seek(txid);
+			tx.batchWrite(e);
+			tx.flush();
 		}
 		finally{
 			lock.unlock();
@@ -445,8 +452,9 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			try{
 				txID = this.tx.length();
 				
-				this.tx.seek(txID);
-				this.tx.write(new TransactionalEntity<T>(id, status, entity));
+				tx.seek(txID);
+				tx.write(new TransactionalEntity<T>(id, status, entity));
+				tx.flush();
 			}
 			finally{
 				lock.unlock();
@@ -458,8 +466,9 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			Lock lock = tx.getLock();
 			lock.lock();
 			try{
-				this.tx.seek(pointer);
-				this.tx.write(new TransactionalEntity<T>(id, status, entity));
+				tx.seek(pointer);
+				tx.write(new TransactionalEntity<T>(id, status, entity));
+				tx.flush();
 			}
 			finally{
 				lock.unlock();
@@ -484,20 +493,21 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		int max                    = subIds.length;
 		long id;
 		
-		Lock lock = this.tx.getLock();
+		Lock lock = tx.getLock();
 		lock.lock();
 		try{
 			
-			long txID = this.tx.length();
+			long txID = tx.length();
 			
 			for(int i=0;i<max;i++){
 				id   = ids[subIds[i]];
 				e[i] = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
-				this.pointerMap.put(id, txID + i);
+				pointerMap.put(id, txID + i);
 			}
 			
-			this.tx.seek(txID);
-			this.tx.batchWrite(e);
+			tx.seek(txID);
+			tx.batchWrite(e);
+			tx.flush();
 		}
 		finally{
 			lock.unlock();
@@ -509,13 +519,14 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 		for(int i=0;i<max;i++){
 			id = ids[subIds[i]];
-			Long pm = this.pointerMap.get(id);
+			Long pm = pointerMap.get(id);
 			en = new TransactionalEntity<T>(id, status, status == TransactionalEntity.DELETE_RECORD? null : entities[i]);
 			
 			lock.lock();
 			try{
-				this.tx.seek(pm);
-				this.tx.write(en);
+				tx.seek(pm);
+				tx.write(en);
+				tx.flush();
 			}
 			finally{
 				lock.unlock();
@@ -527,14 +538,14 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 
 	private T selectEntity(long id) throws IOException{
 		
-		Long pointer = this.pointerMap.get(id);
+		Long pointer = pointerMap.get(id);
 		
 		if(pointer == null){
-			Lock lock = this.data.getLock();
+			Lock lock = data.getLock();
 			lock.lock();
 			try{
-				this.data.seek(id);
-				return this.data.read();
+				data.seek(id);
+				return data.read();
 			}
 			finally{
 				lock.unlock();
@@ -544,8 +555,8 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			Lock lock = this.tx.getLock();
 			lock.lock();
 			try{
-				this.tx.seek(pointer);
-				TransactionalEntity<T> e = this.tx.read();
+				tx.seek(pointer);
+				TransactionalEntity<T> e = tx.read();
 				return e == null? null : e.getEntity();
 			}
 			finally{
@@ -571,7 +582,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		Lock lock       = this.data.getLock();
 		int pos         = 0;
 		int q;
-		T[] data;
+		T[] es;
 		while(pos < subIds.length){
 			
 			int nextPos = EntityFileTransactionUtil.getLastSequence(ids, pos);
@@ -581,8 +592,8 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			if(q == 1){
 				lock.lock();
 				try{
-					this.data.seek(subIds[pos]);
-					e[pos] = this.data.read();
+					data.seek(subIds[pos]);
+					e[pos] = data.read();
 				}
 				finally{
 					lock.unlock();
@@ -591,14 +602,14 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			else{
 				lock.lock();
 				try{
-					this.data.seek(subIds[pos]);
-					data = this.data.batchRead(q);
+					data.seek(subIds[pos]);
+					es = data.batchRead(q);
 				}
 				finally{
 					lock.unlock();
 				}
 				
-				System.arraycopy(data, 0, e, pos, q);
+				System.arraycopy(es, 0, e, pos, q);
 			}
 			
 			pos = nextPos;
@@ -622,11 +633,11 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			q = nextPos - pos;
 			
 			if(q == 1){
-				TransactionalEntity<T> r = this.tx.read();
+				TransactionalEntity<T> r = tx.read();
 				if(r != null){
 					lock.lock();
 					try{
-						this.tx.seek(subIds[pos]);
+						tx.seek(subIds[pos]);
 						e[pos] = r.getEntity();
 					}
 					finally{
@@ -637,8 +648,8 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			else{
 				lock.lock();
 				try{
-					this.tx.seek(subIds[pos]);
-					rs = this.tx.batchRead(q);
+					tx.seek(subIds[pos]);
+					rs = tx.batchRead(q);
 				}
 				finally{
 					lock.unlock();
@@ -682,22 +693,5 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 	public void delete() throws IOException {
 		this.tx.delete();
 	}
-
-	private void writeObject(ObjectOutputStream stream) throws IOException {
-		stream.writeObject(data);
-		stream.writeObject(tx);
-		stream.writeObject(pointerManager);
-		stream.writeInt(batchOperationLength);
-		stream.writeObject(pointerMap);
-    }
-
-    @SuppressWarnings("unchecked")
-	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-    	data                 = (EntityFileAccess<T, R, H>) stream.readObject();
-    	tx                   = (TransactionEntityFileAccess<T, R, H>) stream.readObject();
-    	pointerManager       = (PointerManager<T, R, H>) stream.readObject();
-    	batchOperationLength = stream.readInt();
-    	pointerMap           = (Map<Long, Long>) stream.readObject();
-    }
 	
 }

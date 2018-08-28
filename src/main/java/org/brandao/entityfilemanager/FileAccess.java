@@ -141,10 +141,10 @@ public class FileAccess {
 	}
 	
 	public void seek(long pos) throws IOException{
-		this.randomAccessFile.seek(pos);
 		out.flush();
 		in.clear();
 		pointer = pos;
+		this.randomAccessFile.seek(pos);
 	}
 	
 	public int read(byte[] b) throws IOException{
