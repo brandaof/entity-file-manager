@@ -27,6 +27,10 @@ public class BufferedInputStream extends InputStream{
         this.stream   = stream;
     }
 
+    public int available() throws IOException {
+    	return this.limit - this.offset;
+    }
+    
     public int read() throws IOException{
     	
         if(this.offset == this.limit && this.checkBuffer() < 0){

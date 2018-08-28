@@ -99,7 +99,11 @@ public class BufferedOutputStream extends OutputStream{
     	}
     }
 
-    public void close() throws IOException{
+    public int getOffset() {
+		return offset;
+	}
+
+	public void close() throws IOException{
     	try{
     		this.flush();
     	}
