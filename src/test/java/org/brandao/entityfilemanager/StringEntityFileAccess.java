@@ -16,7 +16,7 @@ public class StringEntityFileAccess
 	public static class StringEntityFileAccessHandler 
 		implements EntityFileDataHandler<String, byte[], StringEntityFileAccessHeader>{
 
-		public void writeMetaData(DataOutputStream stream,
+		public void writeMetaData(DataWritter stream,
 				StringEntityFileAccessHeader value) throws IOException {
 		}
 	
@@ -25,15 +25,15 @@ public class StringEntityFileAccess
 			return new StringEntityFileAccessHeader();
 		}
 	
-		public void writeEOF(DataOutputStream stream) throws IOException {
+		public void writeEOF(DataWritter stream) throws IOException {
 			stream.writeByte((byte)-1);
 		}
 	
-		public void write(DataOutputStream stream, String entity) throws IOException {
+		public void write(DataWritter stream, String entity) throws IOException {
 			stream.writeString(entity, 256);
 		}
 	
-		public void writeRaw(DataOutputStream stream, byte[] entity)
+		public void writeRaw(DataWritter stream, byte[] entity)
 				throws IOException {
 			stream.write(entity);
 		}

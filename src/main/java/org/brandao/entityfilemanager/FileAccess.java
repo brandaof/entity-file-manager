@@ -26,7 +26,7 @@ public class FileAccess {
 	private long pointer;
 	
 	public FileAccess(File file, RandomAccessFile randomAccessFile) throws IOException{
-		this(file, randomAccessFile, 8192, 8192);
+		this(file, randomAccessFile, 2048, 2048);
 	}
 	
 	public FileAccess(File file, RandomAccessFile randomAccessFile, 
@@ -138,11 +138,16 @@ public class FileAccess {
 		writebytes(result, 0, length);
 	}
 	
+	public void writeString(String[] value, int length) throws IOException{
+		byte[] buffer = DataUtil.stringsToBytes(value, length);
+		write(buffer, 0, length);
+	}
+	
 	public void seek(long pos) throws IOException{
 		writter.flush();
 		reader.clear();
 		pointer = pos;
-		this.randomAccessFile.seek(pos);
+		randomAccessFile.seek(pos);
 	}
 	
 	public int read(byte[] b) throws IOException{

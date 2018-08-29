@@ -4,10 +4,11 @@ import java.io.IOException;
 
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
 import org.brandao.entityfilemanager.DataInputStream;
-import org.brandao.entityfilemanager.DataOutputStream;
+import org.brandao.entityfilemanager.DataWritter;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 import org.brandao.entityfilemanager.FileAccess;
+import org.brandao.entityfilemanager.FileAccessDataWritter;
 import org.brandao.entityfilemanager.tx.InnerEntityFileAccess.*;
 
 public class InnerEntityFileAccess<T, R, H> 
@@ -22,6 +23,7 @@ public class InnerEntityFileAccess<T, R, H>
 		
 		this.metadata     = new SubtransactionHeader<H>(efa.length(), efa.getMetadata());
 		this.fileAccess   = fileAccess;
+		this.writter      = new FileAccessDataWritter(this.fileAccess);
 	}
 
 	public void createNewFile() throws IOException {
@@ -99,7 +101,7 @@ public class InnerEntityFileAccess<T, R, H>
 			this.firstPointer = firstPointer;
 		}
 		
-		public void writeMetaData(DataOutputStream stream, SubtransactionHeader<H> value)
+		public void writeMetaData(DataWritter stream, SubtransactionHeader<H> value)
 				throws IOException {
 			dataHandler.writeMetaData(stream, value.getParent());
 			stream.writeLong(value.getMaxLength());
@@ -111,15 +113,15 @@ public class InnerEntityFileAccess<T, R, H>
 			return new SubtransactionHeader<H>(maxLength, parent);
 		}
 
-		public void writeEOF(DataOutputStream stream) throws IOException {
+		public void writeEOF(DataWritter stream) throws IOException {
 			dataHandler.writeEOF(stream);
 		}
 
-		public void write(DataOutputStream stream, T entity) throws IOException {
+		public void write(DataWritter stream, T entity) throws IOException {
 			dataHandler.write(stream, entity);
 		}
 
-		public void writeRaw(DataOutputStream stream, R entity)
+		public void writeRaw(DataWritter stream, R entity)
 				throws IOException {
 			dataHandler.writeRaw(stream, entity);
 		}

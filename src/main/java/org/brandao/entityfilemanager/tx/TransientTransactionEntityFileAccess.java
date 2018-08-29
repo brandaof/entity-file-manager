@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.brandao.entityfilemanager.DataInputStream;
-import org.brandao.entityfilemanager.DataOutputStream;
+import org.brandao.entityfilemanager.DataWritterOutputStream;
 import org.brandao.entityfilemanager.EntityFileAccess;
 
 public class TransientTransactionEntityFileAccess<T, R, H> 
@@ -65,7 +65,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	protected void write(Object entity, boolean raw) throws IOException {
 		if(raw){
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength());
-			DataOutputStream dStream     = new DataOutputStream(stream);
+			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
 			
 			super.dataHandler.writeRaw(dStream, (RawTransactionEntity<R>) entity);
 			
@@ -90,7 +90,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 		
 		if(raw){
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*entities.length);
-			DataOutputStream dStream     = new DataOutputStream(stream);
+			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
 			
 			for(int i=0;i<entities.length;i++){
 				super.dataHandler.writeRaw(dStream, (RawTransactionEntity<R>) entities[i]);
@@ -124,7 +124,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 			T e = this.values.get(this.offset);
 			
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength());
-			DataOutputStream dStream     = new DataOutputStream(stream);
+			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
 			
 			super.dataHandler.write(dStream, (TransactionalEntity<T>) e);
 			
@@ -158,7 +158,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 			Object[] rawRead = new RawTransactionEntity[batch];
 		
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*batch);
-			DataOutputStream dStream     = new DataOutputStream(stream);
+			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
 			
 			for(int i=0;i<batch;i++){
 				super.dataHandler.write(dStream, (TransactionalEntity<T>) result[i]);

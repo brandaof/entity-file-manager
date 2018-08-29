@@ -16,7 +16,7 @@ public class LongEntityFileAccess
 	public static class LongEntityFileAccessHandler 
 		implements EntityFileDataHandler<Long, byte[], LongEntityFileAccessHeader>{
 
-		public void writeMetaData(DataOutputStream stream,
+		public void writeMetaData(DataWritter stream,
 				LongEntityFileAccessHeader value) throws IOException {
 		}
 	
@@ -25,15 +25,15 @@ public class LongEntityFileAccess
 			return new LongEntityFileAccessHeader();
 		}
 	
-		public void writeEOF(DataOutputStream stream) throws IOException {
+		public void writeEOF(DataWritter stream) throws IOException {
 			stream.writeByte((byte)-1);
 		}
 	
-		public void write(DataOutputStream stream, Long entity) throws IOException {
+		public void write(DataWritter stream, Long entity) throws IOException {
 			stream.writeLong(entity == null? 0L : entity);
 		}
 	
-		public void writeRaw(DataOutputStream stream, byte[] entity)
+		public void writeRaw(DataWritter stream, byte[] entity)
 				throws IOException {
 			stream.write(entity);
 		}

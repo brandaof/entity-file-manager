@@ -248,7 +248,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	
 	public void testConcurrentInsert() throws Throwable{
 		final int task                         = 100;
-		final int ops                          = 3000;
+		final int ops                          = 3;
 		final AtomicLong totalTime             = new AtomicLong(0);
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
 		final Random random                    = new Random();
@@ -327,8 +327,8 @@ public class EntityFileManagerImpTest extends TestCase{
 	}
 	
 	public void testConcurrentBulkInsert() throws Throwable{
-		final int task                         = 100;
-		final int ops                          = 3;
+		final int task                         = 1;
+		final int ops                          = 3000;
 		final AtomicLong totalTime             = new AtomicLong(0);
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
 		final Random random                    = new Random();
@@ -362,9 +362,9 @@ public class EntityFileManagerImpTest extends TestCase{
 							assertEquals(vals[i], ef.select(ids[i]));
 						}
 						
-						long time = System.currentTimeMillis();
+						long time = System.nanoTime();
 						tx.commit();
-						time = System.currentTimeMillis() - time;
+						time = System.nanoTime() - time;
 
 						totalTime.addAndGet(time);
 
@@ -388,14 +388,17 @@ public class EntityFileManagerImpTest extends TestCase{
 			}.start();
 			
 		}
-		
 		countDownLatch.await();
 		
 		if(!ex.isEmpty()){
 			throw ex.get(0);
 		}
 		
-		//double time = totalTime.doubleValue() / (task*ops);
+		double totalOps = task*ops;
+		double time = totalTime.doubleValue() / totalOps;
+		time = 1000000000 / time;
+		
+		System.out.println("total Time: " + totalTime + ", ops: " + totalOps + "ops/s: " + time );
 		
 		EntityFileTransaction tx = efm.beginTransaction();
 		EntityFile<Long> ef      = efm.getEntityFile("long", tx, Long.class);

@@ -3,7 +3,7 @@ package org.brandao.entityfilemanager.tx;
 import java.io.IOException;
 
 import org.brandao.entityfilemanager.DataInputStream;
-import org.brandao.entityfilemanager.DataOutputStream;
+import org.brandao.entityfilemanager.DataWritter;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 
 public class EntityFileTransactionDataHandler<T, R, H> 
@@ -31,7 +31,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		this.rawType = (Class<RawTransactionEntity<R>>)new RawTransactionEntity<R>(0,(byte)0,null).getClass();
 	}
 	
-	public void writeMetaData(DataOutputStream stream, TransactionHeader<H> value) throws IOException {
+	public void writeMetaData(DataWritter stream, TransactionHeader<H> value) throws IOException {
 		this.handler.writeMetaData(stream, value.getParent());
 		stream.writeByte(value.getTransactionStatus());
 		stream.writeLong(value.getTransactionID());
@@ -50,11 +50,11 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		return result;
 	}
 
-	public void writeEOF(DataOutputStream stream) throws IOException {
+	public void writeEOF(DataWritter stream) throws IOException {
 		this.handler.writeEOF(stream);
 	}
 
-	public void write(DataOutputStream stream, TransactionalEntity<T> entity)
+	public void write(DataWritter stream, TransactionalEntity<T> entity)
 			throws IOException {
 		stream.writeLong(entity.getRecordID());
 		stream.writeByte(entity.getFlags());
@@ -70,7 +70,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		return new TransactionalEntity<T>(recordID, flags, entity);
 	}
 
-	public void writeRaw(DataOutputStream stream, RawTransactionEntity<R> entity)
+	public void writeRaw(DataWritter stream, RawTransactionEntity<R> entity)
 			throws IOException {
 		stream.writeLong(entity.getRecordID());
 		stream.writeByte(entity.getFlags());
