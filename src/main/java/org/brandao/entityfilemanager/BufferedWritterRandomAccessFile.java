@@ -1,9 +1,9 @@
 package org.brandao.entityfilemanager;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.RandomAccessFile;
 
-public class BufferedOutputStream extends OutputStream{
+public class BufferedWritterRandomAccessFile {
     
     private int offset;
     
@@ -11,23 +11,23 @@ public class BufferedOutputStream extends OutputStream{
     
     private int capacity;
     
-    private OutputStream out;
+    private RandomAccessFile randomAccessFile;
 
     private boolean hasLineFeed;
 
-    public BufferedOutputStream(OutputStream out){
-    	this(8192, out);
+    public BufferedWritterRandomAccessFile(RandomAccessFile randomAccessFile){
+    	this(8192, randomAccessFile);
     }
     
-    public BufferedOutputStream(int capacity, OutputStream out){
+    public BufferedWritterRandomAccessFile(int capacity, RandomAccessFile randomAccessFile){
         
-        if(capacity < 1)
+        if(capacity < 256)
             throw new IllegalArgumentException("capacity");
         
-        this.offset   = 0;
-        this.buffer   = new byte[capacity];
-        this.capacity = capacity;
-        this.out      = out;
+        this.offset           = 0;
+        this.buffer           = new byte[capacity];
+        this.capacity         = capacity;
+        this.randomAccessFile = randomAccessFile;
     }
 
     public void write(byte[] buffer) throws IOException{
@@ -48,19 +48,19 @@ public class BufferedOutputStream extends OutputStream{
             int maxWrite = this.capacity - this.offset;
             
             if(maxRead > maxWrite){
-            	this.out.write(buffer, offset, maxWrite);
+            	randomAccessFile.write(buffer, offset, maxWrite);
                 offset      += maxWrite;
                 this.offset += maxWrite;
                 this.flush();
             }
             else{
-            	this.out.write(buffer, offset, maxRead);
+            	randomAccessFile.write(buffer, offset, maxRead);
                 offset       += maxRead;
                 this.offset  += maxRead;
             }
         }
         
-        this.out.flush();
+        //this.out.flush();
     }
 
     public void write(byte[] buffer, int offset, int len) throws IOException{
@@ -87,31 +87,18 @@ public class BufferedOutputStream extends OutputStream{
         }
     } 
 
-    public OutputStream getDirectOutputStream(){
-    	return this.out;
+    public RandomAccessFile getDirectRandomAccessFile(){
+    	return randomAccessFile;
     }
     
     public void flush() throws IOException{
     	if(this.offset > 0){
-	        this.out.write(this.buffer, 0, this.offset);
-	        this.out.flush();
+    		randomAccessFile.write(this.buffer, 0, this.offset);
+	        //this.out.flush();
 	        this.offset = 0;
     	}
     }
 
-    public int getOffset() {
-		return offset;
-	}
-
-	public void close() throws IOException{
-    	try{
-    		this.flush();
-    	}
-    	finally{
-    		super.close();
-    	}
-    }
-    
     public void clear(){
         this.offset = 0;
     }

@@ -1,9 +1,9 @@
 package org.brandao.entityfilemanager;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.RandomAccessFile;
 
-public class BufferedInputStream extends InputStream{
+public class BufferedReaderRandomAccessFile {
     
     private int offset;
     
@@ -13,18 +13,18 @@ public class BufferedInputStream extends InputStream{
     
     private int capacity;
     
-    private InputStream stream;
+    private RandomAccessFile randomAccessFile;
 
-    public BufferedInputStream(InputStream stream){
-    	this(8192, stream);
+    public BufferedReaderRandomAccessFile(RandomAccessFile randomAccessFile){
+    	this(8192, randomAccessFile);
     }
     
-    public BufferedInputStream(int capacity, InputStream stream){
-        this.offset   = 0;
-        this.limit    = 0;
-        this.buffer   = new byte[capacity];
-        this.capacity = capacity;
-        this.stream   = stream;
+    public BufferedReaderRandomAccessFile(int capacity, RandomAccessFile randomAccessFile){
+        this.offset           = 0;
+        this.limit            = 0;
+        this.buffer           = new byte[capacity];
+        this.capacity         = capacity;
+        this.randomAccessFile = randomAccessFile;
     }
 
     public int available() throws IOException {
@@ -78,7 +78,7 @@ public class BufferedInputStream extends InputStream{
             this.limit  = 0;
         }
         
-        int len = stream.read(this.buffer, this.limit, this.buffer.length - limit);
+        int len = randomAccessFile.read(this.buffer, this.limit, this.buffer.length - limit);
         
         if(len == -1){
         	return -1;

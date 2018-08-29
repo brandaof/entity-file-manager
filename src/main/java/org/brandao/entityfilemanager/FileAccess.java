@@ -2,8 +2,6 @@ package org.brandao.entityfilemanager;
 
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -19,9 +17,9 @@ public class FileAccess {
 	
 	private File file;
 	
-	private BufferedOutputStream out;
+	private BufferedWritterRandomAccessFile writter;
 	
-	private BufferedInputStream in;
+	private BufferedReaderRandomAccessFile reader;
 	
 	private byte lastOP;
 	
@@ -36,8 +34,8 @@ public class FileAccess {
 		this.randomAccessFile = randomAccessFile;
 		this.file = file;
 		this.lastOP = 0;
-		this.in = new BufferedInputStream(readCapacity, new FileInputStream(randomAccessFile.getFD()));
-		this.out = new BufferedOutputStream(writeCapacity, new FileOutputStream(randomAccessFile.getFD()));
+		this.reader = new BufferedReaderRandomAccessFile(readCapacity, randomAccessFile);
+		this.writter = new BufferedWritterRandomAccessFile(writeCapacity, randomAccessFile);
 		this.pointer = randomAccessFile.getFilePointer();
 	}
 
@@ -141,8 +139,8 @@ public class FileAccess {
 	}
 	
 	public void seek(long pos) throws IOException{
-		out.flush();
-		in.clear();
+		writter.flush();
+		reader.clear();
 		pointer = pos;
 		this.randomAccessFile.seek(pos);
 	}
@@ -176,8 +174,8 @@ public class FileAccess {
 	}
 
 	public void setLength(long value) throws IOException{
-		in.clear();
-		out.flush();
+		reader.clear();
+		writter.flush();
 		this.randomAccessFile.setLength(value);
 	}
 	
@@ -198,15 +196,15 @@ public class FileAccess {
 	}
 	
 	public void flush() throws IOException{
-		out.flush();
-		in.clear();
+		writter.flush();
+		reader.clear();
 	}
 	private void resyncBuffer(byte type) throws IOException{
 		
 		if(type != lastOP){
 			if(lastOP == WRITE){
-				out.flush();
-				in.clear();
+				writter.flush();
+				reader.clear();
 			}
 			
 			randomAccessFile.seek(pointer);
@@ -217,7 +215,7 @@ public class FileAccess {
 	
 	private int readbytes(byte[] b) throws IOException{
 		resyncBuffer(READ);
-		int i = in.read(b);
+		int i = reader.read(b, 0, b.length);
 
 		if(i > 0){
 			pointer += i;
@@ -228,7 +226,7 @@ public class FileAccess {
 	
 	private int readbytes(byte[] b, int off, int len) throws IOException{
 		resyncBuffer(READ);
-		int i = in.read(b, off, len);
+		int i = reader.read(b, off, len);
 
 		if(i > 0){
 			pointer += i;
@@ -239,7 +237,7 @@ public class FileAccess {
 
 	private int readFully(byte[] b, int off, int len) throws IOException{
 		resyncBuffer(READ);
-		int i = in.read(b, off, len);
+		int i = reader.read(b, off, len);
 		
 		if(i > 0){
 			pointer += i;
@@ -254,7 +252,7 @@ public class FileAccess {
 
 	private void writebytes(byte[] b, int off, int len) throws IOException{
 		resyncBuffer(WRITE);
-		out.write(b, off, len);
+		writter.write(b, off, len);
 		pointer += len;
 	}
 	
