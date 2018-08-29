@@ -293,13 +293,13 @@ public class EntityFileTransactionManagerImp
 	protected void registerTransactionInformation(
 			ConfigurableEntityFileTransaction transaction, boolean override) throws IOException{
 		if(override || !transaction.isRecoveredTransaction()){
-			this.transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
+			transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
 		}
 	}
 
-	protected void deleteTransactionInformation(ConfigurableEntityFileTransaction transaction
-			) throws IOException{
-		this.transactionLoader.deleteEntityFileTransaction(transaction, this.transactionPath);
+	protected void deleteTransactionInformation(
+			ConfigurableEntityFileTransaction transaction) throws IOException{
+		transactionLoader.deleteEntityFileTransaction(transaction, this.transactionPath);
 	}
 	
 	protected void logTransaction(ConfigurableEntityFileTransaction transaction){

@@ -20,7 +20,7 @@ public class LongEntityFileAccess
 				LongEntityFileAccessHeader value) throws IOException {
 		}
 	
-		public LongEntityFileAccessHeader readMetaData(DataInputStream srteam)
+		public LongEntityFileAccessHeader readMetaData(DataReader srteam)
 				throws IOException {
 			return new LongEntityFileAccessHeader();
 		}
@@ -38,11 +38,11 @@ public class LongEntityFileAccess
 			stream.write(entity);
 		}
 	
-		public Long read(DataInputStream stream) throws IOException {
+		public Long read(DataReader stream) throws IOException {
 			return stream.readLong();
 		}
 	
-		public byte[] readRaw(DataInputStream stream) throws IOException {
+		public byte[] readRaw(DataReader stream) throws IOException {
 			byte[] b = new byte[8];
 			stream.read(b);
 			return b;

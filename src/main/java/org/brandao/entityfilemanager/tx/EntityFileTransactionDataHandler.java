@@ -2,7 +2,7 @@ package org.brandao.entityfilemanager.tx;
 
 import java.io.IOException;
 
-import org.brandao.entityfilemanager.DataInputStream;
+import org.brandao.entityfilemanager.DataReader;
 import org.brandao.entityfilemanager.DataWritter;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 
@@ -38,7 +38,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		stream.writeByte(value.getTransactionIsolation());
 	}
 
-	public TransactionHeader<H> readMetaData(DataInputStream stream) throws IOException {
+	public TransactionHeader<H> readMetaData(DataReader stream) throws IOException {
 		
 		H parent = this.handler.readMetaData(stream);
 		
@@ -61,7 +61,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		this.handler.write(stream, entity.getEntity());
 	}
 
-	public TransactionalEntity<T> read(DataInputStream stream)
+	public TransactionalEntity<T> read(DataReader stream)
 			throws IOException {
 		
 		long recordID = stream.readLong();
@@ -78,7 +78,7 @@ public class EntityFileTransactionDataHandler<T, R, H>
 		
 	}
 
-	public RawTransactionEntity<R> readRaw(DataInputStream stream)
+	public RawTransactionEntity<R> readRaw(DataReader stream)
 			throws IOException {
 		long recordID = stream.readLong();
 		byte flags    = stream.readByte();

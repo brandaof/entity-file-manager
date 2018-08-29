@@ -137,6 +137,13 @@ public class FileAccess {
 		//this.randomAccessFile.write(result, 0, length);
 		writebytes(result, 0, length);
 	}
+
+	public String[] readStrings(int length) throws IOException{
+		byte[] result = new byte[length];
+		//this.randomAccessFile.read(result, 0, length);
+		readFully(result, 0, length);
+		return DataUtil.bytesToStrings(result, 0);
+	}
 	
 	public void writeString(String[] value, int length) throws IOException{
 		byte[] buffer = DataUtil.stringsToBytes(value, length);

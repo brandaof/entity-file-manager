@@ -10,7 +10,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.brandao.entityfilemanager.DataInputStream;
+import org.brandao.entityfilemanager.DataReader;
+import org.brandao.entityfilemanager.DataReaderInputStream;
+import org.brandao.entityfilemanager.DataWritter;
 import org.brandao.entityfilemanager.DataWritterOutputStream;
 import org.brandao.entityfilemanager.EntityFileAccess;
 
@@ -65,12 +67,12 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	protected void write(Object entity, boolean raw) throws IOException {
 		if(raw){
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength());
-			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
+			DataWritter dStream          = new DataWritterOutputStream(stream);
 			
 			super.dataHandler.writeRaw(dStream, (RawTransactionEntity<R>) entity);
 			
 			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
-			DataInputStream readDStream     = new DataInputStream(readStream);
+			DataReader readDStream          = new DataReaderInputStream(readStream);
 			
 			entity = super.dataHandler.read(readDStream);
 		}
@@ -90,14 +92,14 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 		
 		if(raw){
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*entities.length);
-			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
+			DataWritter dStream          = new DataWritterOutputStream(stream);
 			
 			for(int i=0;i<entities.length;i++){
 				super.dataHandler.writeRaw(dStream, (RawTransactionEntity<R>) entities[i]);
 			}
 			
 			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
-			DataInputStream readDStream     = new DataInputStream(readStream);
+			DataReader readDStream          = new DataReaderInputStream(readStream);
 
 			for(int i=0;i<entities.length;i++){
 				T entity = (T)super.dataHandler.read(readDStream);
@@ -124,12 +126,12 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 			T e = this.values.get(this.offset);
 			
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength());
-			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
+			DataWritter dStream          = new DataWritterOutputStream(stream);
 			
 			super.dataHandler.write(dStream, (TransactionalEntity<T>) e);
 			
 			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
-			DataInputStream readDStream     = new DataInputStream(readStream);
+			DataReader readDStream          = new DataReaderInputStream(readStream);
 
 			this.offset++;
 			
@@ -158,14 +160,14 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 			Object[] rawRead = new RawTransactionEntity[batch];
 		
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*batch);
-			DataWritterOutputStream dStream     = new DataWritterOutputStream(stream);
+			DataWritter dStream          = new DataWritterOutputStream(stream);
 			
 			for(int i=0;i<batch;i++){
 				super.dataHandler.write(dStream, (TransactionalEntity<T>) result[i]);
 			}
 			
 			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
-			DataInputStream readDStream     = new DataInputStream(readStream);
+			DataReader readDStream          = new DataReaderInputStream(readStream);
 			
 			for(int i=0;i<batch;i++){
 				rawRead[i] = super.dataHandler.readRaw(readDStream);

@@ -3,11 +3,12 @@ package org.brandao.entityfilemanager.tx;
 import java.io.IOException;
 
 import org.brandao.entityfilemanager.AbstractEntityFileAccess;
-import org.brandao.entityfilemanager.DataInputStream;
+import org.brandao.entityfilemanager.DataReader;
 import org.brandao.entityfilemanager.DataWritter;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileDataHandler;
 import org.brandao.entityfilemanager.FileAccess;
+import org.brandao.entityfilemanager.FileAccessDataReader;
 import org.brandao.entityfilemanager.FileAccessDataWritter;
 import org.brandao.entityfilemanager.tx.InnerEntityFileAccess.*;
 
@@ -24,6 +25,7 @@ public class InnerEntityFileAccess<T, R, H>
 		this.metadata     = new SubtransactionHeader<H>(efa.length(), efa.getMetadata());
 		this.fileAccess   = fileAccess;
 		this.writter      = new FileAccessDataWritter(this.fileAccess);
+		this.reader       = new FileAccessDataReader(this.fileAccess);
 	}
 
 	public void createNewFile() throws IOException {
@@ -107,7 +109,7 @@ public class InnerEntityFileAccess<T, R, H>
 			stream.writeLong(value.getMaxLength());
 		}
 
-		public SubtransactionHeader<H> readMetaData(DataInputStream stream) throws IOException {
+		public SubtransactionHeader<H> readMetaData(DataReader stream) throws IOException {
 			H parent       = dataHandler.readMetaData(stream);
 			long maxLength = stream.readLong();
 			return new SubtransactionHeader<H>(maxLength, parent);
@@ -126,11 +128,11 @@ public class InnerEntityFileAccess<T, R, H>
 			dataHandler.writeRaw(stream, entity);
 		}
 
-		public T read(DataInputStream stream) throws IOException {
+		public T read(DataReader stream) throws IOException {
 			return dataHandler.read(stream);
 		}
 
-		public R readRaw(DataInputStream stream) throws IOException {
+		public R readRaw(DataReader stream) throws IOException {
 			return dataHandler.readRaw(stream);
 		}
 

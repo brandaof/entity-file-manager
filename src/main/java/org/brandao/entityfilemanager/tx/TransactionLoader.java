@@ -32,6 +32,15 @@ public class TransactionLoader {
 	static{
 		PATTERN_TX_FILE = Pattern.compile(TX_FILE_PATTERN);
 	}
+
+	private TransactionWritter transactionWritter;
+
+	private TransactionReader transactionReader;
+	
+	public TransactionLoader(){
+		this.transactionReader = new TransactionReader();
+		this.transactionWritter = new TransactionWritter();
+	}
 	
 	public ConfigurableEntityFileTransaction[] loadTransactions(
 			LockProvider lockProvider,
@@ -125,26 +134,8 @@ public class TransactionLoader {
 
 	public void writeEntityFileTransaction(
 			ConfigurableEntityFileTransaction t, File path) throws IOException{
-		
 		File f = new File(path, "ftx-" + Long.toString(t.getTransactionID(), Character.MAX_RADIX));
-		TransactionWritter w = new TransactionWritter();
-		w.write(t, f);
-		
-		/*
-		FileOutputStream fout = null;
-		ObjectOutput out = null;
-		try{
-			fout = new FileOutputStream(f);
-			out  = new ObjectOutputStream(fout);
-			out.writeObject(t);
-		}
-		finally{
-			if(fout != null){
-				fout.close();
-			}
-		}
-		*/
-		
+		transactionWritter.write(t, f);
 	}
 
 	public void deleteEntityFileTransaction(
@@ -156,24 +147,7 @@ public class TransactionLoader {
 	private ConfigurableEntityFileTransaction toEntityFileTransaction(
 			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer,
 			TransactionFileNameMetadata f) throws IOException, TransactionException {
-		
-		TransactionReader r = new TransactionReader();
-		return r.read(entityFileTransactionManagerConfigurer, f.getFile());
-		
-		/*
-		FileInputStream fin = null;
-		ObjectInput in = null;
-		try{
-			fin = new FileInputStream(f.getFile());
-			in = new ObjectInputStream(fin);
-			return (ConfigurableEntityFileTransaction) in.readObject();
-		}
-		finally{
-			if(fin != null){
-				fin.close();
-			}
-		}
-		*/
+		return transactionReader.read(entityFileTransactionManagerConfigurer, f.getFile());
 	}
 	
 	private Map<Long, List<TransactionFileNameMetadata>> groupTransaction(

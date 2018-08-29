@@ -20,7 +20,7 @@ public class StringEntityFileAccess
 				StringEntityFileAccessHeader value) throws IOException {
 		}
 	
-		public StringEntityFileAccessHeader readMetaData(DataInputStream srteam)
+		public StringEntityFileAccessHeader readMetaData(DataReader srteam)
 				throws IOException {
 			return new StringEntityFileAccessHeader();
 		}
@@ -38,11 +38,11 @@ public class StringEntityFileAccess
 			stream.write(entity);
 		}
 	
-		public String read(DataInputStream stream) throws IOException {
+		public String read(DataReader stream) throws IOException {
 			return stream.readString(256).trim();
 		}
 	
-		public byte[] readRaw(DataInputStream stream) throws IOException {
+		public byte[] readRaw(DataReader stream) throws IOException {
 			byte[] b = new byte[256];
 			stream.read(b);
 			return b;
