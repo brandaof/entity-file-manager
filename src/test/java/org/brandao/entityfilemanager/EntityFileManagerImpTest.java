@@ -58,32 +58,21 @@ public class EntityFileManagerImpTest extends TestCase{
 	public void testSimpleInsert() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
-		
-		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 			ef.insert(198563254512664L);
 			assertEquals(198563254512664L, (long)ef.select(0));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef = efm.getEntityFile("long", tx, Long.class);
 			assertEquals(198563254512664L, (long)ef.select(0));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 	}
 
 	public void testMultipleInsert() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
-		
-		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 			ef.insert(198563254512664L);
 			ef.insert(152326598598562L);
@@ -92,40 +81,26 @@ public class EntityFileManagerImpTest extends TestCase{
 			assertEquals(198563254512664L, (long)ef.select(0));
 			assertEquals(152326598598562L, (long)ef.select(1));
 			assertEquals(123L            , (long)ef.select(2));
-			
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 
 		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			efm.getEntityFile("long", tx, Long.class);
 			assertEquals(152326598598562L, (long)ef.select(1));
 			ef.update(0, 1L);
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			efm.getEntityFile("long", tx, Long.class);
 			assertEquals(1L              , (long)ef.select(0));
 			assertEquals(152326598598562L, (long)ef.select(1));
 			assertEquals(123L            , (long)ef.select(2));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 	}
 
 	public void testInsertAndUpdate() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
-		
-		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 			ef.insert(198563254512664L);
 			ef.insert(152326598598562L);
@@ -136,65 +111,49 @@ public class EntityFileManagerImpTest extends TestCase{
 			ef.update(1, 0L);
 			
 			assertEquals(0L, (long)ef.select(1));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			efm.getEntityFile("long", tx, Long.class);
 			assertEquals(198563254512664L, (long)ef.select(0));
 			assertEquals(0L, (long)ef.select(1));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 	}
 
 	public void testBulkInsert() throws TransactionException, IOException{
 		
-		EntityFileTransaction tx = efm.beginTransaction();
-		Long[] values;
+		int len       = 100000;
+		Long[] values = new Long[len];;
 		long[] ids;
-		int len = 10000;
-		try{
+
+		for(int i=0;i<len;i++){
+			values[i] = new Long(i);
+		}
+		
+		EntityFileTransaction tx = efm.beginTransaction();
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			values = new Long[len];
-			
-			for(int i=0;i<len;i++){
-				values[i] = new Long(i);
-			}
 			
 			ids = ef.insert(values);
 			
 			for(int i=0;i<len;i++){
 				assertEquals((long)values[i], (long)ef.select(ids[i]));
 			}
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef = efm.getEntityFile("long", tx, Long.class);
+			
 			for(int i=0;i<len;i++){
 				assertEquals((long)values[i], (long)ef.select(ids[i]));
 			}
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 	}
 
 	public void testBulkUpdate() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
-		
-		try{
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 			Long[] values = new Long[]{new Long(1),new Long(2),new Long(3),new Long(4),new Long(5),new Long(6)};
 			ef.insert(values);
@@ -205,14 +164,10 @@ public class EntityFileManagerImpTest extends TestCase{
 			assertEquals(4L, (long)ef.select(3));
 			assertEquals(5L, (long)ef.select(4));
 			assertEquals(6L, (long)ef.select(5));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 
 		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef = efm.getEntityFile("long", tx, Long.class);
 			ef.update(
 				new long[]{0,3,5}, 
 				new Long[]{new Long(11),new Long(12),new Long(13)});
@@ -222,56 +177,33 @@ public class EntityFileManagerImpTest extends TestCase{
 			assertEquals(12L, (long)ef.select(3));
 			assertEquals(5L, (long)ef.select(4));
 			assertEquals(13L, (long)ef.select(5));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
+			ef = efm.getEntityFile("long", tx, Long.class);
 			assertEquals(11L, (long)ef.select(0));
 			assertEquals(2L, (long)ef.select(1));
 			assertEquals(3L, (long)ef.select(2));
 			assertEquals(12L, (long)ef.select(3));
 			assertEquals(5L, (long)ef.select(4));
 			assertEquals(13L, (long)ef.select(5));
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 	}
 	
 	public void testFail() throws TransactionException, IOException{
-		
-		EntityFileTransaction tx = efm.beginTransaction();
-		
+
 		try{
+			EntityFileTransaction tx = efm.beginTransaction();
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			Long[] values = new Long[]{new Long(1),new Long(2),new Long(3),new Long(4),new Long(5),new Long(6)};
-			ef.insert(values);
 			ef.update(1000, new Long(1));
 			tx.commit();
-		}
-		catch(Throwable e){
 			tx.rollback();
 		}
-
-		tx = efm.beginTransaction();
-		try{
-			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
-			assertEquals(0L, (long)ef.select(0));
-			assertEquals(0L, (long)ef.select(1));
-			assertEquals(0L, (long)ef.select(2));
-			assertEquals(0L, (long)ef.select(3));
-			assertEquals(0L, (long)ef.select(4));
-			assertEquals(0L, (long)ef.select(5));
+		catch(EntityFileException e){
+			IOException c = (IOException) e.getCause();
+			assertEquals("entity not found: 1000", c.getMessage());
 		}
-		finally{
-			tx.commit();
-		}
-		
 	}
 	
 	public void testConcurrentUpdate() throws TransactionException, IOException, InterruptedException{
@@ -316,7 +248,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	
 	public void testConcurrentInsert() throws Throwable{
 		final int task                         = 100;
-		final int ops                          = 3;
+		final int ops                          = 3000;
 		final AtomicLong totalTime             = new AtomicLong(0);
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
 		final Random random                    = new Random();
@@ -331,8 +263,6 @@ public class EntityFileManagerImpTest extends TestCase{
 						EntityFileTransaction tx = efm.beginTransaction();
 						EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 						
-						sleep(2000 + random.nextInt(1000));
-
 						long[] ids  = new long[ops];
 						Long[] vals = new Long[ops];
 						
@@ -340,32 +270,26 @@ public class EntityFileManagerImpTest extends TestCase{
 							vals[i] = new Long(random.nextLong());
 						}
 						
-						long time = System.currentTimeMillis();
 						for(int i=0;i<ops;i++){
 							ids[i] = ef.insert(vals[i]);
 							values.put(ids[i], vals[i]);
-							//sleep(sleep);
 						}
-						time = System.currentTimeMillis() - time;
-
-						totalTime.addAndGet(time);
 						
 						for(int i=0;i<ops;i++){
 							assertEquals(vals[i], ef.select(ids[i]));
 						}
 						
+						long time = System.currentTimeMillis();
 						tx.commit();
+						time = System.currentTimeMillis() - time;
+
+						totalTime.addAndGet(time);
 						
 						tx = efm.beginTransaction();
 						ef = efm.getEntityFile("long", tx, Long.class);
 						
 						for(int i=0;i<ops;i++){
-							try{
-								assertEquals(vals[i], ef.select(ids[i]));
-							}
-							catch(Throwable e){
-								assertEquals(vals[i], ef.select(ids[i]));
-							}
+							assertEquals(vals[i], ef.select(ids[i]));
 						}
 						tx.commit();
 						
@@ -403,7 +327,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	}
 	
 	public void testConcurrentBulkInsert() throws Throwable{
-		final int task                         = 1000;
+		final int task                         = 100;
 		final int ops                          = 3;
 		final AtomicLong totalTime             = new AtomicLong(0);
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
@@ -419,7 +343,7 @@ public class EntityFileManagerImpTest extends TestCase{
 						EntityFileTransaction tx = efm.beginTransaction();
 						EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 						
-						sleep(2000 + random.nextInt(1000));
+						//sleep(2000 + random.nextInt(1000));
 
 						long[] ids;
 						Long[] vals = new Long[ops];
@@ -428,25 +352,24 @@ public class EntityFileManagerImpTest extends TestCase{
 							vals[i] = new Long(random.nextLong());
 						}
 						
-						long time = System.currentTimeMillis();
 						ids = ef.insert(vals);
-						time = System.currentTimeMillis() - time;
 
 						for(int i=0;i<ops;i++){
 							values.put(ids[i], vals[i]);
 						}
 						
-						totalTime.addAndGet(time);
-						
 						for(int i=0;i<ops;i++){
 							assertEquals(vals[i], ef.select(ids[i]));
 						}
 						
+						long time = System.currentTimeMillis();
 						tx.commit();
-						
+						time = System.currentTimeMillis() - time;
+
+						totalTime.addAndGet(time);
+
 						tx = efm.beginTransaction();
 						ef = efm.getEntityFile("long", tx, Long.class);
-						
 						for(int i=0;i<ops;i++){
 							assertEquals(vals[i], ef.select(ids[i]));
 						}
@@ -487,8 +410,6 @@ public class EntityFileManagerImpTest extends TestCase{
 	public void testCommitMultipleFiles() throws TransactionException, IOException{
 		
 		EntityFileTransaction tx = efm.beginTransaction();
-		
-		try{
 			EntityFile<Long> longEF     = efm.getEntityFile("long", tx, Long.class);
 			EntityFile<String> stringEF = efm.getEntityFile("string", tx, String.class);
 			
@@ -504,28 +425,18 @@ public class EntityFileManagerImpTest extends TestCase{
 			assertEquals(152326598598562L, (long)longEF.select(2));
 			assertEquals("test", stringEF.select(0));
 			assertEquals("test3", stringEF.select(1));
-			
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 		tx = efm.beginTransaction();
-		
-		try{
-			EntityFile<Long> longEF     = efm.getEntityFile("long", tx, Long.class);
-			EntityFile<String> stringEF = efm.getEntityFile("string", tx, String.class);
+			longEF   = efm.getEntityFile("long", tx, Long.class);
+			stringEF = efm.getEntityFile("string", tx, String.class);
 			
 			assertEquals(0L, (long)longEF.select(0));
 			assertEquals(198563254512664L, (long)longEF.select(1));
 			assertEquals(152326598598562L, (long)longEF.select(2));
 			assertEquals("test", stringEF.select(0));
 			assertEquals("test3", stringEF.select(1));
-			
-		}
-		finally{
-			tx.commit();
-		}
+		tx.commit();
 		
 	}
 	
