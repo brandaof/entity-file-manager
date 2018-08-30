@@ -67,6 +67,8 @@ public class TransactionReader {
 			}
 			
 			m.put(efa, tef);
+			
+			stf.close();
 		}
 		
 		return eftmc

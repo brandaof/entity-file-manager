@@ -7,9 +7,9 @@ import java.io.RandomAccessFile;
 
 public class FileAccess {
 
-	private static final byte WRITE = 0;
+	private static final byte WRITE = 1;
 	
-	private static final byte READ = 1;
+	private static final byte READ = 2;
 	
 	private byte[] buffer = new byte[8];
 	

@@ -16,8 +16,6 @@ public class TransactionLogImp
 
 	private static final long MIN_FILELOG_LENGTH = 25*1024*1024;
 	
-	private static final long END_FILE = -1;
-	
 	private FileAccess transactionFile;
 
 	private long limitFileLength;
@@ -172,9 +170,11 @@ public class TransactionLogImp
 			) throws TransactionException, IOException{
 		
 		ConfigurableEntityFileTransaction tx;
-		long pointerValue = tfa.readLong();
+		long lastPointerValue = -1;
 		
-		while(tfa.getFilePointer() != tfa.length() - 1){
+		do{
+			
+			long pointerValue = tfa.readLong();
 			
 			if(pointerValue != tfa.getFilePointer()){
 				throw new TransactionException("invalid transaction: " + tfa.getFile().getName());
@@ -191,35 +191,9 @@ public class TransactionLogImp
 				throw new TransactionException("invalid transaction file: " + tfa.getFile().getName(), e);
 			}
 		
-			if(tfa.getFilePointer() == tfa.length()){
-				break;
-			}
+			lastPointerValue = pointerValue;
 			
-			pointerValue = tfa.readLong();
-		}
-
-		/*
-		while((txID = tfa.readLong()) != -1L){
-			
-			try{
-				tx = transactionReader.read(eftmc, tfa);
-				
-				if(tx.getTransactionID() != txID){
-					throw new TransactionException("invalid transaction: " + tx.getTransactionID());
-				}
-				
-				eftmc.closeTransaction(tx);
-				
-			}
-			catch(TransactionException e){
-				throw e;
-			}
-			catch(Throwable e){
-				throw new TransactionException("invalid transaction file: " + tfa.getFile().getName(), e);
-			}
-			
-		}
-		*/
+		}while(tfa.getFilePointer() != tfa.length());
 		
 	}
 }
