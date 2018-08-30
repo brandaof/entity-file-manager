@@ -1,8 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,27 +10,13 @@ import org.brandao.entityfilemanager.FileAccess;
 
 public class TransactionReader {
 
-	public ConfigurableEntityFileTransaction read(
-			EntityFileTransactionManagerConfigurer eftmc, File f) throws IOException, TransactionException{
-		RandomAccessFile tf = new RandomAccessFile(f, "rw");
-		try{
-			return this.read(eftmc, tf, f);
-		}
-		finally{
-			tf.close();
-		}
-		
-	}
-	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private ConfigurableEntityFileTransaction read(
+	public ConfigurableEntityFileTransaction read(
 			EntityFileTransactionManagerConfigurer eftmc,
-			RandomAccessFile tf, File f) throws IOException, TransactionException{
+			FileAccess fa) throws IOException, TransactionException{
 
 		EntityFileManagerConfigurer entityFileManagerConfigurer = 
 				eftmc.getEntityFileManagerConfigurer();
-		
-		FileAccess fa = new FileAccess(f, tf);
 		
 		byte status               = fa.readByte();
 		long timeout              = fa.readLong();

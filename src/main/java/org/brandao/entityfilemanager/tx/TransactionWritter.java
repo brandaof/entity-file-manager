@@ -1,8 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Collection;
 import java.util.Map;
 
@@ -11,23 +9,12 @@ import org.brandao.entityfilemanager.FileAccess;
 
 public class TransactionWritter {
 
-	
-	public void write(ConfigurableEntityFileTransaction ceft, File f) throws IOException{
-		RandomAccessFile tf = new RandomAccessFile(f, "rw");
-		try{
-			this.write(ceft, tf, f);
-		}
-		finally{
-			tf.close();
-		}
-		
-	}
-	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private void write(ConfigurableEntityFileTransaction ceft, 
-			RandomAccessFile tf, File f) throws IOException{
+	public void write(ConfigurableEntityFileTransaction ceft, 
+			FileAccess fa) throws IOException{
 
-		FileAccess fa = new FileAccess(f, tf);
+		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = ceft.getTransactionFiles();
+		Collection<TransactionEntity<?,?>> list = m.values();
 		
 		fa.writeByte(ceft.getStatus());
 		fa.writeLong(ceft.getTimeout());
@@ -39,9 +26,6 @@ public class TransactionWritter {
 				(ceft.isRolledBack()? 2 : 0) |
 				(ceft.isStarted()?    4 : 0)));
 		
-		
-		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = ceft.getTransactionFiles();
-		Collection<TransactionEntity<?,?>> list = m.values();
 		
 		for(TransactionEntity<?,?> tt: list){
 			

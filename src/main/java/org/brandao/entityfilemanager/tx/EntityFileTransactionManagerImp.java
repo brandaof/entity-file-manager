@@ -15,6 +15,7 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.EntityFileManagerException;
 import org.brandao.entityfilemanager.LockProvider;
+import org.brandao.entityfilemanager.TransactionLog;
 import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEntityFile;
 
 public class EntityFileTransactionManagerImp 
@@ -38,13 +39,13 @@ public class EntityFileTransactionManagerImp
 	
 	private LockProvider lockProvider;
 
-	private TransactionLoader transactionLoader;
+	private TransactionLog transactionLog;
 	
 	public EntityFileTransactionManagerImp(){
 		this.transactionIDCounter = 0;
 		this.txIDLock             = new ReentrantLock();
 		this.transactions         = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
-		this.transactionLoader    = new TransactionLoader();
+		this.transactionLog       = null;
 	}
 	
 	private long getNextTransactionID() {
@@ -291,15 +292,16 @@ public class EntityFileTransactionManagerImp
 	}
 
 	protected void registerTransactionInformation(
-			ConfigurableEntityFileTransaction transaction, boolean override) throws IOException{
+			ConfigurableEntityFileTransaction transaction, boolean override) throws TransactionException {
 		if(override || !transaction.isRecoveredTransaction()){
-			transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
+			transactionLog.registerLog(transaction);
+			//transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
 		}
 	}
 
 	protected void deleteTransactionInformation(
 			ConfigurableEntityFileTransaction transaction) throws IOException{
-		transactionLoader.deleteEntityFileTransaction(transaction, this.transactionPath);
+		//transactionLoader.deleteEntityFileTransaction(transaction, this.transactionPath);
 	}
 	
 	protected void logTransaction(ConfigurableEntityFileTransaction transaction){
@@ -307,15 +309,12 @@ public class EntityFileTransactionManagerImp
 	
 	protected void reloadTransactions() throws EntityFileManagerException{
 		try{
-			ConfigurableEntityFileTransaction[] txList = 
-					transactionLoader.loadTransactions(
-							this.lockProvider,
-							this.entityFileManagerConfigurer, 
-							this, this.transactionPath);
 			
-			for(ConfigurableEntityFileTransaction tx: txList){
-				this.closeTransaction(tx);
+			if(transactionLog == null){
+				transactionLog = new TransactionLogImp("binlog", transactionPath);
 			}
+			
+			transactionLog.open(this);
 			
 		}
 		catch(Throwable e){
@@ -422,6 +421,16 @@ public class EntityFileTransactionManagerImp
 				status, 
 				transactionID, started, rolledBack, commited, timeout, true);
 		
+	}
+
+	public void setTransactionLog(TransactionLog value) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public TransactionLog getTransactionLog() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 	
 }
