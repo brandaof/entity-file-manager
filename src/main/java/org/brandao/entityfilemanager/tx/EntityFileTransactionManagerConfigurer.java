@@ -21,6 +21,10 @@ public interface EntityFileTransactionManagerConfigurer
 	
 	void setTimeout(long value);
 	
+	void setEnabledTransactionLog(boolean value);
+	
+	boolean isEnabledTransactionLog();
+	
 	File getTransactionPath();
 	
 	void setTransactionPath(File value);

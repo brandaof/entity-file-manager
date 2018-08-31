@@ -1,12 +1,8 @@
 package org.brandao.entityfilemanager.tx;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
 
-import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.FileAccess;
 import org.brandao.entityfilemanager.TransactionLog;
 
@@ -15,7 +11,7 @@ public class TransactionLogImp
 
 	private static final long MIN_FILELOG_LENGTH = 25*1024*1024;
 	
-	private FileAccess transactionFile;
+	private TransactionFileLog transactionFile;
 
 	private long limitFileLength;
 
@@ -25,11 +21,14 @@ public class TransactionLogImp
 	
 	private TransactionReader transactionReader;
 	
-	public TransactionLogImp(String name, File path){
+	private EntityFileTransactionManagerConfigurer eftmc;
+	
+	public TransactionLogImp(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		this.transactionFileCreator = new TransactionFileCreator(name, path);
 		this.limitFileLength        = MIN_FILELOG_LENGTH;
 		this.transactionWritter     = new TransactionWritter();
 		this.transactionReader      = new TransactionReader();
+		this.eftmc                  = eftmc;
 	}
 
 	public void setLimitFileLength(long value) throws TransactionException {
@@ -49,74 +48,11 @@ public class TransactionLogImp
 			throws TransactionException {
 		
 		try{
-			if(isEmptyTransaction(ceft)){
-				return;
-			}
-			
-			if(transactionFile.length() > this.limitFileLength){
+			if(transactionFile.getFilelength() > this.limitFileLength){
 				createNewFileTransactionLog();
 			}
 			
-			transactionFile.writeLong(transactionFile.getFilePointer() + 8);
-			transactionWritter.write(ceft, transactionFile);
-			
-		}
-		catch(Throwable e){
-			throw new TransactionException(e);
-		}
-	}
-
-	@SuppressWarnings("rawtypes")
-	private boolean isEmptyTransaction(ConfigurableEntityFileTransaction ceft) throws IOException{
-		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = ceft.getTransactionFiles();
-		Collection<TransactionEntity<?,?>> list = m.values();
-		
-		boolean empty = true;
-		
-		for(TransactionEntity<?,?> tt: list){
-			TransactionEntityFileAccess tefa = tt.getTransactionEntityFileAccess();
-			empty = empty && tefa.length() == 0;
-			
-			if(!empty){
-				break;
-			}
-		}
-		
-		return empty;
-	}
-	
-	private void createNewFileTransactionLog() throws IOException{
-		
-		transactionFile.flush();
-		transactionFile.close();
-		
-		File nextFile   = this.transactionFileCreator.getNextFile();
-		transactionFile = new FileAccess(nextFile);
-		
-		transactionFile.seek(0);
-	}
-
-	public void open(EntityFileTransactionManagerConfigurer eftmc) throws TransactionException{
-		
-		File txf = transactionFileCreator.getCurrentFile();
-		
-		if(txf == null){
-			
-			txf = transactionFileCreator.getNextFile();
-			try{
-				transactionFile = new FileAccess(txf);
-				return;
-			}
-			catch(Throwable e){
-				throw new TransactionException(e);
-			}
-			
-		}
-
-		try{
-			reloadTransactions(eftmc);
-			transactionFile = new FileAccess(txf);
-			transactionFile.seek(transactionFile.length());
+			transactionFile.add(ceft);
 		}
 		catch(TransactionException e){
 			throw e;
@@ -126,78 +62,93 @@ public class TransactionLogImp
 		}
 	}
 	
-	private void reloadTransactions(EntityFileTransactionManagerConfigurer eftmc
-			) throws FileNotFoundException, IOException, TransactionException{
+	private void createNewFileTransactionLog() throws IOException, TransactionException{
 		
-		int index = transactionFileCreator.getCurrentIndex();
-		File txf = null;
+		transactionFile.close();
 		
-		for(int i=0;i<=index;i++){
-			
-			txf = transactionFileCreator.getFileByIndex(i);
-			
-			if(!txf.exists()){
-				continue;
-			}
-			
-			FileAccess tfa = new FileAccess(txf);
-			
+		FileAccess fa = null;
+		try{
+			File nextFile   = this.transactionFileCreator.getNextFile();
+			fa              = new FileAccess(nextFile);
+			transactionFile = new TransactionFileLog(fa, transactionReader, transactionWritter, eftmc);
+			transactionFile.load();
+			return;
+		}
+		catch(Throwable e){
 			try{
-				if(tfa.length() == 0){
-					
-					if(i == index){
-						continue;
-					}
-					
-					throw new TransactionException("invalid transaction file size: " + txf.getName());
+				if(transactionFile != null){
+					transactionFile.close();
 				}
-				
-				reloadTransactionFile(tfa, eftmc);
 			}
-			finally{
-				tfa.close();
+			catch(Throwable x){
+				throw new TransactionException(x.toString(), e);
 			}
-		}
-		
-		transactionFile = new FileAccess(txf);
-		
-		if(transactionFile.length() > limitFileLength){
-			createNewFileTransactionLog();
-		}
-		else{
-			transactionFile.seek(transactionFile.length());
+			
+			throw e instanceof TransactionException? 
+					(TransactionException)e : 
+					new TransactionException(e);
 		}
 		
 	}
 
-	private void reloadTransactionFile(FileAccess tfa, EntityFileTransactionManagerConfigurer eftmc
-			) throws TransactionException, IOException{
+	public void open() throws TransactionException{
 		
-		ConfigurableEntityFileTransaction tx;
-		long lastPointerValue = -1;
+		File txf = transactionFileCreator.getCurrentFile();
 		
-		do{
+		if(txf == null){
 			
-			long pointerValue = tfa.readLong();
-			
-			if(pointerValue != tfa.getFilePointer()){
-				throw new TransactionException("invalid transaction: " + tfa.getFile().getName());
-			}
-			
+			txf           = transactionFileCreator.getNextFile();
+			FileAccess fa = null;
 			try{
-				tx = transactionReader.read(eftmc, tfa);
-				eftmc.closeTransaction(tx);
-			}
-			catch(TransactionException e){
-				throw e;
+				fa              = new FileAccess(txf);
+				transactionFile = new TransactionFileLog(fa, transactionReader, transactionWritter, eftmc);
+				transactionFile.load();
+				return;
 			}
 			catch(Throwable e){
-				throw new TransactionException("invalid transaction file: " + tfa.getFile().getName(), e);
+				try{
+					if(transactionFile != null){
+						transactionFile.close();
+					}
+				}
+				catch(Throwable x){
+					throw new TransactionException(x.toString(), e);
+				}
+				
+				throw e instanceof TransactionException? 
+						(TransactionException)e : 
+						new TransactionException(e);
 			}
-		
-			lastPointerValue = pointerValue;
 			
-		}while(tfa.getFilePointer() != tfa.length());
-		
+		}
+		else{
+			
+			FileAccess fa = null;
+			try{
+				fa              = new FileAccess(txf);
+				transactionFile = new TransactionFileLog(fa, transactionReader, transactionWritter, eftmc);
+				transactionFile.load();
+				
+				if(transactionFile.getError() != null){
+					throw transactionFile.getError();
+				}
+			}
+			catch(Throwable e){
+				try{
+					if(fa != null){
+						fa.close();
+					}
+				}
+				catch(Throwable x){
+					throw new TransactionException(x.toString(), e);
+				}
+				
+				throw e instanceof TransactionException? 
+						(TransactionException)e : 
+						new TransactionException(e);
+			}
+			
+		}
 	}
+	
 }

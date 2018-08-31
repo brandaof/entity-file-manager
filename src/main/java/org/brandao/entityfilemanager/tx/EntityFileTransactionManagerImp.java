@@ -39,15 +39,18 @@ public class EntityFileTransactionManagerImp
 	
 	private LockProvider lockProvider;
 
-	//private TransactionLog transactionLog;
+	private TransactionLog transactionLog;
 	
 	private RecoveryTransactionLog recoveryLog;
 	
+	private boolean enabledTransactionLog;
+	
 	public EntityFileTransactionManagerImp(){
-		this.transactionIDCounter = 0;
-		this.txIDLock             = new ReentrantLock();
-		this.transactions         = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
-		//this.transactionLog       = null;
+		this.transactionIDCounter  = 0;
+		this.txIDLock              = new ReentrantLock();
+		this.transactions          = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
+		this.transactionLog        = null;
+		this.enabledTransactionLog = false;
 	}
 	
 	private long getNextTransactionID() {
@@ -104,11 +107,12 @@ public class EntityFileTransactionManagerImp
 		
 		this.recoveryLog = new RecoveryTransactionLog("recovery", transactionPath, this);
 		
-		//if(transactionLog == null){
-		//	transactionLog = new TransactionLogImp("binlog", transactionPath);
-		//}
+		if(transactionLog == null){
+			transactionLog = new TransactionLogImp("binlog", transactionPath, this);
+		}
 		
-		this.reloadTransactions();
+		transactionLog.open();
+		recoveryLog.open();
 	}
 	
 	public void destroy() throws TransactionException{
@@ -329,18 +333,12 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 	
-	protected void logTransaction(ConfigurableEntityFileTransaction transaction){
+	protected void logTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException{
+		if(enabledTransactionLog){
+			transactionLog.registerLog(transaction);
+		}
 	}
 	
-	protected void reloadTransactions() throws EntityFileManagerException{
-		try{
-			recoveryLog.open();
-		}
-		catch(Throwable e){
-			throw new EntityFileManagerException(e);
-		}
-	}
-
 	private void closeAllTransactions() throws EntityFileManagerException{
 		try{
 			for(ConfigurableEntityFileTransaction tx: this.transactions.values()){
@@ -443,13 +441,19 @@ public class EntityFileTransactionManagerImp
 	}
 
 	public void setTransactionLog(TransactionLog value) {
-		// TODO Auto-generated method stub
-		
+		this.transactionLog = value;
 	}
 
 	public TransactionLog getTransactionLog() {
-		// TODO Auto-generated method stub
-		return null;
+		return transactionLog;
+	}
+
+	public void setEnabledTransactionLog(boolean value) {
+		this.enabledTransactionLog = value;
+	}
+
+	public boolean isEnabledTransactionLog() {
+		return enabledTransactionLog;
 	}
 	
 }
