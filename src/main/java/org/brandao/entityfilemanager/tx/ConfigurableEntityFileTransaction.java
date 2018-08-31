@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -35,6 +36,8 @@ public interface ConfigurableEntityFileTransaction extends EntityFileTransaction
 	
 	boolean isStarted();
 
+	boolean isEmpty() throws IOException;
+	
 	long getTransactionID();
 	
 	Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> getTransactionFiles();

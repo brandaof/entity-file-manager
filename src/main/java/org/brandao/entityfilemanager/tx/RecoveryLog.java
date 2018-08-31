@@ -3,13 +3,10 @@ package org.brandao.entityfilemanager.tx;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.FileAccess;
 
 public class RecoveryLog {
@@ -52,14 +49,16 @@ public class RecoveryLog {
 		return limitFileLength;
 	}
 
+	public void close() throws IOException{
+		if(transactionFile != null){
+			transactionFile.close();
+		}
+	}
+	
 	public synchronized void registerTransaction(ConfigurableEntityFileTransaction ceft)
 			throws TransactionException {
 		
 		try{
-			if(isEmptyTransaction(ceft)){
-				return;
-			}
-			
 			if(transactionFile.length() > this.limitFileLength){
 				createNewFileTransactionLog();
 			}
@@ -83,10 +82,6 @@ public class RecoveryLog {
 
 	public synchronized void deleteTransaction(ConfigurableEntityFileTransaction ceft)
 			throws TransactionException {
-		
-		if(isEmptyTransaction(ceft)){
-			return;
-		}
 		
 		LinkedHashSet<Long> txSet = transactions.get(ceft.getRepository());
 		
@@ -112,34 +107,29 @@ public class RecoveryLog {
 		}
 	}
 	
-	@SuppressWarnings("rawtypes")
-	private boolean isEmptyTransaction(ConfigurableEntityFileTransaction ceft) throws IOException{
-		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> m = ceft.getTransactionFiles();
-		Collection<TransactionEntity<?,?>> list = m.values();
-		
-		boolean empty = true;
-		
-		for(TransactionEntity<?,?> tt: list){
-			TransactionEntityFileAccess tefa = tt.getTransactionEntityFileAccess();
-			empty = empty && tefa.length() == 0;
-			
-			if(!empty){
-				break;
-			}
-		}
-		
-		return empty;
-	}
-	
-	private void createNewFileTransactionLog() throws IOException{
+	private void createNewFileTransactionLog() throws TransactionException, IOException{
 		
 		transactionFile.close();
 		
-		File nextFile   = this.transactionFileCreator.getNextFile();
-		FileAccess fa   = new FileAccess(nextFile, new RandomAccessFile(nextFile, "rw"));
-		transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
-		
-		transactionFile.load();
+		File nextFile = this.transactionFileCreator.getNextFile();
+		FileAccess fa = null;
+		try{
+			fa              = new FileAccess(nextFile);
+			transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
+			transactionFile.load();
+		}
+		catch(Throwable e){
+			try{
+				if(fa != null){
+					fa.close();
+				}
+			}
+			catch(Throwable x){
+				throw new TransactionException(x.toString(), e);
+			}
+			
+			throw new TransactionException(e);
+		}
 	}
 
 	public void open() throws TransactionException{
@@ -149,26 +139,51 @@ public class RecoveryLog {
 		if(txf == null){
 			
 			txf = transactionFileCreator.getNextFile();
+			FileAccess fa = null;
 			try{
-				FileAccess fa   = new FileAccess(txf, new RandomAccessFile(txf, "rw"));
+				fa              = new FileAccess(txf);
 				transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
 				transactionFile.load();
 				return;
 			}
 			catch(Throwable e){
+				try{
+					if(fa != null){
+						fa.close();
+					}
+				}
+				catch(Throwable x){
+					throw new TransactionException(x.toString(), e);
+				}
+				
 				throw new TransactionException(e);
 			}
 			
 		}
-
-		try{
-			reloadTransactions(eftmc);
-		}
-		catch(TransactionException e){
-			throw e;
-		}
-		catch(Throwable e){
-			throw new TransactionException(e);
+		else{
+	
+			FileAccess fa = null;
+			try{
+				reloadTransactions(eftmc);
+				fa              = new FileAccess(txf);
+				transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
+				transactionFile.load();
+			}
+			catch(Throwable e){
+				try{
+					if(fa != null){
+						fa.close();
+					}
+				}
+				catch(Throwable x){
+					throw new TransactionException(x.toString(), e);
+				}
+				
+				throw e instanceof TransactionException? 
+						(TransactionException)e : 
+						new TransactionException(e);
+			}
+			
 		}
 	}
 	
@@ -186,9 +201,10 @@ public class RecoveryLog {
 				continue;
 			}
 			
-			FileAccess fa = new FileAccess(txf, new RandomAccessFile(txf, "rw"));
-			TransactionFileLog transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
+			FileAccess fa = null;			
 			try{
+				fa                                 = new FileAccess(txf);
+				TransactionFileLog transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
 				transactionFile.load();
 				
 				if(transactionFile.getError() != null){
@@ -202,8 +218,10 @@ public class RecoveryLog {
 				
 			}
 			finally{
-				transactionFile.close();
-				transactionFile.delete();
+				if(fa != null){
+					fa.close();
+					fa.delete();
+				}
 			}
 		}
 		

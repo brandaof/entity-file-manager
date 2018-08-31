@@ -25,18 +25,18 @@ public class FileAccess {
 	
 	private long pointer;
 	
-	public FileAccess(File file, RandomAccessFile randomAccessFile) throws IOException{
-		this(file, randomAccessFile, 2048, 2048);
+	public FileAccess(File file) throws IOException{
+		this(file, 2048, 2048);
 	}
 	
-	public FileAccess(File file, RandomAccessFile randomAccessFile, 
+	public FileAccess(File file, 
 			int readCapacity, int writeCapacity) throws IOException{
-		this.randomAccessFile = randomAccessFile;
-		this.file = file;
-		this.lastOP = 0;
-		this.reader = new BufferedReaderRandomAccessFile(readCapacity, randomAccessFile);
-		this.writter = new BufferedWritterRandomAccessFile(writeCapacity, randomAccessFile);
-		this.pointer = randomAccessFile.getFilePointer();
+		this.file             = file;
+		this.lastOP           = 0;
+		this.randomAccessFile = new RandomAccessFile(file, "rw");
+		this.reader           = new BufferedReaderRandomAccessFile(readCapacity, randomAccessFile);
+		this.writter          = new BufferedWritterRandomAccessFile(writeCapacity, randomAccessFile);
+		this.pointer          = randomAccessFile.getFilePointer();
 	}
 
 	public long readLong() throws IOException {
@@ -192,7 +192,7 @@ public class FileAccess {
 	}
 	
 	public void close() throws IOException{
-		this.randomAccessFile.close();
+		randomAccessFile.close();
 	}
 	
 	public void delete(){
@@ -210,6 +210,18 @@ public class FileAccess {
 	public void flush() throws IOException{
 		writter.flush();
 		reader.clear();
+	}
+	
+	protected void finalize() throws Throwable{
+		try{
+			randomAccessFile.close();
+		}
+		catch(Throwable e){
+			//suppress exception
+		}
+		finally{
+			super.finalize();
+		}
 	}
 	private void resyncBuffer(byte type) throws IOException{
 		

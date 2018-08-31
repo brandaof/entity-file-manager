@@ -33,7 +33,6 @@ public class TransactionFileLog
 		this.error       = null;
 		this.lastPointer = 0;
 		this.length      = 0;
-		this.fa.seek(0);
 	}
 	
 	public void reset() throws IOException{

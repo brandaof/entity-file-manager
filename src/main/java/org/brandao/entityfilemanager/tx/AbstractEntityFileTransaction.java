@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -83,6 +84,19 @@ public abstract class AbstractEntityFileTransaction
 		return this.commited;
 	}
 
+	@SuppressWarnings("rawtypes")
+	public boolean isEmpty() throws IOException{
+		
+		for(TransactionEntity<?,?> t: transactionFiles.values()){
+			TransactionEntityFileAccess tefa = t.getTransactionEntityFileAccess();
+			if(tefa.length() != 0){
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	public void rollback() throws TransactionException {
 		entityFileTransactionManager.rollbackTransaction(this);
 	}

@@ -181,7 +181,15 @@ public class EntityFileTransactionManagerImp
 			throw new TransactionException("transaction not started");
 		}
 		
+		
 		try{
+			
+			if(transaction.isEmpty()){
+				transaction.setCommited(true);
+				transaction.setRolledBack(false);
+				return;
+			}
+			
 			//obtém os arquivos envolvidos na transação
 			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
 					transaction.getTransactionFiles();
@@ -246,6 +254,13 @@ public class EntityFileTransactionManagerImp
 		}
 		
 		try{
+			
+			if(transaction.isEmpty()){
+				transaction.setCommited(false);
+				transaction.setRolledBack(true);
+				return;
+			}
+			
 			//obtém os arquivos envolvidos na transação
 			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
 					transaction.getTransactionFiles();
