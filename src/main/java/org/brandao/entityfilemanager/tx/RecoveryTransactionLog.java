@@ -9,7 +9,7 @@ import java.util.Map;
 
 import org.brandao.entityfilemanager.FileAccess;
 
-public class RecoveryLog {
+public class RecoveryTransactionLog {
 
 	private static final long MIN_FILELOG_LENGTH = 25*1024*1024;
 	
@@ -27,7 +27,7 @@ public class RecoveryLog {
 	
 	private EntityFileTransactionManagerConfigurer eftmc;
 	
-	public RecoveryLog(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
+	public RecoveryTransactionLog(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		this.transactionFileCreator = new TransactionFileCreator(name, path);
 		this.limitFileLength        = MIN_FILELOG_LENGTH;
 		this.transactions           = new HashMap<TransactionFileLog, LinkedHashSet<Long>>();
@@ -59,7 +59,7 @@ public class RecoveryLog {
 			throws TransactionException {
 		
 		try{
-			if(transactionFile.length() > this.limitFileLength){
+			if(transactionFile.getFilelength() > this.limitFileLength){
 				createNewFileTransactionLog();
 			}
 			

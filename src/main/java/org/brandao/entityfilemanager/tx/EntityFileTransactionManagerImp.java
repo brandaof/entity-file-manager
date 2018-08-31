@@ -41,7 +41,7 @@ public class EntityFileTransactionManagerImp
 
 	//private TransactionLog transactionLog;
 	
-	private RecoveryLog recoveryLog;
+	private RecoveryTransactionLog recoveryLog;
 	
 	public EntityFileTransactionManagerImp(){
 		this.transactionIDCounter = 0;
@@ -102,7 +102,7 @@ public class EntityFileTransactionManagerImp
 
 	public void init() throws TransactionException{
 		
-		this.recoveryLog = new RecoveryLog("recovery", transactionPath, this);
+		this.recoveryLog = new RecoveryTransactionLog("recovery", transactionPath, this);
 		
 		//if(transactionLog == null){
 		//	transactionLog = new TransactionLogImp("binlog", transactionPath);

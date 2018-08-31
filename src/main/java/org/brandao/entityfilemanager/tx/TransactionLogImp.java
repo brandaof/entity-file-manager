@@ -3,7 +3,6 @@ package org.brandao.entityfilemanager.tx;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.Collection;
 import java.util.Map;
 
@@ -92,7 +91,7 @@ public class TransactionLogImp
 		transactionFile.close();
 		
 		File nextFile   = this.transactionFileCreator.getNextFile();
-		transactionFile = new FileAccess(nextFile, new RandomAccessFile(nextFile, "rw"));
+		transactionFile = new FileAccess(nextFile);
 		
 		transactionFile.seek(0);
 	}
@@ -105,7 +104,7 @@ public class TransactionLogImp
 			
 			txf = transactionFileCreator.getNextFile();
 			try{
-				transactionFile = new FileAccess(txf, new RandomAccessFile(txf, "rw"));
+				transactionFile = new FileAccess(txf);
 				return;
 			}
 			catch(Throwable e){
@@ -116,7 +115,7 @@ public class TransactionLogImp
 
 		try{
 			reloadTransactions(eftmc);
-			transactionFile = new FileAccess(txf, new RandomAccessFile(txf, "rw"));
+			transactionFile = new FileAccess(txf);
 			transactionFile.seek(transactionFile.length());
 		}
 		catch(TransactionException e){
@@ -141,7 +140,7 @@ public class TransactionLogImp
 				continue;
 			}
 			
-			FileAccess tfa = new FileAccess(txf, new RandomAccessFile(txf, "rw"));
+			FileAccess tfa = new FileAccess(txf);
 			
 			try{
 				if(tfa.length() == 0){
@@ -160,7 +159,7 @@ public class TransactionLogImp
 			}
 		}
 		
-		transactionFile = new FileAccess(txf, new RandomAccessFile(txf, "rw"));
+		transactionFile = new FileAccess(txf);
 		
 		if(transactionFile.length() > limitFileLength){
 			createNewFileTransactionLog();

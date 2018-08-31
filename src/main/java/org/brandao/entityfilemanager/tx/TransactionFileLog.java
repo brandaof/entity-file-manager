@@ -22,8 +22,6 @@ public class TransactionFileLog
 	
 	private Throwable error;
 	
-	private long length;
-	
 	public TransactionFileLog(FileAccess fa, TransactionReader reader,
 			TransactionWritter writter, EntityFileTransactionManagerConfigurer eftmc) throws IOException{
 		this.fa          = fa;
@@ -32,7 +30,6 @@ public class TransactionFileLog
 		this.eftmc       = eftmc;
 		this.error       = null;
 		this.lastPointer = 0;
-		this.length      = 0;
 	}
 	
 	public void reset() throws IOException{
@@ -51,28 +48,26 @@ public class TransactionFileLog
 
 	public void load() throws IOException{
 
-		length = 0;
-		
 		if(fa.length() == 0){
-			fa.seek(0);
 			return;
 		}
 		
 		fa.seek(0);
 		
 		while(hasMoreElements()){
-			length++;
+			nextElement();
+			lastPointer = fa.getFilePointer();
 		}
 		
-		lastPointer = fa.getFilePointer();
+		fa.seek(0);
 	}
 	
 	public Throwable getError(){
 		return error;
 	}
 	
-	public long length() {
-		return length;
+	public long getFilelength() throws IOException {
+		return fa.length();
 	}
 	
 	public void add(ConfigurableEntityFileTransaction ceft) throws IOException{
@@ -83,16 +78,16 @@ public class TransactionFileLog
 		writter.write(ceft, fa);
 		
 		lastPointer = fa.getFilePointer();
-		length++;
 	}
 	
 	public boolean hasMoreElements() {
 		try{
-			if(length == 0){
+			if(error != null || fa.getFilePointer() == fa.length()){
 				return false;
 			}
 			
 			long pointer = fa.readLong();
+			
 			return 
 				pointer == fa.getFilePointer() &&
 				fa.getFilePointer() != fa.length();
