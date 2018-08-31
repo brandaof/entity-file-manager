@@ -41,7 +41,7 @@ public class EntityFileTransactionManagerImp
 
 	private TransactionLog transactionLog;
 	
-	private RecoveryTransactionLog recoveryLog;
+	private RecoveryTransactionLogImp recoveryLog;
 	
 	private boolean enabledTransactionLog;
 	
@@ -105,7 +105,7 @@ public class EntityFileTransactionManagerImp
 
 	public void init() throws TransactionException{
 		
-		this.recoveryLog = new RecoveryTransactionLog("recovery", transactionPath, this);
+		this.recoveryLog = new RecoveryTransactionLogImp("recovery", transactionPath, this);
 		
 		if(transactionLog == null){
 			transactionLog = new TransactionLogImp("binlog", transactionPath, this);

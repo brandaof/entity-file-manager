@@ -37,7 +37,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		tm.setTimeout(EntityFileTransactionManagerImp.DEFAULT_TIMEOUT);
 		tm.setTransactionPath(txPath);
 		tm.setEntityFileManagerConfigurer(efm);
-		tm.setEnabledTransactionLog(true);
+		tm.setEnabledTransactionLog(false);
 		
 		efm.setEntityFileTransactionManager(tm);
 		efm.setLockProvider(lp);
