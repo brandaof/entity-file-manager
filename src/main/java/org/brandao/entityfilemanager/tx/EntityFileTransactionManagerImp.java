@@ -39,13 +39,15 @@ public class EntityFileTransactionManagerImp
 	
 	private LockProvider lockProvider;
 
-	private TransactionLog transactionLog;
+	//private TransactionLog transactionLog;
+	
+	private RecoveryLog recoveryLog;
 	
 	public EntityFileTransactionManagerImp(){
 		this.transactionIDCounter = 0;
 		this.txIDLock             = new ReentrantLock();
 		this.transactions         = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
-		this.transactionLog       = null;
+		//this.transactionLog       = null;
 	}
 	
 	private long getNextTransactionID() {
@@ -99,6 +101,13 @@ public class EntityFileTransactionManagerImp
 	}
 
 	public void init() throws TransactionException{
+		
+		this.recoveryLog = new RecoveryLog("recovery", transactionPath, this);
+		
+		//if(transactionLog == null){
+		//	transactionLog = new TransactionLogImp("binlog", transactionPath);
+		//}
+		
 		this.reloadTransactions();
 	}
 	
@@ -138,7 +147,7 @@ public class EntityFileTransactionManagerImp
 		
 		try{
 			//apaga os dados da transação.
-			this.deleteTransactionInformation(transaction);
+			this.confirmTransactionInformation(transaction);
 
 			tx.setClosed(true);
 			
@@ -194,7 +203,7 @@ public class EntityFileTransactionManagerImp
 			this.logTransaction(transaction);
 			
 			//apaga os dados da transação.
-			this.deleteTransactionInformation(transaction);
+			this.confirmTransactionInformation(transaction);
 			
 			transaction.setCommited(true);
 			transaction.setRolledBack(false);
@@ -258,7 +267,7 @@ public class EntityFileTransactionManagerImp
 			this.logTransaction(transaction);
 			
 			//apaga os dados da transação.
-			this.deleteTransactionInformation(transaction);
+			this.confirmTransactionInformation(transaction);
 			
 			transaction.setCommited(false);
 			transaction.setRolledBack(true);
@@ -294,14 +303,15 @@ public class EntityFileTransactionManagerImp
 	protected void registerTransactionInformation(
 			ConfigurableEntityFileTransaction transaction, boolean override) throws TransactionException {
 		if(override || !transaction.isRecoveredTransaction()){
-			transactionLog.registerLog(transaction);
-			//transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
+			recoveryLog.registerTransaction(transaction);
 		}
 	}
 
-	protected void deleteTransactionInformation(
-			ConfigurableEntityFileTransaction transaction) throws IOException{
-		//transactionLoader.deleteEntityFileTransaction(transaction, this.transactionPath);
+	protected void confirmTransactionInformation(
+			ConfigurableEntityFileTransaction transaction) throws TransactionException{
+		if(!transaction.isRecoveredTransaction()){
+			recoveryLog.deleteTransaction(transaction);
+		}
 	}
 	
 	protected void logTransaction(ConfigurableEntityFileTransaction transaction){
@@ -309,13 +319,7 @@ public class EntityFileTransactionManagerImp
 	
 	protected void reloadTransactions() throws EntityFileManagerException{
 		try{
-			
-			if(transactionLog == null){
-				transactionLog = new TransactionLogImp("binlog", transactionPath);
-			}
-			
-			transactionLog.open(this);
-			
+			recoveryLog.open();
 		}
 		catch(Throwable e){
 			throw new EntityFileManagerException(e);

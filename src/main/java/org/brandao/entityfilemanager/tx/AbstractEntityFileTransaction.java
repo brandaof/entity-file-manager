@@ -37,6 +37,8 @@ public abstract class AbstractEntityFileTransaction
 	
 	protected boolean recoveredTransaction;
 	
+	protected TransactionFileLog transactionFileLog;
+	
 	public AbstractEntityFileTransaction(
 			EntityFileTransactionManagerConfigurer entityFileTransactionManager,
 			LockProvider lockProvider,
@@ -91,6 +93,14 @@ public abstract class AbstractEntityFileTransaction
 
 	public void close() throws TransactionException{
 		entityFileTransactionManager.closeTransaction(this);
+	}
+	
+	public void setRepository(TransactionFileLog value) {
+		transactionFileLog = value;
+	}
+
+	public TransactionFileLog getRepository() {
+		return transactionFileLog;
 	}
 	
 	public <T, R, H> long insert(T entity, EntityFileAccess<T, R, H> entityFileAccess)

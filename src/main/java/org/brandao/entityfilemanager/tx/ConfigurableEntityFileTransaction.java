@@ -25,6 +25,10 @@ public interface ConfigurableEntityFileTransaction extends EntityFileTransaction
 	
 	void setDirty(boolean value);
 	
+	void setRepository(TransactionFileLog value);
+
+	TransactionFileLog getRepository();
+	
 	boolean isRecoveredTransaction();
 	
 	boolean isDirty();

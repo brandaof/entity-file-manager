@@ -95,9 +95,6 @@ public class TransactionLogImp
 		transactionFile = new FileAccess(nextFile, new RandomAccessFile(nextFile, "rw"));
 		
 		transactionFile.seek(0);
-		transactionFile.writeLong(transactionFile.getFilePointer() + 8);
-		transactionFile.flush();
-		
 	}
 
 	public void open(EntityFileTransactionManagerConfigurer eftmc) throws TransactionException{
@@ -134,10 +131,11 @@ public class TransactionLogImp
 			) throws FileNotFoundException, IOException, TransactionException{
 		
 		int index = transactionFileCreator.getCurrentIndex();
+		File txf = null;
 		
 		for(int i=0;i<=index;i++){
 			
-			File txf = transactionFileCreator.getFileByIndex(i);
+			txf = transactionFileCreator.getFileByIndex(i);
 			
 			if(!txf.exists()){
 				continue;
@@ -162,7 +160,14 @@ public class TransactionLogImp
 			}
 		}
 		
-		createNewFileTransactionLog();
+		transactionFile = new FileAccess(txf, new RandomAccessFile(txf, "rw"));
+		
+		if(transactionFile.length() > limitFileLength){
+			createNewFileTransactionLog();
+		}
+		else{
+			transactionFile.seek(transactionFile.length());
+		}
 		
 	}
 

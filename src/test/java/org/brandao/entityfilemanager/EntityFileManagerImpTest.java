@@ -493,6 +493,18 @@ public class EntityFileManagerImpTest extends TestCase{
 		final Random random                    = new Random();
 		final List<Throwable> ex               = new ArrayList<Throwable>();
 		List<Thread> taskList                  = new ArrayList<Thread>();
+		final Entity[] vals                    = new Entity[ops];
+		
+		for(int i=0;i<ops;i++){
+			Entity e = new Entity();
+			e.setId(random.nextInt());
+			e.setStatus(random.nextInt());
+			
+			byte[] msg = new byte[140];
+			e.setMessage(new String(msg));
+			vals[i] = e;
+		}
+		
 		for(int i=0;i<task;i++){
 			taskList.add(
 				new Thread(){
@@ -500,25 +512,9 @@ public class EntityFileManagerImpTest extends TestCase{
 					public void run(){
 						try{
 							EntityFileTransaction tx = efm.beginTransaction();
-							EntityFile<Entity> ef = efm.getEntityFile("entity", tx, Entity.class);
-							
-							Entity[] vals = new Entity[ops];
-							
-							for(int i=0;i<ops;i++){
-								Entity e = new Entity();
-								e.setId(random.nextInt());
-								e.setStatus(random.nextInt());
-								
-								byte[] msg = new byte[140];
-								e.setMessage(new String(msg));
-								vals[i] = e;
-							}
-							
-							long time = System.nanoTime();
+							EntityFile<Entity> ef    = efm.getEntityFile("entity", tx, Entity.class);
 							ef.insert(vals);
 							tx.commit();
-							time = System.nanoTime() - time;
-	
 						}
 						catch(Throwable e){
 							ex.add(e);
