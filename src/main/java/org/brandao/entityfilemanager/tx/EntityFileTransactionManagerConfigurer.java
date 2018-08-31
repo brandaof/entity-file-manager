@@ -17,6 +17,10 @@ public interface EntityFileTransactionManagerConfigurer
 
 	TransactionLog getTransactionLog();
 	
+	void setRecoveryTransactionLog(RecoveryTransactionLog value);
+	
+	RecoveryTransactionLog getRecoveryTransactionLog();
+	
 	long getTimeout();
 	
 	void setTimeout(long value);

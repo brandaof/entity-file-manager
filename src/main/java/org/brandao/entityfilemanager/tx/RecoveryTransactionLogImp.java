@@ -9,7 +9,8 @@ import java.util.Map;
 
 import org.brandao.entityfilemanager.FileAccess;
 
-public class RecoveryTransactionLogImp {
+public class RecoveryTransactionLogImp 
+	implements RecoveryTransactionLog{
 
 	private static final long MIN_FILELOG_LENGTH = 25*1024*1024;
 	
@@ -49,9 +50,14 @@ public class RecoveryTransactionLogImp {
 		return limitFileLength;
 	}
 
-	public void close() throws IOException{
-		if(transactionFile != null){
-			transactionFile.close();
+	public void close() throws TransactionException{
+		try{
+			if(transactionFile != null){
+				transactionFile.close();
+			}
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
 		}
 	}
 	
