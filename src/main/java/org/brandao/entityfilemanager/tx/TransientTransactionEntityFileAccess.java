@@ -4,11 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.brandao.entityfilemanager.DataReader;
 import org.brandao.entityfilemanager.DataReaderInputStream;
@@ -197,28 +194,5 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	
 	public void delete() throws IOException {
 	}
-
-	private void writeObject(ObjectOutputStream stream) throws IOException {
-		stream.writeObject(metadata);
-		stream.writeUTF(file.getName());
-		stream.writeInt(batchLength);
-		stream.writeObject(dataHandler);
-		//stream.writeObject(parent);
-		stream.writeObject(this.values);
-    }
-
-    @SuppressWarnings("unchecked")
-	private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
-    	metadata               = (TransactionHeader<H>) stream.readObject();
-		file                   = new File(stream.readUTF());
-		batchLength            = stream.readInt();
-		dataHandler            = (EntityFileTransactionDataHandler<T,R,H>) stream.readObject();
-		//parent                 = (EntityFileAccess<T, R, H>)stream.readObject();
-		values                 = (Map<Long, T>) stream.readObject();
-		
-		transactionDataHandler = (EntityFileTransactionDataHandler<T,R,H>)dataHandler;
-		
-		this.lock              = new ReentrantLock();
-    }
 	
 }

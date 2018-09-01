@@ -204,7 +204,7 @@ public class EntityFileTransactionUtil {
 	}
 	
 	@SuppressWarnings("unchecked")
-	private static <R> R[] adjustArray(R[] value, int len){
+	public static <R> R[] adjustArray(R[] value, int len){
 		
 		if(len == 0){
 			return (R[])Array.newInstance(value.getClass().getComponentType(), 0);
@@ -215,13 +215,24 @@ public class EntityFileTransactionUtil {
 		return result;
 	}
 
-	private static int[] adjustArray(int[] value, int len){
+	public static int[] adjustArray(int[] value, int len){
 		
 		if(len == 0){
 			return new int[0];
 		}
 		
 		int[] result = new int[len];
+		System.arraycopy(value, 0, result, 0, len);
+		return result;
+	}
+
+	public static long[] adjustArray(long[] value, int len){
+		
+		if(len == 0){
+			return new long[0];
+		}
+		
+		long[] result = new long[len];
 		System.arraycopy(value, 0, result, 0, len);
 		return result;
 	}

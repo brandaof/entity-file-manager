@@ -47,7 +47,7 @@ public class TransactionEntityFileAccess<T, R, H>
 	public void setTransactionID(long value) throws IOException {
 		this.fileAccess.seek(this.transactionDataHandler.getTransactionIDPointer());
 		this.fileAccess.writeLong(value);
-		this.metadata.setTransactionID(value);;
+		this.metadata.setTransactionID(value);
 	}
 
 	public void setTransactionIsolation(byte value) throws IOException{
