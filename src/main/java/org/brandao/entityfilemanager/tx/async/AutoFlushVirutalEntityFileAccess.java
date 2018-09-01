@@ -1,10 +1,13 @@
-package org.brandao.entityfilemanager;
+package org.brandao.entityfilemanager.tx.async;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+
+import org.brandao.entityfilemanager.AbstractVirutalEntityFileAccess;
+import org.brandao.entityfilemanager.EntityFileAccess;
 
 public class AutoFlushVirutalEntityFileAccess<T, R, H>
 	extends AbstractVirutalEntityFileAccess<T, R, H>{
