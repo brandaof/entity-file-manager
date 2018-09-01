@@ -82,7 +82,7 @@ public class EntityFileManagerImp
 		
 	}
 	
-	public void register(String name, EntityFileAccess<?,?,?> entityFile) throws EntityFileManagerException{
+	public void register(EntityFileAccess<?,?,?> entityFile) throws EntityFileManagerException{
 		
 		try{
 			if(entityFile.exists())
@@ -90,7 +90,7 @@ public class EntityFileManagerImp
 			else
 				entityFile.createNewFile();
 			
-			this.entities.put(name, entityFile);
+			this.entities.put(entityFile.getName(), entityFile);
 		}
 		catch(Throwable e){
 			throw new EntityFileManagerException(e);
