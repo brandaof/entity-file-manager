@@ -12,7 +12,7 @@ import org.brandao.entityfilemanager.FileAccess;
 public class RecoveryTransactionLogImp 
 	implements RecoveryTransactionLog{
 
-	private static final long MIN_FILELOG_LENGTH = 25*1024*1024;
+	private static final long MIN_FILELOG_LENGTH = 300*1024*1024;
 	
 	private TransactionFileLog transactionFile;
 
@@ -171,6 +171,9 @@ public class RecoveryTransactionLogImp
 			FileAccess fa = null;
 			try{
 				reloadTransactions(eftmc);
+				transactionFileCreator.setIndex(0);
+				
+				txf             = transactionFileCreator.getNextFile();
 				fa              = new FileAccess(txf);
 				transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
 				transactionFile.load();

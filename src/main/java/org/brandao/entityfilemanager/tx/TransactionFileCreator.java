@@ -18,6 +18,10 @@ public class TransactionFileCreator {
 		this.reloadIndex();
 	}
 	
+	public void setIndex(int value){
+		this.index = value;
+	}
+	
 	public File getCurrentFile(){
 		return this.currentFile;
 	}
