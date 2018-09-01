@@ -4,6 +4,7 @@ import java.io.File;
 
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.LockProvider;
+import org.brandao.entityfilemanager.TransactionLog;
 
 public interface EntityFileTransactionManagerConfigurer 
 	extends EntityFileTransactionManager{
@@ -12,9 +13,21 @@ public interface EntityFileTransactionManagerConfigurer
 
 	EntityFileManagerConfigurer getEntityFileManagerConfigurer();
 	
+	void setTransactionLog(TransactionLog value);
+
+	TransactionLog getTransactionLog();
+	
+	void setRecoveryTransactionLog(RecoveryTransactionLog value);
+	
+	RecoveryTransactionLog getRecoveryTransactionLog();
+	
 	long getTimeout();
 	
 	void setTimeout(long value);
+	
+	void setEnabledTransactionLog(boolean value);
+	
+	boolean isEnabledTransactionLog();
 	
 	File getTransactionPath();
 	

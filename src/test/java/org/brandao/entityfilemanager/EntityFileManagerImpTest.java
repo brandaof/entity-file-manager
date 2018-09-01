@@ -12,6 +12,8 @@ import java.util.concurrent.CountDownLatch;
 
 import junit.framework.TestCase;
 
+import org.brandao.entityfilemanager.helper.Entity;
+import org.brandao.entityfilemanager.helper.EntityEntityFileAccess;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerConfigurer;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerImp;
@@ -35,13 +37,14 @@ public class EntityFileManagerImpTest extends TestCase{
 		tm.setTimeout(EntityFileTransactionManagerImp.DEFAULT_TIMEOUT);
 		tm.setTransactionPath(txPath);
 		tm.setEntityFileManagerConfigurer(efm);
+		tm.setEnabledTransactionLog(false);
 		
 		efm.setEntityFileTransactionManager(tm);
 		efm.setLockProvider(lp);
 		efm.setPath(path);
 		efm.register("long", new LongEntityFileAccess("long", new File(path, "long")));
 		efm.register("string", new StringEntityFileAccess("string", new File(path, "string")));
-		
+		efm.register("entity", new EntityEntityFileAccess("entity", new File(path, "entity")));
 		efm.init();
 		
 		efm.truncate("long");
@@ -424,7 +427,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	public void testInsertPerformance() throws Throwable{
 		
 		final int task                         = 300;
-		final int ops                          = 600;
+		final int ops                          = 1200;
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
 		final Random random                    = new Random();
 		final List<Throwable> ex               = new ArrayList<Throwable>();
@@ -481,6 +484,71 @@ public class EntityFileManagerImpTest extends TestCase{
 		double timeOp = time / op;
 		double opsSec = 1000000000 / timeOp;
 		System.out.println("time: " + time + " nano, ops: " + op + ", ops/Sec: " + + opsSec );
+	}
+	
+	public void testInsertEntityPerformance() throws Throwable{
+		
+		final int task                         = 1000;
+		final int ops                          = 1000;
+		final CountDownLatch countDownLatch    = new CountDownLatch(task);
+		final Random random                    = new Random();
+		final List<Throwable> ex               = new ArrayList<Throwable>();
+		List<Thread> taskList                  = new ArrayList<Thread>();
+		final Entity[] vals                    = new Entity[ops];
+		
+		for(int i=0;i<ops;i++){
+			Entity e = new Entity();
+			e.setId(random.nextInt());
+			e.setStatus(random.nextInt());
+			
+			byte[] msg = new byte[140];
+			e.setMessage(new String(msg));
+			vals[i] = e;
+		}
+		
+		for(int i=0;i<task;i++){
+			taskList.add(
+				new Thread(){
+					
+					public void run(){
+						try{
+							EntityFileTransaction tx = efm.beginTransaction();
+							EntityFile<Entity> ef    = efm.getEntityFile("entity", tx, Entity.class);
+							ef.insert(vals);
+							tx.commit();
+						}
+						catch(Throwable e){
+							ex.add(e);
+						}
+						finally{
+							countDownLatch.countDown();
+						}
+						
+					}
+					
+				}
+			);
+			
+		}
+		
+		long time = System.nanoTime();
+		
+		for(Thread t: taskList){
+			t.start();
+		}
+		
+		countDownLatch.await();
+		time = System.nanoTime() - time;
+		
+		if(!ex.isEmpty()){
+			throw ex.get(0);
+		}
+		
+		double op     = task*ops;
+		double timeOp = time / op;
+		double opsSec = 1000000000 / timeOp;
+		System.out.println("time: " + time + " nano, ops: " + op + ", ops/Sec: " + + opsSec );
 	}	
+	
 	
 }

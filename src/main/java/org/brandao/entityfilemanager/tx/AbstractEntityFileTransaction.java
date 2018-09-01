@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -36,6 +37,8 @@ public abstract class AbstractEntityFileTransaction
 	protected byte transactionIsolation;
 	
 	protected boolean recoveredTransaction;
+	
+	protected TransactionFileLog transactionFileLog;
 	
 	public AbstractEntityFileTransaction(
 			EntityFileTransactionManagerConfigurer entityFileTransactionManager,
@@ -81,6 +84,19 @@ public abstract class AbstractEntityFileTransaction
 		return this.commited;
 	}
 
+	@SuppressWarnings("rawtypes")
+	public boolean isEmpty() throws IOException{
+		
+		for(TransactionEntity<?,?> t: transactionFiles.values()){
+			TransactionEntityFileAccess tefa = t.getTransactionEntityFileAccess();
+			if(tefa.length() != 0){
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	public void rollback() throws TransactionException {
 		entityFileTransactionManager.rollbackTransaction(this);
 	}
@@ -91,6 +107,14 @@ public abstract class AbstractEntityFileTransaction
 
 	public void close() throws TransactionException{
 		entityFileTransactionManager.closeTransaction(this);
+	}
+	
+	public void setRepository(TransactionFileLog value) {
+		transactionFileLog = value;
+	}
+
+	public TransactionFileLog getRepository() {
+		return transactionFileLog;
 	}
 	
 	public <T, R, H> long insert(T entity, EntityFileAccess<T, R, H> entityFileAccess)

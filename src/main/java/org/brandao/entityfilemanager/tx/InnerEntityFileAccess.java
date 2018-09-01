@@ -60,6 +60,16 @@ public class InnerEntityFileAccess<T, R, H>
 		this.length = value;
 	}
 
+	public void close() throws IOException {
+		long endFile = 
+				dataHandler.getFirstPointer() +
+				dataHandler.getHeaderLength() + 
+				dataHandler.getRecordLength()*this.length + 
+				dataHandler.getEOFLength();
+		
+		fileAccess.seek(endFile);
+	}
+	
 	public void delete() throws IOException {
 	}
 	

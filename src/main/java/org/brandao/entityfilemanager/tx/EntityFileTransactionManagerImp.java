@@ -15,6 +15,7 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.EntityFileManagerException;
 import org.brandao.entityfilemanager.LockProvider;
+import org.brandao.entityfilemanager.TransactionLog;
 import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEntityFile;
 
 public class EntityFileTransactionManagerImp 
@@ -38,13 +39,18 @@ public class EntityFileTransactionManagerImp
 	
 	private LockProvider lockProvider;
 
-	private TransactionLoader transactionLoader;
+	private TransactionLog transactionLog;
+	
+	private RecoveryTransactionLog recoveryLog;
+	
+	private boolean enabledTransactionLog;
 	
 	public EntityFileTransactionManagerImp(){
-		this.transactionIDCounter = 0;
-		this.txIDLock             = new ReentrantLock();
-		this.transactions         = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
-		this.transactionLoader    = new TransactionLoader();
+		this.transactionIDCounter  = 0;
+		this.txIDLock              = new ReentrantLock();
+		this.transactions          = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
+		this.transactionLog        = null;
+		this.enabledTransactionLog = false;
 	}
 	
 	private long getNextTransactionID() {
@@ -98,11 +104,21 @@ public class EntityFileTransactionManagerImp
 	}
 
 	public void init() throws TransactionException{
-		this.reloadTransactions();
+		
+		if(recoveryLog == null){
+			recoveryLog = new RecoveryTransactionLogImp("recovery", transactionPath, this);
+		}
+		
+		if(transactionLog == null){
+			transactionLog = new TransactionLogImp("binlog", transactionPath, this);
+		}
+		
+		transactionLog.open();
+		recoveryLog.open();
 	}
 	
 	public void destroy() throws TransactionException{
-		this.closeAllTransactions();
+		closeAllTransactions();
 	}
 	
 	public EntityFileTransaction openTransaction() throws TransactionException {
@@ -137,7 +153,7 @@ public class EntityFileTransactionManagerImp
 		
 		try{
 			//apaga os dados da transação.
-			this.deleteTransactionInformation(transaction);
+			this.confirmTransactionInformation(transaction);
 
 			tx.setClosed(true);
 			
@@ -171,7 +187,15 @@ public class EntityFileTransactionManagerImp
 			throw new TransactionException("transaction not started");
 		}
 		
+		
 		try{
+			
+			if(transaction.isEmpty()){
+				transaction.setCommited(true);
+				transaction.setRolledBack(false);
+				return;
+			}
+			
 			//obtém os arquivos envolvidos na transação
 			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
 					transaction.getTransactionFiles();
@@ -193,7 +217,7 @@ public class EntityFileTransactionManagerImp
 			this.logTransaction(transaction);
 			
 			//apaga os dados da transação.
-			this.deleteTransactionInformation(transaction);
+			this.confirmTransactionInformation(transaction);
 			
 			transaction.setCommited(true);
 			transaction.setRolledBack(false);
@@ -236,6 +260,13 @@ public class EntityFileTransactionManagerImp
 		}
 		
 		try{
+			
+			if(transaction.isEmpty()){
+				transaction.setCommited(false);
+				transaction.setRolledBack(true);
+				return;
+			}
+			
 			//obtém os arquivos envolvidos na transação
 			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
 					transaction.getTransactionFiles();
@@ -257,7 +288,7 @@ public class EntityFileTransactionManagerImp
 			this.logTransaction(transaction);
 			
 			//apaga os dados da transação.
-			this.deleteTransactionInformation(transaction);
+			this.confirmTransactionInformation(transaction);
 			
 			transaction.setCommited(false);
 			transaction.setRolledBack(true);
@@ -291,38 +322,25 @@ public class EntityFileTransactionManagerImp
 	}
 
 	protected void registerTransactionInformation(
-			ConfigurableEntityFileTransaction transaction, boolean override) throws IOException{
+			ConfigurableEntityFileTransaction transaction, boolean override) throws TransactionException {
 		if(override || !transaction.isRecoveredTransaction()){
-			transactionLoader.writeEntityFileTransaction(transaction, this.transactionPath);
+			recoveryLog.registerTransaction(transaction);
 		}
 	}
 
-	protected void deleteTransactionInformation(
-			ConfigurableEntityFileTransaction transaction) throws IOException{
-		transactionLoader.deleteEntityFileTransaction(transaction, this.transactionPath);
-	}
-	
-	protected void logTransaction(ConfigurableEntityFileTransaction transaction){
-	}
-	
-	protected void reloadTransactions() throws EntityFileManagerException{
-		try{
-			ConfigurableEntityFileTransaction[] txList = 
-					transactionLoader.loadTransactions(
-							this.lockProvider,
-							this.entityFileManagerConfigurer, 
-							this, this.transactionPath);
-			
-			for(ConfigurableEntityFileTransaction tx: txList){
-				this.closeTransaction(tx);
-			}
-			
-		}
-		catch(Throwable e){
-			throw new EntityFileManagerException(e);
+	protected void confirmTransactionInformation(
+			ConfigurableEntityFileTransaction transaction) throws TransactionException{
+		if(!transaction.isRecoveredTransaction()){
+			recoveryLog.deleteTransaction(transaction);
 		}
 	}
-
+	
+	protected void logTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException{
+		if(enabledTransactionLog){
+			transactionLog.registerLog(transaction);
+		}
+	}
+	
 	private void closeAllTransactions() throws EntityFileManagerException{
 		try{
 			for(ConfigurableEntityFileTransaction tx: this.transactions.values()){
@@ -422,6 +440,30 @@ public class EntityFileTransactionManagerImp
 				status, 
 				transactionID, started, rolledBack, commited, timeout, true);
 		
+	}
+
+	public void setTransactionLog(TransactionLog value) {
+		this.transactionLog = value;
+	}
+
+	public TransactionLog getTransactionLog() {
+		return transactionLog;
+	}
+
+	public void setEnabledTransactionLog(boolean value) {
+		this.enabledTransactionLog = value;
+	}
+
+	public boolean isEnabledTransactionLog() {
+		return enabledTransactionLog;
+	}
+
+	public void setRecoveryTransactionLog(RecoveryTransactionLog value) {
+		recoveryLog = value;
+	}
+
+	public RecoveryTransactionLog getRecoveryTransactionLog() {
+		return recoveryLog;
 	}
 	
 }

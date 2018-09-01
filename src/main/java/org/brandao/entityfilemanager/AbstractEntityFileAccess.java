@@ -3,7 +3,6 @@ package org.brandao.entityfilemanager;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.lang.reflect.Array;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -72,7 +71,7 @@ public class AbstractEntityFileAccess<T, R, H>
 
 	public void createNewFile() throws IOException {
 		this.file.createNewFile();
-		this.fileAccess = new FileAccess(this.file, new RandomAccessFile(this.file, "rw"));
+		this.fileAccess = new FileAccess(this.file);
 		this.writter    = new FileAccessDataWritter(fileAccess);
 		this.reader     = new FileAccessDataReader(fileAccess);
 		this.fileAccess.setLength(0);
@@ -98,7 +97,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		if(!file.exists())
 			throw new FileNotFoundException();
 		
-		this.fileAccess = new FileAccess(file, new RandomAccessFile(file, "rw"));
+		this.fileAccess = new FileAccess(file);
 		this.writter    = new FileAccessDataWritter(fileAccess);
 		this.readHeader();
 		this.fileAccess.seek(dataHandler.getFirstPointer() + dataHandler.getFirstRecord());
