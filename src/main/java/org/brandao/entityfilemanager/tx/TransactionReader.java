@@ -10,7 +10,7 @@ import org.brandao.entityfilemanager.FileAccess;
 
 public class TransactionReader {
 
-	@SuppressWarnings({ "rawtypes", "unchecked" })
+	@SuppressWarnings({ "rawtypes", "unchecked", "unused" })
 	public ConfigurableEntityFileTransaction read(
 			EntityFileTransactionManagerConfigurer eftmc,
 			FileAccess fa) throws IOException, TransactionException{
@@ -73,7 +73,7 @@ public class TransactionReader {
 		
 		return eftmc
 				.load(m, status, transactionID, transactionIsolation, 
-						started, rolledBack, commited, timeout);
+						false, rolledBack, commited, timeout);
 	}
 	
 }

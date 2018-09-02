@@ -225,7 +225,8 @@ public class RecoveryTransactionLogImp
 				continue;
 			}
 			
-			FileAccess fa = null;			
+			FileAccess fa   = null;
+			boolean success = false;
 			try{
 				fa                                 = new FileAccess(txf);
 				TransactionFileLog transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
@@ -237,14 +238,21 @@ public class RecoveryTransactionLogImp
 				
 				while(transactionFile.hasMoreElements()){
 					ConfigurableEntityFileTransaction ceft = transactionFile.nextElement();
+					//inicia a transação
+					ceft.setStarted(true);
 					eftmc.closeTransaction(ceft);
 				}
-				
+				success = true;
 			}
 			finally{
 				if(fa != null){
+					
 					fa.close();
-					fa.delete();
+					
+					if(success){
+						fa.delete();
+					}
+					
 				}
 			}
 		}
