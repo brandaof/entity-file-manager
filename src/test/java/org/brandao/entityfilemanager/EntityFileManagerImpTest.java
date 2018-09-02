@@ -38,6 +38,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		EntityFileTransactionFactory eftf         = new AsyncEntityFileTransactionFactory(rtl);
 		
 		tm.setTransactionLog(tl);
+		tm.setRecoveryTransactionLog(rtl);
 		tm.setEntityFileTransactionFactory(eftf);
 		tm.setLockProvider(lp);
 		tm.setTimeout(EntityFileTransactionManagerImp.DEFAULT_TIMEOUT);

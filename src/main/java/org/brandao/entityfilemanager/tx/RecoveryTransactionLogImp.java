@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.brandao.entityfilemanager.FileAccess;
 
@@ -14,19 +16,21 @@ public class RecoveryTransactionLogImp
 
 	private static final long MIN_FILELOG_LENGTH = 300*1024*1024;
 	
-	private TransactionFileLog transactionFile;
+	protected TransactionFileLog transactionFile;
 
-	private long limitFileLength;
+	protected long limitFileLength;
 
-	private TransactionFileCreator transactionFileCreator;
+	protected TransactionFileCreator transactionFileCreator;
 	
-	private Map<TransactionFileLog, LinkedHashSet<Long>> transactions;
+	protected Map<TransactionFileLog, LinkedHashSet<Long>> transactions;
 	
-	private TransactionReader reader;
+	protected TransactionReader reader;
 	
-	private TransactionWritter writter;
+	protected TransactionWritter writter;
 	
-	private EntityFileTransactionManagerConfigurer eftmc;
+	protected EntityFileTransactionManagerConfigurer eftmc;
+	
+	protected Lock lock;
 	
 	public RecoveryTransactionLogImp(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		this.transactionFileCreator = new TransactionFileCreator(name, path);
@@ -35,6 +39,7 @@ public class RecoveryTransactionLogImp
 		this.reader                 = new TransactionReader();
 		this.writter                = new TransactionWritter();
 		this.eftmc                  = eftmc;
+		this.lock                   = new ReentrantLock();
 	}
 
 	public void setLimitFileLength(long value) throws TransactionException {
@@ -61,9 +66,10 @@ public class RecoveryTransactionLogImp
 		}
 	}
 	
-	public synchronized void registerTransaction(ConfigurableEntityFileTransaction ceft)
+	public void registerTransaction(ConfigurableEntityFileTransaction ceft)
 			throws TransactionException {
 		
+		lock.lock();
 		try{
 			if(transactionFile.getFilelength() > this.limitFileLength){
 				createNewFileTransactionLog();
@@ -84,36 +90,45 @@ public class RecoveryTransactionLogImp
 		catch(Throwable e){
 			throw new TransactionException(e);
 		}
+		finally{
+			lock.unlock();
+		}
 	}
 
-	public synchronized void deleteTransaction(ConfigurableEntityFileTransaction ceft)
+	public void deleteTransaction(ConfigurableEntityFileTransaction ceft)
 			throws TransactionException {
 		
-		LinkedHashSet<Long> txSet = transactions.get(ceft.getRepository());
-		
-		if(txSet == null){
-			throw new TransactionException("transaction not found: " + ceft.getTransactionID());
+		lock.lock();
+		try{
+			LinkedHashSet<Long> txSet = transactions.get(ceft.getRepository());
+			
+			if(txSet == null){
+				throw new TransactionException("transaction not found: " + ceft.getTransactionID());
+			}
+			
+			txSet.remove(ceft.getTransactionID());
+			
+			if(txSet.isEmpty()){
+				try{
+					TransactionFileLog txFile = ceft.getRepository();
+					if(transactionFile == txFile){
+						txFile.reset();
+					}
+					else{
+						txFile.delete();
+					}
+				}
+				catch(Throwable e){
+					throw new TransactionException("Fail truncate recovery transaction log: " + ceft.getRepository());
+				}
+			}
 		}
-		
-		txSet.remove(ceft.getTransactionID());
-		
-		if(txSet.isEmpty()){
-			try{
-				TransactionFileLog txFile = ceft.getRepository();
-				if(transactionFile == txFile){
-					txFile.reset();
-				}
-				else{
-					txFile.delete();
-				}
-			}
-			catch(Throwable e){
-				throw new TransactionException("Fail truncate recovery transaction log: " + ceft.getRepository());
-			}
+		finally{
+			lock.unlock();
 		}
 	}
 	
-	private void createNewFileTransactionLog() throws TransactionException, IOException{
+	protected void createNewFileTransactionLog() throws Throwable{
 		
 		transactionFile.close();
 		

@@ -46,6 +46,10 @@ public class TransactionFileCreator {
 		
 		File[] files = path.listFiles();
 		
+		if(files == null){
+			return;
+		}
+		
 		for(File f:files){
 			
 			String name = f.getName();
