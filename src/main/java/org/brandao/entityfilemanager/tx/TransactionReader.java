@@ -44,7 +44,7 @@ public class TransactionReader {
 			}
 			
 			TransactionEntityFileAccess tef = 
-					eftmc
+					eftmc.getEntityFileTransactionFactory()
 						.createTransactionEntityFileAccess(efa, transactionID, transactionIsolation);
 			
 			InnerEntityFileAccess<?,?,?> stf = 
