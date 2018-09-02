@@ -348,10 +348,15 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		Lock lock = data.getLock();
 		lock.lock();
 		try{
+			//id pode ser menor ou igual ao tamanho do arquivo.
+			//se for igual ao tamanho, tem que alterar o tamanho do arquivo para length + 1
 			id = this.getNextFreePointer(false);
 			
-			data.seek(id);
-			this.data.write(null);
+			if(id == data.length()){
+				data.setLength(data.length() + 1);
+			}
+			
+			data.flush();
 			
 			this.pointerManager.managerPointer(id);
 		}
@@ -387,10 +392,15 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		Lock lock = data.getLock();
 		lock.lock();
 		try{
+			//por ser uma inserção em lote, a id tem que ser sempre igual ao tamanho do arquivo 
 			id = getNextFreePointer(false);
 			
-			data.seek(id);
-			this.data.batchWrite((T[])Array.newInstance(entities.getClass().getComponentType(), max));
+			assert id == data.length();
+			
+			data.setLength(data.length() + entities.length);
+			
+			//data.seek(id);
+			//this.data.batchWrite((T[])Array.newInstance(entities.getClass().getComponentType(), max));
 			data.flush();
 			
 			for(int i=0;i<max;i++){

@@ -43,6 +43,14 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		virtualLength = value;
 	}
 	
+	public long getOffset() throws IOException {
+		return this.virtualOffset;
+	}
+	
+	public long length() throws IOException {
+		return virtualLength;
+	}
+	
 	protected void write(Object entity, boolean raw) throws IOException {
  
 		long newVirtualOffset = virtualOffset + 1;
@@ -65,10 +73,10 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		long realOffset       = offset;
 		
 		offset = length;
-		super.write(entities, raw);
+		super.batchWrite(entities, raw);
 		
 		for(int i=0;i<entities.length;i++){
-			addVirutalOffset(newVirtualOffset + i, realOffset + i);
+			addVirutalOffset(virtualOffset + i, realOffset + i);
 		}
 		
 		if(newVirtualOffset >= virtualLength){

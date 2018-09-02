@@ -16,6 +16,7 @@ public class AwaitTransactionEntityFileAccess<T, R, H>
 			File file, long transactionID, byte transactionIsolation, Await await) {
 		super(e, file, transactionID, transactionIsolation);
 		this.await = await;
+		this.await.await();
 	}
 	
 	public void close() throws IOException{

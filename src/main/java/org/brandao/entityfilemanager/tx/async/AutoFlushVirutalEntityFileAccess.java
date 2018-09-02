@@ -56,7 +56,7 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 	}
 	
 	protected synchronized void batchWrite(Object[] entities, boolean raw) throws IOException{
-		super.write(entities, raw);
+		super.batchWrite(entities, raw);
 	}
 	
 	protected synchronized Object read(boolean raw) throws IOException {
