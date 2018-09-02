@@ -240,6 +240,8 @@ public class EntityFileTransactionManagerImp
 		
 		for(TransactionEntity<?,?> txFile: transactionEntity){
 			txFile.commit();
+			txFile.close();
+			txFile.delete();
 		}
 		
 	}
@@ -311,6 +313,8 @@ public class EntityFileTransactionManagerImp
 		
 		for(TransactionEntity<?,?> txFile: transactionEntity){
 			txFile.rollback();
+			txFile.close();
+			txFile.delete();
 		}
 		
 	}

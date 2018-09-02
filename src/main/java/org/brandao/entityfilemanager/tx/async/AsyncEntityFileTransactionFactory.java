@@ -53,16 +53,18 @@ public class AsyncEntityFileTransactionFactory
 				}
 			}
 			
-			TransactionEntityFileAccess<T, R, H> txFile = 
-					createTransactionEntityFileAccess(afvefa, transactionID, 
-							transactionIsolation);
+			TransactionEntityFileAccess<T, R, H> txFile =
+					new AwaitTransactionEntityFileAccess<T, R, H>(
+							entityFile, 
+							new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
+							transactionID, 
+							transactionIsolation, afvefa.getAwait());
+				
+			txFile.createNewFile();
 			
 			return 
 				new ReadCommitedTransactionalEntityFile<T, R, H>(
 						txFile, lockProvider, timeout);
-		}
-		catch(TransactionException e){
-			throw e;
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -73,14 +75,12 @@ public class AsyncEntityFileTransactionFactory
 			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation) throws TransactionException{
 		
 		try{
-			AutoFlushVirutalEntityFileAccess<T,R,H> afvefa =
-					(AutoFlushVirutalEntityFileAccess<T,R,H>)entityFile;
 			TransactionEntityFileAccess<T, R, H> tefa =
 				new TransientTransactionEntityFileAccess<T, R, H>(
 						entityFile, 
 						new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
 						transactionID, 
-						transactionIsolation, afvefa.getAwait());
+						transactionIsolation);
 			
 			tefa.createNewFile();
 			return tefa;
