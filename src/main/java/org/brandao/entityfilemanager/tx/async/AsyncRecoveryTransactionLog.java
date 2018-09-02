@@ -19,7 +19,8 @@ import org.brandao.entityfilemanager.tx.TransactionWritter;
 public class AsyncRecoveryTransactionLog 
 	implements RecoveryTransactionLog{
 
-	private static final long MIN_FILELOG_LENGTH = 300*1024*1024;
+	//private static final long MIN_FILELOG_LENGTH = 300*1024*1024;
+	private static final long MIN_FILELOG_LENGTH = 100;
 	
 	private TransactionFileLog transactionFile;
 

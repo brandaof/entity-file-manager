@@ -55,7 +55,7 @@ public class AsyncEntityFileTransactionFactory
 			
 			TransactionEntityFileAccess<T, R, H> txFile =
 					new AwaitTransactionEntityFileAccess<T, R, H>(
-							entityFile, 
+							afvefa, 
 							new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
 							transactionID, 
 							transactionIsolation, afvefa.getAwait());

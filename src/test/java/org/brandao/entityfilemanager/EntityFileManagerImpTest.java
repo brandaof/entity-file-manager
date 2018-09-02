@@ -62,6 +62,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		EntityFileTransaction tx = efm.beginTransaction();
 			EntityFile<Long> ef = efm.getEntityFile("long", tx, Long.class);
 			ef.insert(198563254512664L);
+			ef.insert(198563254512664L);
 			assertEquals(198563254512664L, (long)ef.select(0));
 		tx.commit();
 		
@@ -322,7 +323,7 @@ public class EntityFileManagerImpTest extends TestCase{
 	
 	public void testConcurrentBulkInsert() throws Throwable{
 		
-		final int task                         = 100;
+		final int task                         = 1000;
 		final int ops                          = 3;
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
 		final Random random                    = new Random();
