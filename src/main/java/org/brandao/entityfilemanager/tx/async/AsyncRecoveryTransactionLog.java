@@ -9,6 +9,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Lock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.FileAccess;
 import org.brandao.entityfilemanager.tx.ConfigurableEntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerConfigurer;
 import org.brandao.entityfilemanager.tx.RecoveryTransactionLog;
@@ -90,20 +91,21 @@ public class AsyncRecoveryTransactionLog
 		}
 		
 	}
-
+	
 	protected void createNewFileTransactionLog() throws Throwable{
-		confirmTransactionTask.transactionFiles.put(transactionFile);
+		File f = transactionFile.getFile();
 		super.createNewFileTransactionLog();
+		confirmTransactionTask.transactionFiles.put(f);
 	}
 
 	private class ConfirmTransactionTask implements Runnable{
 
-		public BlockingQueue<TransactionFileLog> transactionFiles;
+		public BlockingQueue<File> transactionFiles;
 		
 		public volatile Throwable failTransactionFileLog;
 		
 		public ConfirmTransactionTask() {
-			this.transactionFiles = new LinkedBlockingQueue<TransactionFileLog>();
+			this.transactionFiles = new LinkedBlockingQueue<File>();
 			this.failTransactionFileLog = null;
 		}
 	
@@ -125,6 +127,7 @@ public class AsyncRecoveryTransactionLog
 				if(transactionFiles.isEmpty() && transactionInProgress == 0){
 					for(AutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
 						Lock lock = afvefa.getLock();
+						lock.lock();
 						try{
 							afvefa.reset();
 						}
@@ -141,21 +144,40 @@ public class AsyncRecoveryTransactionLog
 		}
 		
 		private void execute() throws Throwable {
-			TransactionFileLog tfl = transactionFiles.take();
-			
-			tfl.reset();
-			
-			while(tfl.hasMoreElements()){
-				ConfigurableEntityFileTransaction ceft = tfl.nextElement();
-				eftmc.closeTransaction(ceft);
+			File file = transactionFiles.take();
+
+			FileAccess fa = null;
+			try{
+				fa              = new FileAccess(file);
+				TransactionFileLog tfl = new TransactionFileLog(fa, reader, writter, eftmc);
+				tfl.load();
+				
+				while(tfl.hasMoreElements()){
+					ConfigurableEntityFileTransaction ceft = tfl.nextElement();
+					ceft.setStarted(true);
+					eftmc.closeTransaction(ceft);
+				}
+				
+				if(tfl.getError() != null){
+					throw tfl.getError();
+				}
+				
+				tfl.close();
+				tfl.delete();
+			}
+			catch(Throwable e){
+				try{
+					if(fa != null){
+						fa.close();
+					}
+				}
+				catch(Throwable x){
+					throw new TransactionException(x.toString(), e);
+				}
+				
+				throw new TransactionException(e);
 			}
 			
-			if(tfl.getError() != null){
-				throw tfl.getError();
-			}
-			
-			tfl.close();
-			tfl.delete();
 		}
 	
 	}

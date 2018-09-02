@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
 
@@ -32,9 +33,14 @@ public class TransactionFileLog
 		this.lastPointer = 0;
 	}
 	
+	public File getFile(){
+		return fa.getFile();
+	}
+	
 	public void reset() throws IOException{
 		fa.setLength(0);
 		fa.seek(0);
+		lastPointer = 0;
 	}
 	
 	public void delete(){
@@ -48,11 +54,12 @@ public class TransactionFileLog
 
 	public void load() throws IOException{
 
+		fa.seek(0);
+		
 		if(fa.length() == 0){
 			return;
 		}
 		
-		fa.seek(0);
 		
 		while(hasMoreElements()){
 			nextElement();
@@ -88,9 +95,11 @@ public class TransactionFileLog
 			
 			long pointer = fa.readLong();
 			
-			return 
-				pointer == fa.getFilePointer() &&
-				fa.getFilePointer() != fa.length();
+			if(pointer != fa.getFilePointer()){
+				throw new IllegalStateException("invalid pointer: " + pointer + " <> " + fa.getFilePointer());
+			}
+			
+			return fa.getFilePointer() != fa.length();
 		}
 		catch(Throwable e){
 			error = e;

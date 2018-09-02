@@ -61,7 +61,8 @@ public class TransactionReader {
 			long len   = tef.getBatchLength();
 			
 			while(count < max){
-				Object[] tmp = stf.batchRead((int)len);
+				long read = len > max? max : len;
+				Object[] tmp = stf.batchRead((int)read);
 				tef.batchWrite(tmp);
 				count += tmp.length;
 			}

@@ -66,6 +66,9 @@ public class CommitOperations {
 		Lock lock = data.getLock();
 		lock.lock();
 		try{
+			if(id > data.length()){
+				data.setLength(id);
+			}
 			data.seek(id);
 			data.writeRaw(raw);
 			data.flush();
@@ -80,6 +83,9 @@ public class CommitOperations {
 		Lock lock = data.getLock();
 		lock.lock();
 		try{
+			if(firstID > data.length()){
+				data.setLength(firstID);
+			}
 			data.seek(firstID);
 			data.batchWriteRaw(raw);
 			data.flush();

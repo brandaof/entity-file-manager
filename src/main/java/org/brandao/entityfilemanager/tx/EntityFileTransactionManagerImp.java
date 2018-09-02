@@ -214,7 +214,7 @@ public class EntityFileTransactionManagerImp
 			//salva a transação em mídia persistente para possível recuperação pós-falha.
 			this.registerTransactionInformation(transaction, false);
 			
-			//executa o rollback
+			//executa o commit
 			this.executeCommit(transaction, transactionEntity);
 			
 			//atualiza o status da transação para finalizada.
