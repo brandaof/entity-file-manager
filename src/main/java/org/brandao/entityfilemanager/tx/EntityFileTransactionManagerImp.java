@@ -14,9 +14,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
 import org.brandao.entityfilemanager.EntityFileManagerException;
+import org.brandao.entityfilemanager.EntityFileTransactionFactory;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.TransactionLog;
-import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEntityFile;
 
 public class EntityFileTransactionManagerImp 
 	implements EntityFileTransactionManagerConfigurer{
@@ -44,6 +44,8 @@ public class EntityFileTransactionManagerImp
 	private RecoveryTransactionLog recoveryLog;
 	
 	private boolean enabledTransactionLog;
+	
+	private EntityFileTransactionFactory entityFileTransactionFactory;
 	
 	public EntityFileTransactionManagerImp(){
 		this.transactionIDCounter  = 0;
@@ -351,54 +353,6 @@ public class EntityFileTransactionManagerImp
 			throw new EntityFileManagerException(e);
 		}
 	}
-	
-	public <T,R,H> TransactionEntity<T,R> createTransactionalEntity(
-			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation) throws TransactionException{
-		
-		if(transactionIsolation != EntityFileTransaction.TRANSACTION_READ_COMMITED){
-			throw new TransactionException("transaction not supported: " + transactionIsolation);
-		}
-		
-		TransactionEntityFileAccess<T, R, H> txFile = 
-				this.createTransactionEntityFileAccess(entityFile, transactionID, 
-						transactionIsolation);
-		
-		return 
-			new ReadCommitedTransactionalEntityFile<T, R, H>(
-					txFile, this.lockProvider, this.timeout);
-	}
-
-	public <T,R,H> TransactionEntityFileAccess<T, R, H> createTransactionEntityFileAccess(
-			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation) throws TransactionException{
-		
-		try{
-			TransactionEntityFileAccess<T, R, H> tefa =
-				new TransientTransactionEntityFileAccess<T, R, H>(
-				//new TransactionEntityFileAccess<T, R, H>(
-						entityFile, 
-						new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
-						transactionID, 
-						transactionIsolation);
-			
-			tefa.createNewFile();
-			return tefa;
-		}
-		catch(Throwable e){
-			throw new TransactionException(e);
-		}
-	}
-	
-	public <T,R,H> TransactionEntity<T,R> createTransactionalEntity(
-			TransactionEntityFileAccess<T,R,H> transactionEntityFile, long transactionID,
-			byte transactionIsolation, long timeout) throws TransactionException{
-		
-		if(transactionIsolation != EntityFileTransaction.TRANSACTION_READ_COMMITED){
-			throw new TransactionException("transaction not supported: " + transactionIsolation);
-		}
-		
-		return new ReadCommitedTransactionalEntityFile<T, R, H>(
-					transactionEntityFile, this.lockProvider, timeout < 0? this.timeout : timeout);
-	}
 
 	public ConfigurableEntityFileTransaction load(
 			Map<EntityFileAccess<?,?,?>, TransactionEntityFileAccess<?,?,?>> transactionFiles,
@@ -426,9 +380,9 @@ public class EntityFileTransactionManagerImp
 			transactionFiles.entrySet()){
 			
 			TransactionEntity<?,?> te =
-					this.createTransactionalEntity(
+					entityFileTransactionFactory.createTransactionalEntity(
 							entry.getValue(), transactionID, 
-							transactionIsolation, timeout);
+							transactionIsolation, lockProvider, timeout);
 			
 			tf.put(entry.getKey(), te);
 			
@@ -464,6 +418,15 @@ public class EntityFileTransactionManagerImp
 
 	public RecoveryTransactionLog getRecoveryTransactionLog() {
 		return recoveryLog;
+	}
+
+	public EntityFileTransactionFactory getEntityFileTransactionFactory() {
+		return entityFileTransactionFactory;
+	}
+
+	public void setEntityFileTransactionFactory(
+			EntityFileTransactionFactory entityFileTransactionFactory) {
+		this.entityFileTransactionFactory = entityFileTransactionFactory;
 	}
 	
 }

@@ -3,6 +3,7 @@ package org.brandao.entityfilemanager.tx;
 import java.io.File;
 
 import org.brandao.entityfilemanager.EntityFileManagerConfigurer;
+import org.brandao.entityfilemanager.EntityFileTransactionFactory;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.TransactionLog;
 
@@ -36,5 +37,10 @@ public interface EntityFileTransactionManagerConfigurer
 	LockProvider getLockProvider();
 	
 	void setLockProvider(LockProvider value);
+	
+	EntityFileTransactionFactory getEntityFileTransactionFactory();
+
+	void setEntityFileTransactionFactory(
+			EntityFileTransactionFactory entityFileTransactionFactory);
 	
 }
