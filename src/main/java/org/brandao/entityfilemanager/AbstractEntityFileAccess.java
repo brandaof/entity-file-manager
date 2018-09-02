@@ -286,6 +286,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		fileAccess.flush();
 		fileAccess.setLength(0);
 		fileAccess.seek(0);
+		offset = 0;
 		length = 0;
 	}
 	public long length() throws IOException {

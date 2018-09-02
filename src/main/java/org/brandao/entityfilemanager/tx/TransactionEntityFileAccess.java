@@ -13,8 +13,10 @@ public class TransactionEntityFileAccess<T, R, H>
 	
 	protected EntityFileTransactionDataHandler<T,R,H> transactionDataHandler;
 	
+	protected Await await;
+	
 	public TransactionEntityFileAccess(EntityFileAccess<T, R, H> e, File file, long transactionID, 
-			byte transactionIsolation){
+			byte transactionIsolation, Await await){
 		super(
 				e.getName(), 
 				file, 
@@ -60,6 +62,14 @@ public class TransactionEntityFileAccess<T, R, H>
 		return metadata.getTransactionIsolation();
 	}
 	
+	public void close() throws IOException{
+		try{
+			super.close();
+		}
+		finally{
+			await.release();
+		}
+	}
 	public EntityFileAccess<T, R, H> getEntityFileAccess() {
 		return parent;
 	}

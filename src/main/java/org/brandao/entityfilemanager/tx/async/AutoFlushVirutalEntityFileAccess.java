@@ -4,25 +4,25 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 import org.brandao.entityfilemanager.AbstractVirutalEntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileAccess;
+import org.brandao.entityfilemanager.tx.Await;
 
 public class AutoFlushVirutalEntityFileAccess<T, R, H>
 	extends AbstractVirutalEntityFileAccess<T, R, H>{
 
 	private Map<Long,Long> map;
 	
-	private CountDownLatch countDownLatch;
+	private Await await;
 	
 	private boolean closed;
 	
 	public AutoFlushVirutalEntityFileAccess(EntityFileAccess<T, R, H> e, File file,
-			CountDownLatch countDownLatch) {
+			Await await) {
 		super(e, file);
 		this.map            = new HashMap<Long, Long>();
-		this.countDownLatch = countDownLatch;
+		this.await          = await;
 		this.closed         = false;
 		Thread task         = 
 			new Thread(
@@ -51,11 +51,11 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 		}
 	}
 
-	protected void write(Object entity, boolean raw) throws IOException {
+	protected synchronized void write(Object entity, boolean raw) throws IOException {
 		super.write(entity, raw);
 	}
 	
-	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
+	protected synchronized void batchWrite(Object[] entities, boolean raw) throws IOException{
 		super.write(entities, raw);
 	}
 	
@@ -63,7 +63,7 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 		return super.read(raw);
 	}
 
-	protected Object[] batchRead(int len, boolean raw) throws IOException{
+	protected synchronized Object[] batchRead(int len, boolean raw) throws IOException{
 		return super.batchRead(len, raw);
 	}
 	
@@ -72,13 +72,17 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 		map.clear();
 	}
 	
+	public Await getAwait() {
+		return await;
+	}
+
 	private class AutoFlushVirutalEntityFileAccessTask 
 		implements Runnable{
 
 		public void run() {
 			while(!closed){
 				try{
-					countDownLatch.await();
+					await.waitAll();
 					if(!map.isEmpty()){
 						reset();
 					}

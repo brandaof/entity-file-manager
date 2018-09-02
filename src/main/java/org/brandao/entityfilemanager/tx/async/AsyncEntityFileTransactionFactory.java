@@ -1,10 +1,13 @@
 package org.brandao.entityfilemanager.tx.async;
 
 import java.io.File;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileTransactionFactory;
 import org.brandao.entityfilemanager.LockProvider;
+import org.brandao.entityfilemanager.tx.Await;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.TransactionEntity;
 import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
@@ -15,6 +18,13 @@ import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEn
 public class AsyncEntityFileTransactionFactory 
 	implements EntityFileTransactionFactory{
 
+	private ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
+	
+	public AsyncEntityFileTransactionFactory(){
+		efam = new ConcurrentHashMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?,?,?>>();
+	}
+	
+	@SuppressWarnings("unchecked")
 	public <T,R,H> TransactionEntity<T,R> createTransactionalEntity(
 			EntityFileAccess<T,R,H> entityFile, long transactionID,	
 			byte transactionIsolation, LockProvider lockProvider, long timeout) throws TransactionException{
@@ -23,25 +33,54 @@ public class AsyncEntityFileTransactionFactory
 			throw new TransactionException("transaction not supported: " + transactionIsolation);
 		}
 		
-		TransactionEntityFileAccess<T, R, H> txFile = 
-				this.createTransactionEntityFileAccess(entityFile, transactionID, 
-						transactionIsolation);
+		AutoFlushVirutalEntityFileAccess<T,R,H> afvefa = 
+				(AutoFlushVirutalEntityFileAccess<T, R, H>) efam.get(entityFile);
 		
-		return 
-			new ReadCommitedTransactionalEntityFile<T, R, H>(
-					txFile, lockProvider, timeout);
+		try{
+			if(afvefa == null){
+				synchronized (efam) {
+					afvefa = 
+							(AutoFlushVirutalEntityFileAccess<T, R, H>) efam.get(entityFile);
+					
+					if(afvefa == null){
+						afvefa = new AutoFlushVirutalEntityFileAccess<T, R, H>(
+								entityFile, 
+								new File(entityFile.getAbsolutePath() + "_virtual"),
+								new Await());
+						afvefa.createNewFile();
+						efam.putIfAbsent(entityFile, afvefa);
+					}
+				}
+			}
+			
+			TransactionEntityFileAccess<T, R, H> txFile = 
+					createTransactionEntityFileAccess(afvefa, transactionID, 
+							transactionIsolation);
+			
+			return 
+				new ReadCommitedTransactionalEntityFile<T, R, H>(
+						txFile, lockProvider, timeout);
+		}
+		catch(TransactionException e){
+			throw e;
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
 	}
 
 	public <T,R,H> TransactionEntityFileAccess<T, R, H> createTransactionEntityFileAccess(
 			EntityFileAccess<T,R,H> entityFile, long transactionID,	byte transactionIsolation) throws TransactionException{
 		
 		try{
+			AutoFlushVirutalEntityFileAccess<T,R,H> afvefa =
+					(AutoFlushVirutalEntityFileAccess<T,R,H>)entityFile;
 			TransactionEntityFileAccess<T, R, H> tefa =
 				new TransientTransactionEntityFileAccess<T, R, H>(
 						entityFile, 
 						new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
 						transactionID, 
-						transactionIsolation);
+						transactionIsolation, afvefa.getAwait());
 			
 			tefa.createNewFile();
 			return tefa;

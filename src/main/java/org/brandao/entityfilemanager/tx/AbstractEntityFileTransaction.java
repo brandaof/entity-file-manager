@@ -263,8 +263,8 @@ public abstract class AbstractEntityFileTransaction
 				return tx;
 			}
 			
-			tx = this.entityFileTransactionManager
-					.createTransactionalEntity(entityFile, transactionID, transactionIsolation);
+			tx = entityFileTransactionManager.getEntityFileTransactionFactory()
+					.createTransactionalEntity(entityFile, transactionID, transactionIsolation, lockProvider, timeout);
 			
 			this.transactionFiles.put(entityFile, tx);
 			return tx;

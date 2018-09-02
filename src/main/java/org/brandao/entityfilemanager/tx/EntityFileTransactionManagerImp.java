@@ -17,6 +17,8 @@ import org.brandao.entityfilemanager.EntityFileManagerException;
 import org.brandao.entityfilemanager.EntityFileTransactionFactory;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.TransactionLog;
+import org.brandao.entityfilemanager.tx.async.AsyncEntityFileTransactionFactory;
+import org.brandao.entityfilemanager.tx.async.AsyncRecoveryTransactionLog;
 
 public class EntityFileTransactionManagerImp 
 	implements EntityFileTransactionManagerConfigurer{
@@ -48,11 +50,12 @@ public class EntityFileTransactionManagerImp
 	private EntityFileTransactionFactory entityFileTransactionFactory;
 	
 	public EntityFileTransactionManagerImp(){
-		this.transactionIDCounter  = 0;
-		this.txIDLock              = new ReentrantLock();
-		this.transactions          = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
-		this.transactionLog        = null;
-		this.enabledTransactionLog = false;
+		this.transactionIDCounter         = 0;
+		this.txIDLock                     = new ReentrantLock();
+		this.transactions                 = new ConcurrentHashMap<Long, ConfigurableEntityFileTransaction>();
+		this.transactionLog               = null;
+		this.enabledTransactionLog        = false;
+		this.entityFileTransactionFactory = new AsyncEntityFileTransactionFactory();
 	}
 	
 	private long getNextTransactionID() {
@@ -108,7 +111,7 @@ public class EntityFileTransactionManagerImp
 	public void init() throws TransactionException{
 		
 		if(recoveryLog == null){
-			recoveryLog = new RecoveryTransactionLogImp("recovery", transactionPath, this);
+			recoveryLog = new AsyncRecoveryTransactionLog("recovery", transactionPath, this);
 		}
 		
 		if(transactionLog == null){

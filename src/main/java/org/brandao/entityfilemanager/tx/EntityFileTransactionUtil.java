@@ -168,6 +168,7 @@ public class EntityFileTransactionUtil {
 		return result;
 	}
 
+	/*
 	public static <T,R,H> TransactionEntityFileAccess<T,R,H> getTransactionEntityFileAccess( 
 		EntityFileAccess<T,R,H> entityFile, long transactionID, byte transactionIsolation, 
 		EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer) {
@@ -178,7 +179,7 @@ public class EntityFileTransactionUtil {
 						entityFileTransactionManagerConfigurer);
 		return new TransactionEntityFileAccess<T,R,H>(entityFile, transactionFile, transactionID, transactionIsolation);
 	}
-	
+	*/
 	
 	public static File getTransactionFile(File file, long transactionID, 
 			EntityFileTransactionManagerConfigurer entityFileTransactionManagerConfigurer){
@@ -198,10 +199,12 @@ public class EntityFileTransactionUtil {
 				Long.parseLong(parts[1], Character.MAX_RADIX), file);
 	}
 
+	/*
 	public static <T,R,H> TransactionEntityFileAccess<T,R,H> getTransactionEntityFileAccess( 
 		EntityFileAccess<T,R,H> entityFile, TransactionFileNameMetadata tfmd) {
 		return new TransactionEntityFileAccess<T,R,H>(entityFile, tfmd.getFile(), (byte)-1, (byte)-1);
 	}
+	*/
 	
 	@SuppressWarnings("unchecked")
 	public static <R> R[] adjustArray(R[] value, int len){

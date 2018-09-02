@@ -19,8 +19,8 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	private Map<Long, T> values;
 	
 	public TransientTransactionEntityFileAccess(EntityFileAccess<T, R, H> e,
-			File file, long transactionID, byte transactionIsolation) {
-		super(e, file, transactionID, transactionIsolation);
+			File file, long transactionID, byte transactionIsolation, Await await) {
+		super(e, file, transactionID, transactionIsolation, await);
 		this.offset = 0;
 		this.length = 0;
 		this.values = new HashMap<Long, T>();
@@ -186,6 +186,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	}
 
 	public void close() throws IOException {
+		await.release();
 	}
 
 	public boolean exists() {
