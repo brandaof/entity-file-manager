@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.FileAccess;
 import org.brandao.entityfilemanager.tx.ConfigurableEntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerConfigurer;
@@ -19,8 +22,9 @@ import org.brandao.entityfilemanager.tx.TransactionWritter;
 public class AsyncRecoveryTransactionLog 
 	implements RecoveryTransactionLog{
 
-	//private static final long MIN_FILELOG_LENGTH = 300*1024*1024;
-	private static final long MIN_FILELOG_LENGTH = 100;
+	private static final long MIN_FILELOG_LENGTH = 300*1024*1024;
+	
+	ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
 	
 	private TransactionFileLog transactionFile;
 
@@ -36,13 +40,18 @@ public class AsyncRecoveryTransactionLog
 	
 	private ConfirmTransactionTask confirmTransactionTask;
 	
+	private long transactionInProgress;
+	
 	public AsyncRecoveryTransactionLog(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		this.transactionFileCreator = new TransactionFileCreator(name, path);
 		this.limitFileLength        = MIN_FILELOG_LENGTH;
 		this.reader                 = new TransactionReader();
 		this.writter                = new TransactionWritter();
 		this.eftmc                  = eftmc;
-		this.confirmTransactionTask = new ConfirmTransactionTask(eftmc);
+		this.transactionInProgress  = 0;
+		this.confirmTransactionTask = new ConfirmTransactionTask();
+		this.efam                   = 
+				new ConcurrentHashMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?,?,?>>();
 		
 		Thread confirmTransactionTask = 
 				new Thread(
@@ -81,13 +90,14 @@ public class AsyncRecoveryTransactionLog
 			throws TransactionException {
 		
 		try{
+			//Cria um novo arquivo de log se for atingido o tamanho máximo
 			if(transactionFile.getFilelength() > this.limitFileLength){
 				createNewFileTransactionLog();
 			}
 			
 			ceft.setRepository(transactionFile);
 			transactionFile.add(ceft);
-			
+			transactionInProgress++;
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -96,6 +106,20 @@ public class AsyncRecoveryTransactionLog
 
 	public synchronized void deleteTransaction(ConfigurableEntityFileTransaction ceft)
 			throws TransactionException {
+		
+		//Cria um novo arquivo de log quando não existir transações abertas 
+		//forçando a atualização dos arquivos envolvidos. 
+		transactionInProgress--;
+		
+		try{
+			if(transactionInProgress == 0){
+				createNewFileTransactionLog();
+			}
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
+		
 	}
 	
 	private void createNewFileTransactionLog(
@@ -226,19 +250,17 @@ public class AsyncRecoveryTransactionLog
 
 		public BlockingQueue<TransactionFileLog> transactionFiles;
 		
-		public EntityFileTransactionManagerConfigurer eftmc;
-		
 		public volatile Throwable failTransactionFileLog;
 		
-		public ConfirmTransactionTask(EntityFileTransactionManagerConfigurer eftmc) {
+		public ConfirmTransactionTask() {
 			this.transactionFiles = new LinkedBlockingQueue<TransactionFileLog>();
-			this.eftmc = eftmc;
 			this.failTransactionFileLog = null;
 		}
 	
 		public void run() {
 			while(failTransactionFileLog == null){
 				try{
+					flushVirutalEntityFileAccess();
 					execute();
 				}
 				catch(Throwable e){
@@ -247,7 +269,17 @@ public class AsyncRecoveryTransactionLog
 			}
 		}
 		
-		public void execute() throws Throwable {
+		private void flushVirutalEntityFileAccess() throws IOException{
+			synchronized(AsyncRecoveryTransactionLog.this){
+				if(transactionFiles.isEmpty() && transactionInProgress == 0){
+					for(AutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
+						afvefa.reset();
+					}
+					
+				}
+			}
+		}
+		private void execute() throws Throwable {
 			TransactionFileLog tfl = transactionFiles.take();
 			
 			tfl.reset();

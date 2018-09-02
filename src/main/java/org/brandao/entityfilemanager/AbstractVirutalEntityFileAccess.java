@@ -30,6 +30,7 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		);
 		this.readBulkRVirtual = new ReadBulkRVirtual();
 		this.readBulkTVirtual = new ReadBulkTVirtual();
+		this.parent           = e;
 	}
 	
 	public void seek(long value) throws IOException{
@@ -88,11 +89,13 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	protected Object read(boolean raw) throws IOException {
 		
 		Long realOffset = getOffset(virtualOffset);
-		Object r;
+		Object r        = null;
 		
 		if(realOffset == null){
-			parent.seek(virtualOffset);
-			r = raw? parent.readRaw() : parent.read();
+			if(virtualOffset < parent.length()){
+				parent.seek(virtualOffset);
+				r = raw? parent.readRaw() : parent.read();
+			}
 		}
 		else{
 			offset = realOffset;

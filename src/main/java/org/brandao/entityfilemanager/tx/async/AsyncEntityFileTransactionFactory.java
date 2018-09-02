@@ -1,7 +1,6 @@
 package org.brandao.entityfilemanager.tx.async;
 
 import java.io.File;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -20,8 +19,8 @@ public class AsyncEntityFileTransactionFactory
 
 	private ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
 	
-	public AsyncEntityFileTransactionFactory(){
-		efam = new ConcurrentHashMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?,?,?>>();
+	public AsyncEntityFileTransactionFactory(AsyncRecoveryTransactionLog asyncRecoveryTransactionLog){
+		efam = asyncRecoveryTransactionLog.efam;
 	}
 	
 	@SuppressWarnings("unchecked")
