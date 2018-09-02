@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentMap;
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileTransactionFactory;
 import org.brandao.entityfilemanager.LockProvider;
-import org.brandao.entityfilemanager.tx.Await;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.TransactionEntity;
 import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
@@ -20,7 +19,7 @@ public class AsyncEntityFileTransactionFactory
 	private ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
 	
 	public AsyncEntityFileTransactionFactory(AsyncRecoveryTransactionLog asyncRecoveryTransactionLog){
-		efam = asyncRecoveryTransactionLog.efam;
+		this.efam = asyncRecoveryTransactionLog.getEntityFileAccessMapping();
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -44,8 +43,7 @@ public class AsyncEntityFileTransactionFactory
 					if(afvefa == null){
 						afvefa = new AutoFlushVirutalEntityFileAccess<T, R, H>(
 								entityFile, 
-								new File(entityFile.getAbsolutePath() + "_virtual"),
-								new Await());
+								new File(entityFile.getAbsolutePath() + "_virtual"));
 						afvefa.createNewFile();
 						efam.putIfAbsent(entityFile, afvefa);
 					}
@@ -53,11 +51,11 @@ public class AsyncEntityFileTransactionFactory
 			}
 			
 			TransactionEntityFileAccess<T, R, H> txFile =
-					new AwaitTransactionEntityFileAccess<T, R, H>(
+					new TransientTransactionEntityFileAccess<T, R, H>(
 							afvefa, 
 							new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
 							transactionID, 
-							transactionIsolation, afvefa.getAwait());
+							transactionIsolation);
 				
 			txFile.createNewFile();
 			

@@ -7,6 +7,7 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.tx.Await;
 import org.brandao.entityfilemanager.tx.TransientTransactionEntityFileAccess;
 
+@Deprecated
 public class AwaitTransactionEntityFileAccess<T, R, H>
 	extends TransientTransactionEntityFileAccess<T, R, H>{
 

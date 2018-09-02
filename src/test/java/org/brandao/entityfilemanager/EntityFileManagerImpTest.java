@@ -18,6 +18,9 @@ import org.brandao.entityfilemanager.tx.EntityFileTransaction;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerConfigurer;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerImp;
 import org.brandao.entityfilemanager.tx.TransactionException;
+import org.brandao.entityfilemanager.tx.TransactionLogImp;
+import org.brandao.entityfilemanager.tx.async.AsyncEntityFileTransactionFactory;
+import org.brandao.entityfilemanager.tx.async.AsyncRecoveryTransactionLog;
 
 public class EntityFileManagerImpTest extends TestCase{
 
@@ -27,12 +30,15 @@ public class EntityFileManagerImpTest extends TestCase{
 		File path   = new File("./data");
 		File txPath = new File(path, "tx");
 		
-		EntityFileManagerConfigurer efm = new EntityFileManagerImp();
-		
-		LockProvider lp = new LockProviderImp();
-		
+		EntityFileManagerConfigurer efm           = new EntityFileManagerImp();
+		LockProvider lp                           = new LockProviderImp();
 		EntityFileTransactionManagerConfigurer tm = new EntityFileTransactionManagerImp();
+		AsyncRecoveryTransactionLog rtl           = new AsyncRecoveryTransactionLog("recovery", txPath, tm);
+		TransactionLog tl                         = new TransactionLogImp("binlog", txPath, tm);
+		EntityFileTransactionFactory eftf         = new AsyncEntityFileTransactionFactory(rtl);
 		
+		tm.setTransactionLog(tl);
+		tm.setEntityFileTransactionFactory(eftf);
 		tm.setLockProvider(lp);
 		tm.setTimeout(EntityFileTransactionManagerImp.DEFAULT_TIMEOUT);
 		tm.setTransactionPath(txPath);

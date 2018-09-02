@@ -1,5 +1,6 @@
 package org.brandao.entityfilemanager.tx;
 
+@Deprecated
 public class Await {
 
 	private int count;

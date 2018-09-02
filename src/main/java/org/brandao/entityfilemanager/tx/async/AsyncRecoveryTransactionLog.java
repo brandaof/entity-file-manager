@@ -7,6 +7,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Lock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.FileAccess;
@@ -24,7 +25,7 @@ public class AsyncRecoveryTransactionLog
 
 	private static final long MIN_FILELOG_LENGTH = 300*1024*1024;
 	
-	ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
+	private ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
 	
 	private TransactionFileLog transactionFile;
 
@@ -75,6 +76,10 @@ public class AsyncRecoveryTransactionLog
 		return limitFileLength;
 	}
 
+	public ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> getEntityFileAccessMapping(){
+		return efam;
+	}
+	
 	public void close() throws TransactionException{
 		try{
 			if(transactionFile != null){
@@ -122,32 +127,6 @@ public class AsyncRecoveryTransactionLog
 		
 	}
 	
-	private void createNewFileTransactionLog(
-			) throws TransactionException, IOException, InterruptedException{
-		
-		confirmTransactionTask.transactionFiles.put(transactionFile);
-		
-		File nextFile = this.transactionFileCreator.getNextFile();
-		FileAccess fa = null;
-		try{
-			fa              = new FileAccess(nextFile);
-			transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
-			transactionFile.load();
-		}
-		catch(Throwable e){
-			try{
-				if(fa != null){
-					fa.close();
-				}
-			}
-			catch(Throwable x){
-				throw new TransactionException(x.toString(), e);
-			}
-			
-			throw new TransactionException(e);
-		}
-	}
-
 	public void open() throws TransactionException{
 		
 		File txf = transactionFileCreator.getCurrentFile();
@@ -203,6 +182,32 @@ public class AsyncRecoveryTransactionLog
 						new TransactionException(e);
 			}
 			
+		}
+	}
+
+	private void createNewFileTransactionLog(
+			) throws TransactionException, IOException, InterruptedException{
+		
+		confirmTransactionTask.transactionFiles.put(transactionFile);
+		
+		File nextFile = this.transactionFileCreator.getNextFile();
+		FileAccess fa = null;
+		try{
+			fa              = new FileAccess(nextFile);
+			transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
+			transactionFile.load();
+		}
+		catch(Throwable e){
+			try{
+				if(fa != null){
+					fa.close();
+				}
+			}
+			catch(Throwable x){
+				throw new TransactionException(x.toString(), e);
+			}
+			
+			throw new TransactionException(e);
 		}
 	}
 	
@@ -273,12 +278,19 @@ public class AsyncRecoveryTransactionLog
 			synchronized(AsyncRecoveryTransactionLog.this){
 				if(transactionFiles.isEmpty() && transactionInProgress == 0){
 					for(AutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
-						afvefa.reset();
+						Lock lock = afvefa.getLock();
+						try{
+							afvefa.reset();
+						}
+						finally{
+							lock.unlock();
+						}
 					}
 					
 				}
 			}
 		}
+		
 		private void execute() throws Throwable {
 			TransactionFileLog tfl = transactionFiles.take();
 			

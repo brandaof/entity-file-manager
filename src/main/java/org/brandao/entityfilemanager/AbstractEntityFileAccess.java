@@ -285,10 +285,13 @@ public class AbstractEntityFileAccess<T, R, H>
 	public void reset() throws IOException{
 		fileAccess.flush();
 		fileAccess.setLength(0);
-		fileAccess.seek(0);
+		fileAccess.seek(dataHandler.getFirstPointer());
+		writeHeader();
+		setLength(0);
 		offset = 0;
 		length = 0;
 	}
+	
 	public long length() throws IOException {
 		return this.length;
 	}
