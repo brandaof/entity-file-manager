@@ -102,46 +102,24 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	
 	protected Object[] batchRead(int len, boolean raw) throws IOException{
 		
-		int[] managedI    = new int[len];
-		int[] notManagedI = new int[len];
-
-		long[] managed      = new long[len];
-		long[] notManaged   = new long[len];
+		IdMap[] ids = getMappedIds(virtualOffset, len);
 		
-		int notManagedIndex = 0;
-		int managedIndex    = 0;
-		
-		Long realOffset;
-		long localOffset;
-		
-		for(int i=0;i<len;i++){
-			localOffset = virtualOffset + i;
-			realOffset = getOffset(localOffset);
-			if(realOffset == null){
-				notManagedI[notManagedIndex]  = i;
-				notManaged[notManagedIndex++] = localOffset;
-			}
-			else{
-				managedI[managedIndex]  = i;
-				managed[managedIndex++] = realOffset;
-			}
-		}
-		
-		Object[] managedE     = (Object[])Array.newInstance(
-									raw? 
-										this.dataHandler.getRawType() : 
-										this.dataHandler.getType(), 
-									managed.length
-								);
 		Object[] notmanagedE  = (Object[])Array.newInstance(
 				raw? 
 					this.dataHandler.getRawType() : 
 					this.dataHandler.getType(), 
-				notManaged.length
+				ids[0].len
+			);
+
+		Object[] managedE     = (Object[])Array.newInstance(
+				raw? 
+					this.dataHandler.getRawType() : 
+					this.dataHandler.getType(), 
+				ids[1].len
 			);
 		
-		BulkOperations.read(managed, managedE, this, 0, managedIndex, raw);
-		BulkOperations.read(notManaged, notmanagedE, parent, 0, notManagedIndex, raw);
+		BulkOperations.read(ids[0].ids, notmanagedE, parent, 0, ids[0].len, raw);
+		BulkOperations.read(ids[1].ids, managedE, this, 0, ids[1].len, raw);
 		
 		Object[] r = 
 				(Object[])Array.newInstance(
@@ -153,13 +131,14 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		
 		int i=0;
 		
-		for(Object o: managedE){
-			r[managedI[i]] = o;
+		for(Object o: notmanagedE){
+			r[ids[0].map[i++]] = o;
 		}
 
 		i=0;
-		for(Object o: notmanagedE){
-			r[notManagedI[i]] = o;
+		
+		for(Object o: managedE){
+			r[ids[1].map[i++]] = o;
 		}
 		
 		virtualOffset++;
@@ -175,4 +154,47 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		return parent;
 	}
 	
+	private IdMap[] getMappedIds(long id, int len){
+		
+		IdMap managedID = new IdMap();
+		managedID.ids   = new long[len];
+		managedID.map   = new int[len];
+		managedID.len   = 0;
+		
+		IdMap notManagedID = new IdMap();
+		notManagedID.ids   = new long[len];
+		notManagedID.map   = new int[len];
+		notManagedID.len   = 0;
+		
+		Long realOffset;
+		long localOffset;
+		
+		for(int i=0;i<len;i++){
+			
+			localOffset = id + i;
+			realOffset  = getOffset(localOffset);
+			
+			if(realOffset == null){
+				managedID.map[managedID.len  ] = i; 
+				managedID.ids[managedID.len++] = localOffset;
+			}
+			else{
+				notManagedID.map[notManagedID.len  ] = i; 
+				notManagedID.ids[notManagedID.len++] = realOffset;
+			}
+			
+		}
+		
+		return new IdMap[]{notManagedID, managedID};
+	}
+	
+	private static class IdMap{
+		
+		public long[] ids;
+		
+		public int[] map;
+
+		public int len;
+		
+	}
 }

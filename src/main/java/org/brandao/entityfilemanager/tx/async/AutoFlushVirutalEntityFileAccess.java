@@ -27,22 +27,6 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 	protected Long getOffset(long virutalOffset) {
 		return map.get(virutalOffset);
 	}
-
-	protected void write(Object entity, boolean raw) throws IOException {
-		super.write(entity, raw);
-	}
-	
-	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
-		super.batchWrite(entities, raw);
-	}
-	
-	protected Object read(boolean raw) throws IOException {
-		return super.read(raw);
-	}
-
-	protected Object[] batchRead(int len, boolean raw) throws IOException{
-		return super.batchRead(len, raw);
-	}
 	
 	public void resync() throws IOException{
 		super.reset();
