@@ -129,7 +129,9 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		long realOffset       = virtual.length();
 		
 		if(raw){
-			virtual.seek(realOffset);
+			virtual.writeRaw((R[]) b, off, len);
+		}
+		else{
 			virtual.write((T[]) b, off, len);
 		}
 		
@@ -213,8 +215,8 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 				ids[1].len
 			);
 		
-		BulkOperations.read(ids[0].ids, notmanagedE, parent, 0, ids[0].len, raw);
-		BulkOperations.read(ids[1].ids, managedE, virtual, 0, ids[1].len, raw);
+		BulkOperations.read(ids[0].ids, notmanagedE, parent, 0, ids[0].len, raw, true);
+		BulkOperations.read(ids[1].ids, managedE, virtual, 0, ids[1].len, raw, false);
 		
 		int i=0;
 		
