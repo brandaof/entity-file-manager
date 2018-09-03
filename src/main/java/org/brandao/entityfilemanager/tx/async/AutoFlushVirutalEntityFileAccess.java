@@ -44,8 +44,9 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 		return super.batchRead(len, raw);
 	}
 	
-	public void reset() throws IOException{
+	public void resync() throws IOException{
 		super.reset();
+		virtualLength = parent.length();
 		map.clear();
 	}
 

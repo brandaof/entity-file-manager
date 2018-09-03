@@ -284,7 +284,7 @@ public class AbstractEntityFileAccess<T, R, H>
 	
 	public void reset() throws IOException{
 		fileAccess.flush();
-		fileAccess.setLength(0);
+		fileAccess.setLength(dataHandler.getFirstPointer());
 		fileAccess.seek(dataHandler.getFirstPointer());
 		writeHeader();
 		setLength(0);

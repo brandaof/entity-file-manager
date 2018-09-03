@@ -129,7 +129,7 @@ public class AsyncRecoveryTransactionLog
 						Lock lock = afvefa.getLock();
 						lock.lock();
 						try{
-							afvefa.reset();
+							afvefa.resync();
 						}
 						finally{
 							lock.unlock();
