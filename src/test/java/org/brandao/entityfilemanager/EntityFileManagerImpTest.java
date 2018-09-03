@@ -435,8 +435,8 @@ public class EntityFileManagerImpTest extends TestCase{
 
 	public void testInsertPerformance() throws Throwable{
 		
-		final int task                         = 300;
-		final int ops                          = 1200;
+		final int task                         = 1000;
+		final int ops                          = 1000;
 		final CountDownLatch countDownLatch    = new CountDownLatch(task);
 		final Random random                    = new Random();
 		final List<Throwable> ex               = new ArrayList<Throwable>();
