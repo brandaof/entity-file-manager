@@ -125,100 +125,22 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.offset = value;
 	}
 	
-	public void write(T value) throws IOException {
-		this.write(value, false);
+	public void write(T ... value) throws IOException {
+		write(value, 0, value.length, false);
 	}
 
-	public void writeRaw(R value) throws IOException {
-		this.write(value, true);
+	public void writeRaw(R ... value) throws IOException {
+		write(value, 0, value.length, false);
 	}
 
-	@SuppressWarnings("unchecked")
-	protected void write(Object entity, boolean raw) throws IOException {
-		
-		long newOffset = offset + 1;
-		
-		long pointerOffset = 
-				dataHandler.getFirstPointer() +
-				dataHandler.getFirstRecord() + 
-				dataHandler.getRecordLength()*offset;
-		
-		fileAccess.seek(pointerOffset);
-		
-		long len = fileAccess.getFilePointer();
-		if(raw){
-			dataHandler.writeRaw(writter, (R)entity);
-		}
-		else{
-			dataHandler.write(writter, (T)entity);
-		}
-		len = fileAccess.getFilePointer() - len;
-		
-		if(len != dataHandler.getRecordLength()){
-			throw new IOException(file.getName() + ": " + len + " <> " + dataHandler.getRecordLength());
-		}
-		
-		if(newOffset >= length){
-			this.dataHandler.writeEOF(writter);
-		}
-		
-		offset = newOffset;
-		
-		if(newOffset >= length){
-			length++;
-		}
-		
-	}
-	
 	public void batchWrite(T[] values) throws IOException{
-		this.batchWrite(values, false);
+		write(values, 0, values.length, false);
 
 	}
 	public void batchWriteRaw(R[] values) throws IOException {
-		this.batchWrite(values, true);
+		write(values, 0, values.length, true);
 	}
 	
-	@SuppressWarnings("unchecked")
-	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
-		long pointerOffset =
-				dataHandler.getFirstPointer() +
-				dataHandler.getFirstRecord() + 
-				dataHandler.getRecordLength()*offset;
-		
-		long newOffset = this.offset + entities.length;
-		
-		fileAccess.seek(pointerOffset);
-		
-		for(Object entity: entities){
-			
-			long startOffset = fileAccess.getFilePointer();
-
-			if(raw){
-				dataHandler.writeRaw(writter, (R)entity);
-			}
-			else{
-				dataHandler.write(writter, (T)entity);
-			}
-			
-			long endOffset   = fileAccess.getFilePointer();
-			long writeLength = endOffset - startOffset;
-			
-			if(writeLength != dataHandler.getRecordLength())
-				throw new IOException(file.getName() + ": " + writeLength + " <> " + dataHandler.getRecordLength());
-			
-		}
-		
-		if(newOffset >= length){
-			dataHandler.writeEOF(writter);
-		}
-		
-		offset = newOffset;
-		
-		if(newOffset >= length){
-			length = newOffset;
-		}
-	}
-
 	public void write(T[] b, int off, int len) throws IOException{
 		write(b, off, len, false);
 	}
@@ -289,31 +211,16 @@ public class AbstractEntityFileAccess<T, R, H>
 	}
 	
 	protected Object read(boolean raw) throws IOException {
-		
-		long pointerOffset = 
-				this.dataHandler.getFirstPointer() +
-				this.dataHandler.getFirstRecord() + 
-				this.dataHandler.getRecordLength()*this.offset;
-		
-		this.fileAccess.seek(pointerOffset);
-		Object entity = raw? this.dataHandler.readRaw(reader) : this.dataHandler.read(reader);
-		
-		this.offset++;
-		
-		return entity;
+		Object[] b = new Object[1];
+		read(b, 0, 1, raw);
+		return b[0];
 	}
 	
 	protected Object[] batchRead(int len, boolean raw) throws IOException{
 		
 		long maxRead       = this.length - this.offset;
 		int batch          = maxRead > len? len : (int)maxRead;
-		long pointerOffset = 
-				this.dataHandler.getFirstPointer() +
-				this.dataHandler.getFirstRecord() + 
-				this.dataHandler.getRecordLength()*this.offset;
-		
-		this.fileAccess.seek(pointerOffset);
-				
+
 		Object[] result = 
 				(Object[])Array.newInstance(
 						raw? 
@@ -322,12 +229,7 @@ public class AbstractEntityFileAccess<T, R, H>
 						batch
 				);
 		
-		for(int i=0;i<batch;i++){
-			result[i] = raw? this.dataHandler.readRaw(reader) : this.dataHandler.read(reader);
-		}
-		
-		this.offset += batch;
-		
+		read(result, 0, batch, raw);
 		return result;
 	}
 
@@ -343,14 +245,13 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		long maxRead       = this.length - this.offset;
 		int batch          = maxRead > len? len : (int)maxRead;
+		int last           = off + batch;
 		long pointerOffset = 
 				this.dataHandler.getFirstPointer() +
 				this.dataHandler.getFirstRecord() + 
 				this.dataHandler.getRecordLength()*this.offset;
 		
 		this.fileAccess.seek(pointerOffset);
-		
-		int last = off + batch;
 		
 		for(int i=off;i<last;i++){
 			b[i] = raw? this.dataHandler.readRaw(reader) : this.dataHandler.read(reader);
@@ -383,7 +284,7 @@ public class AbstractEntityFileAccess<T, R, H>
 			int op = (int)(value - length);
 			offset = length;
 			T[] array = (T[])Array.newInstance(dataHandler.getType(), op);
-			batchWrite(array, false);
+			write(array, 0, array.length, false);
 		}
 		else{
 			long fileLength = 

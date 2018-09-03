@@ -61,52 +61,29 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected void write(Object entity, boolean raw) throws IOException {
+	protected void write(Object[] b, int off, int len, boolean raw) throws IOException{
+		
+		int last = off + len;
 		if(raw){
-			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength());
+			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*len);
 			DataWritter dStream          = new DataWritterOutputStream(stream);
 			
-			super.dataHandler.writeRaw(dStream, (RawTransactionEntity<R>) entity);
-			
-			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
-			DataReader readDStream          = new DataReaderInputStream(readStream);
-			
-			entity = super.dataHandler.read(readDStream);
-		}
-		
-		this.values.put(this.offset, (T)entity);
-		
-		this.offset++;
-		
-		if(this.offset >= this.length){
-			this.length = this.offset;
-		}
-		
-	}
-	
-	@SuppressWarnings("unchecked")
-	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
-		
-		if(raw){
-			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*entities.length);
-			DataWritter dStream          = new DataWritterOutputStream(stream);
-			
-			for(int i=0;i<entities.length;i++){
-				super.dataHandler.writeRaw(dStream, (RawTransactionEntity<R>) entities[i]);
+			for(int i=off;i<last;i++){
+				super.dataHandler.writeRaw(dStream, (RawTransactionEntity<R>) b[i]);
 			}
 			
 			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
 			DataReader readDStream          = new DataReaderInputStream(readStream);
 
-			for(int i=0;i<entities.length;i++){
+			for(int i=0;i<len;i++){
 				T entity = (T)super.dataHandler.read(readDStream);
 				this.values.put(offset++, entity);
 			}
 			
 		}
 		else{
-			for(int i=0;i<entities.length;i++){
-				this.values.put(offset++, (T) entities[i]);
+			for(int i=off;i<last;i++){
+				this.values.put(offset++, (T) b[i]);
 			}
 		}
 		
@@ -117,65 +94,40 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	}
 	
 	@SuppressWarnings("unchecked")
-	protected Object read(boolean raw) throws IOException {
-		
-		if(raw){
-			T e = this.values.get(this.offset);
-			
-			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength());
-			DataWritter dStream          = new DataWritterOutputStream(stream);
-			
-			super.dataHandler.write(dStream, (TransactionalEntity<T>) e);
-			
-			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
-			DataReader readDStream          = new DataReaderInputStream(readStream);
-
-			this.offset++;
-			
-			return (RawTransactionEntity<R>)super.dataHandler.readRaw(readDStream);
-		}
-		else{
-			return this.values.get(this.offset++);
-		}
-		
-	}
-	
-	@SuppressWarnings("unchecked")
-	protected Object[] batchRead(int len, boolean raw) throws IOException{
+	protected int read(Object[] b, int off, int len, boolean raw) throws IOException{
 		
 		long maxRead    = this.length - this.offset;
 		int batch       = maxRead > len? len : (int)maxRead;
-		Object[] result = new TransactionalEntity[batch];
-		
-		for(int i=0;i<batch;i++){
-			result[i] = this.values.get(this.offset + i);
-		}
+		int last        = off + batch;
 		
 		this.offset+= batch;
 		
 		if(raw){
-			Object[] rawRead = new RawTransactionEntity[batch];
-		
+			
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*batch);
 			DataWritter dStream          = new DataWritterOutputStream(stream);
-			
+
 			for(int i=0;i<batch;i++){
-				super.dataHandler.write(dStream, (TransactionalEntity<T>) result[i]);
+				super.dataHandler.write(dStream, (TransactionalEntity<T>)values.get(offset + i));
 			}
 			
 			ByteArrayInputStream readStream = new ByteArrayInputStream(stream.toByteArray());
 			DataReader readDStream          = new DataReaderInputStream(readStream);
 			
-			for(int i=0;i<batch;i++){
-				rawRead[i] = super.dataHandler.readRaw(readDStream);
+			for(int i=off;i<last;i++){
+				b[i] = super.dataHandler.readRaw(readDStream);
 			}
 			
-			return rawRead;
 		}
 		else{
-			return result;
+			
+			for(int i=off;i<last;i++){
+				b[i] = this.values.get(this.offset + i);
+			}
+			
 		}
 
+		return len;
 	}
 	
 	public void setLength(long value) throws IOException {

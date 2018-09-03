@@ -45,22 +45,6 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		return virtualLength;
 	}
 	
-	protected void write(Object entity, boolean raw) throws IOException {
- 
-		long newVirtualOffset = virtualOffset + 1;
-		long realOffset       = offset;
-		
-		offset = length;
-		super.write(entity, raw);
-		
-		addVirutalOffset(virtualOffset, realOffset);
-		
-		if(newVirtualOffset >= virtualLength){
-			virtualLength++;
-		}
-		
-	}
-	
 	protected void write(Object[] b, int off, int len, boolean raw) throws IOException{
 		
 		int last              = off + len;
