@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 
 import org.brandao.entityfilemanager.tx.EntityFileTransactionDataHandler;
-import org.brandao.entityfilemanager.tx.EntityFileTransactionUtil;
 
 public abstract class AbstractVirutalEntityFileAccess<T, R, H> 
 	extends AbstractEntityFileAccess<T, R, H> {
@@ -128,9 +127,6 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 			}
 		}
 		
-		managed    = EntityFileTransactionUtil.adjustArray(managed, managedIndex);		
-		notManaged = EntityFileTransactionUtil.adjustArray(notManaged, notManagedIndex);
-		
 		Object[] managedE     = (Object[])Array.newInstance(
 									raw? 
 										this.dataHandler.getRawType() : 
@@ -144,8 +140,8 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 				notManaged.length
 			);
 		
-		BulkOperations.read(managed, managedE, this, 0, managedE.length, raw);
-		BulkOperations.read(notManaged, notmanagedE, this, 0, managedE.length, raw);
+		BulkOperations.read(managed, managedE, this, 0, managedIndex, raw);
+		BulkOperations.read(notManaged, notmanagedE, parent, 0, notManagedIndex, raw);
 		
 		Object[] r = 
 				(Object[])Array.newInstance(

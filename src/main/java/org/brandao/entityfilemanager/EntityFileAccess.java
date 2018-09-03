@@ -40,6 +40,10 @@ public interface EntityFileAccess<T, R, H> {
 	
 	void writeRaw(R value) throws IOException;
 
+	void write(T[] b, int off, int len) throws IOException;
+	
+	void writeRaw(R[] b, int off, int len) throws IOException;
+	
 	void batchWriteRaw(R[] entities) throws IOException;
 	
 	T[] batchRead(int len) throws IOException;

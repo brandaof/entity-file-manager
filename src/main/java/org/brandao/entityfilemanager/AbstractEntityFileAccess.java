@@ -219,11 +219,11 @@ public class AbstractEntityFileAccess<T, R, H>
 		}
 	}
 
-	public void batchWrite(T[] b, int off, int len, boolean raw) throws IOException{
+	public void write(T[] b, int off, int len) throws IOException{
 		write(b, off, len, false);
 	}
 	
-	public void batchWriteRaw(R[] b, int off, int len, boolean raw) throws IOException {
+	public void writeRaw(R[] b, int off, int len) throws IOException {
 		write(b, off, len, true);
 	}
 	
