@@ -56,6 +56,7 @@ public class EntityFileManagerImpTest extends TestCase{
 		
 		efm.truncate("long");
 		efm.truncate("string");
+		efm.truncate("entity");
 		
 		this.efm = efm;
 	}
