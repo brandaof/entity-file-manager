@@ -64,27 +64,6 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		
 	}
 	
-	protected Object read(boolean raw) throws IOException {
-		
-		Long realOffset = getOffset(virtualOffset);
-		Object r        = null;
-		
-		if(realOffset == null){
-			if(virtualOffset < parent.length()){
-				parent.seek(virtualOffset);
-				r = raw? parent.readRaw() : parent.read();
-			}
-		}
-		else{
-			offset = realOffset;
-			r = super.read(raw);
-		}
-		
-		virtualOffset++;
-		
-		return r;
-	}
-	
 	protected int read(Object[] b, int off, int len, boolean raw) throws IOException{
 		
 		long maxRead = virtualLength - virtualOffset;
@@ -121,7 +100,7 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 			b[off + ids[1].map[i++]] = o;
 		}
 		
-		virtualOffset++;
+		virtualOffset += len;
 		
 		return len;
 	}
@@ -155,12 +134,12 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 			realOffset  = getOffset(localOffset);
 			
 			if(realOffset == null){
-				managedID.map[managedID.len  ] = i; 
-				managedID.ids[managedID.len++] = localOffset;
+				notManagedID.map[notManagedID.len  ] = i; 
+				notManagedID.ids[notManagedID.len++] = localOffset;
 			}
 			else{
-				notManagedID.map[notManagedID.len  ] = i; 
-				notManagedID.ids[notManagedID.len++] = realOffset;
+				managedID.map[managedID.len  ] = i; 
+				managedID.ids[managedID.len++] = realOffset;
 			}
 			
 		}

@@ -43,17 +43,22 @@ public class TransactionWritter {
 							fa,
 							tefa);
 			
-			long count = 0;
-			long max   = tefa.length();
-			long len   = tefa.getBatchLength();
+			long count   = 0;
+			long max     = tefa.length();
+			long batch   = tefa.getBatchLength();
+			long maxRead = batch > max? max : batch;
 			
 			stf.createNewFile();
 			
 			tefa.seek(0);
 			
 			while(count < max){
-				Object[] tmp = tefa.batchRead((int)len);
+				long avail = max - count;
+				long read  = avail > maxRead? maxRead : avail;
+
+				Object[] tmp = tefa.batchRead((int)read);
 				stf.batchWrite(tmp);
+				
 				count += tmp.length;
 			}
 			

@@ -64,6 +64,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 	protected void write(Object[] b, int off, int len, boolean raw) throws IOException{
 		
 		int last = off + len;
+		
 		if(raw){
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*len);
 			DataWritter dStream          = new DataWritterOutputStream(stream);
@@ -100,8 +101,6 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 		int batch       = maxRead > len? len : (int)maxRead;
 		int last        = off + batch;
 		
-		this.offset+= batch;
-		
 		if(raw){
 			
 			ByteArrayOutputStream stream = new ByteArrayOutputStream(this.dataHandler.getRecordLength()*batch);
@@ -127,6 +126,8 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 			
 		}
 
+		this.offset+= batch;
+		
 		return len;
 	}
 	
