@@ -125,7 +125,17 @@ public class EntityFileTransactionManagerImp
 	}
 	
 	public void destroy() throws TransactionException{
+		
 		closeAllTransactions();
+		
+		if(recoveryLog != null){
+			recoveryLog.close();
+		}
+		
+		if(transactionLog != null){
+			transactionLog.close();
+		}
+		
 	}
 	
 	public EntityFileTransaction openTransaction() throws TransactionException {

@@ -28,6 +28,14 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 				);
 	}
 	
+	protected EntityFileAccess<T, R, H> getParent(){
+		return parent;
+	}
+
+	protected EntityFileAccess<T, R, H> getVirtual(){
+		return virtual;
+	}
+	
 	public void resync() throws IOException{
 		virtual.reset();
 		virtualLength = parent.length();
@@ -130,6 +138,8 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		long newVirtualOffset = virtualOffset + len;
 		long realOffset       = virtual.length();
 		
+		virtual.seek(realOffset);
+		
 		if(raw){
 			virtual.writeRaw((R[]) b, off, len);
 		}
@@ -141,10 +151,11 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 			addVirutalOffset(virtualOffset + i, realOffset + i);
 		}
 		
-		if(newVirtualOffset >= virtualLength){
+		if(newVirtualOffset > virtualLength){
 			virtualLength = newVirtualOffset;
 		}
 		
+		virtualOffset = newVirtualOffset;
 	}
 	
 	@SuppressWarnings("unchecked")

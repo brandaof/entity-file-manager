@@ -27,6 +27,14 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 		return map.get(virutalOffset);
 	}
 	
+	protected EntityFileAccess<T, R, H> getParent(){
+		return parent;
+	}
+
+	protected EntityFileAccess<T, R, H> getVirtual(){
+		return virtual;
+	}
+	
 	public void resync() throws IOException{
 		super.resync();
 		map.clear();

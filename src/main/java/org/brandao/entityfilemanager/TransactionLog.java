@@ -12,5 +12,7 @@ public interface TransactionLog {
 	void registerLog(ConfigurableEntityFileTransaction ceft) throws TransactionException;
 	
 	void open() throws TransactionException;
+
+	void close() throws TransactionException;
 	
 }

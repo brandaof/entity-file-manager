@@ -27,19 +27,21 @@ public class AsyncRecoveryTransactionLog
 	
 	private long transactionInProgress;
 	
+	private Thread confirmTransactionThread;
+	
 	public AsyncRecoveryTransactionLog(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		super(name, path, eftmc);
 		this.transactionInProgress  = 0;
 		this.confirmTransactionTask = new ConfirmTransactionTask();
 		this.efam                   = new ConcurrentHashMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?,?,?>>();
 		
-		Thread confirmTransactionTask = 
+		this.confirmTransactionThread = 
 				new Thread(
 						null,
 						this.confirmTransactionTask,
 						"Async recovery transaction log confirmation task");
 		
-		confirmTransactionTask.start();
+		this.confirmTransactionThread.start();
 	}
 
 	public ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> getEntityFileAccessMapping(){
@@ -98,18 +100,42 @@ public class AsyncRecoveryTransactionLog
 		confirmTransactionTask.transactionFiles.put(f);
 	}
 
+	public void close() throws TransactionException{
+		confirmTransactionThread.interrupt();
+		
+		while(confirmTransactionTask.run){
+			try{
+				Thread.sleep(100);
+			}
+			catch(Throwable e){
+				throw new TransactionException(e);
+			}
+		}
+		
+		if(!(confirmTransactionTask.failTransactionFileLog instanceof InterruptedException)){
+			throw new TransactionException(confirmTransactionTask.failTransactionFileLog);
+		}
+
+		super.close();
+		
+	}
+	
 	private class ConfirmTransactionTask implements Runnable{
 
 		public BlockingQueue<File> transactionFiles;
 		
 		public volatile Throwable failTransactionFileLog;
 		
+		public boolean run;
+		
 		public ConfirmTransactionTask() {
 			this.transactionFiles = new LinkedBlockingQueue<File>();
 			this.failTransactionFileLog = null;
+			this.run = false;
 		}
 	
 		public void run() {
+			run = true;
 			while(failTransactionFileLog == null){
 				try{
 					flushVirutalEntityFileAccess();
@@ -119,6 +145,7 @@ public class AsyncRecoveryTransactionLog
 					failTransactionFileLog = e;
 				}
 			}
+			run = false;
 		}
 		
 		private void flushVirutalEntityFileAccess() throws IOException{

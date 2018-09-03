@@ -150,5 +150,15 @@ public class TransactionLogImp
 			
 		}
 	}
+
+	public void close() throws TransactionException {
+		try{
+			transactionFile.close();
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
+		
+	}
 	
 }

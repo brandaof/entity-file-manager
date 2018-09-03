@@ -132,7 +132,7 @@ public class AbstractEntityFileAccess<T, R, H>
 
 	public void writeRaw(R value) throws IOException {
 		Object[] o = new Object[]{value};
-		write(o, 0, 1, false);
+		write(o, 0, 1, true);
 	}
 
 	public void batchWrite(T[] values) throws IOException{
@@ -187,7 +187,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		offset = newOffset;
 		
-		if(newOffset >= length){
+		if(newOffset > length){
 			length = newOffset;
 		}
 	}
