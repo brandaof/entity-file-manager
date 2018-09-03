@@ -41,9 +41,7 @@ public class AsyncEntityFileTransactionFactory
 							(AutoFlushVirutalEntityFileAccess<T, R, H>) efam.get(entityFile);
 					
 					if(afvefa == null){
-						afvefa = new AutoFlushVirutalEntityFileAccess<T, R, H>(
-								entityFile, 
-								new File(entityFile.getAbsolutePath() + "_virtual"));
+						afvefa = new AutoFlushVirutalEntityFileAccess<T, R, H>(entityFile);
 						afvefa.createNewFile();
 						efam.putIfAbsent(entityFile, afvefa);
 					}

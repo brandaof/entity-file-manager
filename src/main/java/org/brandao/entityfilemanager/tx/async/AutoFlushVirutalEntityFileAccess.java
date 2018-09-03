@@ -1,6 +1,5 @@
 package org.brandao.entityfilemanager.tx.async;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,8 +12,8 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 
 	private Map<Long,Long> map;
 	
-	public AutoFlushVirutalEntityFileAccess(EntityFileAccess<T, R, H> e, File file) {
-		super(e, file);
+	public AutoFlushVirutalEntityFileAccess(EntityFileAccess<T, R, H> e) throws IOException {
+		super(e);
 		this.map = new HashMap<Long, Long>();
 	}
 	
@@ -29,8 +28,7 @@ public class AutoFlushVirutalEntityFileAccess<T, R, H>
 	}
 	
 	public void resync() throws IOException{
-		super.reset();
-		virtualLength = parent.length();
+		super.resync();
 		map.clear();
 	}
 

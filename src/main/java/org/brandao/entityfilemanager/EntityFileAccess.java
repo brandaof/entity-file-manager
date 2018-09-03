@@ -20,6 +20,8 @@ public interface EntityFileAccess<T, R, H> {
 	
 	Lock getLock();
 	
+	void reset() throws IOException;
+	
 	File getAbsoluteFile();
 	
 	String getAbsolutePath();
