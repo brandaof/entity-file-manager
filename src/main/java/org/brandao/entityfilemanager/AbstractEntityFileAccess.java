@@ -125,12 +125,14 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.offset = value;
 	}
 	
-	public void write(T ... value) throws IOException {
-		write(value, 0, value.length, false);
+	public void write(T value) throws IOException {
+		Object[] o = new Object[]{value};
+		write(o, 0, 1, false);
 	}
 
-	public void writeRaw(R ... value) throws IOException {
-		write(value, 0, value.length, false);
+	public void writeRaw(R value) throws IOException {
+		Object[] o = new Object[]{value};
+		write(o, 0, 1, false);
 	}
 
 	public void batchWrite(T[] values) throws IOException{

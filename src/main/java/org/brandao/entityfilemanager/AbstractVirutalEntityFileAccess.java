@@ -101,12 +101,14 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		write(entities, 0, entities.length, false);
 	}
 	
-	public void write(T ... value) throws IOException {
-		write(value, 0, value.length, false);
+	public void write(T value) throws IOException {
+		Object[] o = new Object[]{value};
+		write(o, 0, 1, false);
 	}
 	
-	public void writeRaw(R... value) throws IOException {
-		write(value, 0, value.length, true);
+	public void writeRaw(R value) throws IOException {
+		Object[] o = new Object[]{value};
+		write(o, 0, 1, true);
 	}
 	
 	public void write(T[] b, int off, int len) throws IOException {
