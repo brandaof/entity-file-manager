@@ -125,18 +125,10 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.offset = value;
 	}
 	
-	public void batchWrite(T[] values) throws IOException{
-		this.batchWrite(values, false);
-	}
-	
 	public void write(T value) throws IOException {
 		this.write(value, false);
 	}
 
-	public void batchWriteRaw(R[] values) throws IOException {
-		this.batchWrite(values, true);
-	}
-	
 	public void writeRaw(R value) throws IOException {
 		this.write(value, true);
 	}
@@ -178,6 +170,14 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 	}
 	
+	public void batchWrite(T[] values) throws IOException{
+		this.batchWrite(values, false);
+
+	}
+	public void batchWriteRaw(R[] values) throws IOException {
+		this.batchWrite(values, true);
+	}
+	
 	@SuppressWarnings("unchecked")
 	protected void batchWrite(Object[] entities, boolean raw) throws IOException{
 		long pointerOffset =
@@ -206,6 +206,55 @@ public class AbstractEntityFileAccess<T, R, H>
 			if(writeLength != dataHandler.getRecordLength())
 				throw new IOException(file.getName() + ": " + writeLength + " <> " + dataHandler.getRecordLength());
 			
+		}
+		
+		if(newOffset >= length){
+			dataHandler.writeEOF(writter);
+		}
+		
+		offset = newOffset;
+		
+		if(newOffset >= length){
+			length = newOffset;
+		}
+	}
+
+	public void batchWrite(T[] b, int off, int len, boolean raw) throws IOException{
+		write(b, off, len, false);
+	}
+	
+	public void batchWriteRaw(R[] b, int off, int len, boolean raw) throws IOException {
+		write(b, off, len, true);
+	}
+	
+	@SuppressWarnings("unchecked")
+	protected void write(Object[] b, int off, int len, boolean raw) throws IOException{
+		
+		long pointerOffset =
+				dataHandler.getFirstPointer() +
+				dataHandler.getFirstRecord() + 
+				dataHandler.getRecordLength()*offset;
+		int last       = off + len;
+		long newOffset = this.offset + len;
+		
+		fileAccess.seek(pointerOffset);
+		
+		for(int i=off;i<last;i++){
+			Object entity    = b[i];
+			long startOffset = fileAccess.getFilePointer();
+
+			if(raw){
+				dataHandler.writeRaw(writter, (R)entity);
+			}
+			else{
+				dataHandler.write(writter, (T)entity);
+			}
+			
+			long endOffset   = fileAccess.getFilePointer();
+			long writeLength = endOffset - startOffset;
+			
+			if(writeLength != dataHandler.getRecordLength())
+				throw new IOException(file.getName() + ": " + writeLength + " <> " + dataHandler.getRecordLength());			
 		}
 		
 		if(newOffset >= length){
@@ -280,6 +329,36 @@ public class AbstractEntityFileAccess<T, R, H>
 		this.offset += batch;
 		
 		return result;
+	}
+
+	public int read(T[] b, int off, int len) throws IOException {
+		return read(b, off, len, false);
+	}
+	
+	public int readRaw(R[] b, int off, int len) throws IOException {
+		return read(b, off, len, true);
+	}
+	
+	protected int read(Object[] b, int off, int len, boolean raw) throws IOException{
+		
+		long maxRead       = this.length - this.offset;
+		int batch          = maxRead > len? len : (int)maxRead;
+		long pointerOffset = 
+				this.dataHandler.getFirstPointer() +
+				this.dataHandler.getFirstRecord() + 
+				this.dataHandler.getRecordLength()*this.offset;
+		
+		this.fileAccess.seek(pointerOffset);
+		
+		int last = off + batch;
+		
+		for(int i=off;i<last;i++){
+			b[i] = raw? this.dataHandler.readRaw(reader) : this.dataHandler.read(reader);
+		}
+		
+		this.offset += batch;
+		
+		return batch;
 	}
 	
 	public void reset() throws IOException{

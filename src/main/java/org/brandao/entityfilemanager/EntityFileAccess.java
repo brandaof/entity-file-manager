@@ -50,6 +50,10 @@ public interface EntityFileAccess<T, R, H> {
 	
 	R[] batchReadRaw(int len) throws IOException;
 	
+	int read(T[] b, int off, int len) throws IOException;
+	
+	int readRaw(R[] b, int off, int len) throws IOException;
+	
 	long length() throws IOException;
 	
 	void setLength(long value) throws IOException;

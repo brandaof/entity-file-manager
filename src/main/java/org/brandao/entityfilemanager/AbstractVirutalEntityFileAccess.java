@@ -18,19 +18,13 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	
 	protected long virtualOffset;
 	
-	protected ReadBulkTVirtual readBulkTVirtual;
-
-	protected ReadBulkRVirtual readBulkRVirtual;
-	
 	public AbstractVirutalEntityFileAccess(EntityFileAccess<T, R, H> e, File file){
 		super(
 				e.getName(), 
 				file, 
 				e.getEntityFileDataHandler()
 		);
-		this.readBulkRVirtual = new ReadBulkRVirtual();
-		this.readBulkTVirtual = new ReadBulkTVirtual();
-		this.parent           = e;
+		this.parent = e;
 	}
 	
 	public void seek(long value) throws IOException{
@@ -117,6 +111,7 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		
 		int notManagedIndex = 0;
 		int managedIndex    = 0;
+		
 		Long realOffset;
 		long localOffset;
 		
@@ -136,11 +131,21 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		managed    = EntityFileTransactionUtil.adjustArray(managed, managedIndex);		
 		notManaged = EntityFileTransactionUtil.adjustArray(notManaged, notManagedIndex);
 		
-		Object[] managedE;
-		Object[] notmanagedE;
+		Object[] managedE     = (Object[])Array.newInstance(
+									raw? 
+										this.dataHandler.getRawType() : 
+										this.dataHandler.getType(), 
+									managed.length
+								);
+		Object[] notmanagedE  = (Object[])Array.newInstance(
+				raw? 
+					this.dataHandler.getRawType() : 
+					this.dataHandler.getType(), 
+				notManaged.length
+			);
 		
-		managedE    = raw? readBulkRVirtual.read(managed) : readBulkTVirtual.read(managed);
-		notmanagedE = raw? readBulkRVirtual.read(notManaged) : readBulkTVirtual.read(notManaged);
+		BulkOperations.read(managed, managedE, this, 0, managedE.length, raw);
+		BulkOperations.read(notManaged, notmanagedE, this, 0, managedE.length, raw);
 		
 		Object[] r = 
 				(Object[])Array.newInstance(
@@ -151,6 +156,7 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 				);
 		
 		int i=0;
+		
 		for(Object o: managedE){
 			r[managedI[i]] = o;
 		}
@@ -171,44 +177,6 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	
 	public EntityFileAccess<T, R, H> getEntityFileAccess() {
 		return parent;
-	}
-
-	@SuppressWarnings("unchecked")
-	private class ReadBulkTVirtual extends ReadBulkArray<T>{
-
-		protected T[] createArray(int len) {
-			return (T[])Array.newInstance(dataHandler.getType());
-		}
-
-		protected T readItem(long id) throws IOException {
-			offset = id;
-			return (T)AbstractVirutalEntityFileAccess.super.read(false);
-		}
-
-		protected T[] readItens(long[] ids) throws IOException {
-			offset = ids[0];
-			return (T[])AbstractVirutalEntityFileAccess.super.batchRead(ids.length, false);
-		}
-		
-	}
-
-	@SuppressWarnings("unchecked")
-	private class ReadBulkRVirtual extends ReadBulkArray<T>{
-
-		protected T[] createArray(int len) {
-			return (T[])Array.newInstance(dataHandler.getRawType());
-		}
-
-		protected T readItem(long id) throws IOException {
-			offset = id;
-			return (T)AbstractVirutalEntityFileAccess.super.read(false);
-		}
-
-		protected T[] readItens(long[] ids) throws IOException {
-			offset = ids[0];
-			return (T[])AbstractVirutalEntityFileAccess.super.batchRead(ids.length, false);
-		}
-		
 	}
 	
 }
