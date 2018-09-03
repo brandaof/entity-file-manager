@@ -102,6 +102,9 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	
 	protected Object[] batchRead(int len, boolean raw) throws IOException{
 		
+		long maxRead = virtualLength - virtualOffset;
+		len          = maxRead > len? len : (int)maxRead;
+		
 		IdMap[] ids = getMappedIds(virtualOffset, len);
 		
 		Object[] notmanagedE  = (Object[])Array.newInstance(
@@ -144,6 +147,47 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		virtualOffset++;
 		
 		return r;
+	}
+	
+	protected int read(Object[] b, int off, int len, boolean raw) throws IOException{
+		
+		long maxRead = virtualLength - virtualOffset;
+		len          = maxRead > len? len : (int)maxRead;
+		
+		IdMap[] ids = getMappedIds(virtualOffset, len);
+		
+		Object[] notmanagedE  = (Object[])Array.newInstance(
+				raw? 
+					this.dataHandler.getRawType() : 
+					this.dataHandler.getType(), 
+				ids[0].len
+			);
+
+		Object[] managedE     = (Object[])Array.newInstance(
+				raw? 
+					this.dataHandler.getRawType() : 
+					this.dataHandler.getType(), 
+				ids[1].len
+			);
+		
+		BulkOperations.read(ids[0].ids, notmanagedE, parent, 0, ids[0].len, raw);
+		BulkOperations.read(ids[1].ids, managedE, this, 0, ids[1].len, raw);
+		
+		int i=0;
+		
+		for(Object o: notmanagedE){
+			b[off + ids[0].map[i++]] = o;
+		}
+
+		i=0;
+		
+		for(Object o: managedE){
+			b[off + ids[1].map[i++]] = o;
+		}
+		
+		virtualOffset++;
+		
+		return len;
 	}
 	
 	protected abstract void addVirutalOffset(long virtualOffset, long offset);
