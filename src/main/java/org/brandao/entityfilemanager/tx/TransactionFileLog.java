@@ -3,6 +3,8 @@ package org.brandao.entityfilemanager.tx;
 import java.io.File;
 import java.io.IOException;
 import java.util.Enumeration;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 import org.brandao.entityfilemanager.DataReader;
 import org.brandao.entityfilemanager.DataWritter;
@@ -23,6 +25,10 @@ public class TransactionFileLog
 	
 	private Throwable error;
 	
+	private	Checksum crc;
+
+	private byte[] crcBuffer;
+	
 	public TransactionFileLog(FileAccess fa, TransactionReader reader,
 			TransactionWritter writter, EntityFileTransactionManagerConfigurer eftmc) throws IOException{
 		this.fa          = fa;
@@ -31,6 +37,8 @@ public class TransactionFileLog
 		this.eftmc       = eftmc;
 		this.error       = null;
 		this.lastPointer = 0;
+		this.crc         = new CRC32();
+		this.crcBuffer   = new byte[2048];
 	}
 	
 	public File getFile(){
@@ -60,10 +68,8 @@ public class TransactionFileLog
 			return;
 		}
 		
-		
 		while(hasMoreElements()){
 			nextElement();
-			lastPointer = fa.getFilePointer();
 		}
 		
 		fa.seek(0);
@@ -79,12 +85,30 @@ public class TransactionFileLog
 	
 	public void add(ConfigurableEntityFileTransaction ceft) throws IOException{
 		
+		//aponta para o último registro
 		fa.seek(lastPointer);
 
-		fa.writeLong(fa.getFilePointer() + 8);
-		writter.write(ceft, fa);
+		//marca o ínicio do registro com a posição do primeiro byte válido
+		long start = fa.getFilePointer() + 8; //posição do primeiro byte válido
+		fa.writeLong(start);
 		
-		lastPointer = fa.getFilePointer();
+		//reserva espaço para armazenar o tamanho do registro
+		fa.writeLong(-1);
+		
+		//registra a transação
+		writter.write(ceft, fa);
+
+		//atualiza o tamanho do registro
+		long end = fa.getFilePointer() + 8;
+		fa.seek(start);
+		fa.writeLong(end);
+		
+		//calcula e armazena o crc no final do registro
+		long crcValue = calculateCRC(start, end - 8);
+		fa.seek(end - 8);
+		fa.writeLong(crcValue);
+		
+		lastPointer = end;
 	}
 	
 	public boolean hasMoreElements() {
@@ -93,13 +117,18 @@ public class TransactionFileLog
 				return false;
 			}
 			
-			long pointer = fa.readLong();
+			long firstPointer = fa.readLong();
 			
-			if(pointer != fa.getFilePointer()){
-				throw new IllegalStateException("invalid pointer: " + pointer + " <> " + fa.getFilePointer());
+			if(firstPointer != fa.getFilePointer()){
+				throw new IllegalStateException("start error: " + firstPointer + " <> " + fa.getFilePointer());
 			}
 			
-			return fa.getFilePointer() != fa.length();
+			check();
+			
+			fa.seek(firstPointer);
+			
+			//return fa.getFilePointer() != fa.length();
+			return true;
 		}
 		catch(Throwable e){
 			error = e;
@@ -107,12 +136,19 @@ public class TransactionFileLog
 		}
 	}
 
+	public void cutLog() throws IOException{
+		fa.setLength(lastPointer);
+	}
+	
 	public ConfigurableEntityFileTransaction nextElement() {
 		
 		ConfigurableEntityFileTransaction r = null;
 		
 		try{
+			long nextPointer = fa.readLong();
 			r = reader.read(eftmc, fa);
+			fa.seek(nextPointer);
+			lastPointer = nextPointer;
 		}
 		catch(TransactionException e){
 			error = e;
@@ -124,6 +160,45 @@ public class TransactionFileLog
 		return r;
 	}
 
+	private void check() throws IOException{
+		
+		long firstPointer = fa.getFilePointer();
+		long lastPointer  = fa.readLong();
+
+		if(lastPointer == -1){
+			throw new IllegalStateException("invalid data: " + fa.getFilePointer());
+		}
+		
+		if(fa.length() < lastPointer){
+			throw new IllegalStateException("invalid size: " + fa.length() + " < " + lastPointer);
+		}
+		
+		long crc = calculateCRC(firstPointer, lastPointer - 8);
+		long pCrc = fa.readLong();
+		
+		if(crc != pCrc){
+			throw new IllegalStateException("invalid crc: " + crc + " <> " + pCrc);
+		}
+		
+	}
+	
+	private long calculateCRC(long firstPointer, long lastPointer) throws IOException{
+		
+		crc.reset();
+		
+		fa.seek(firstPointer);
+		
+		long counter = lastPointer - firstPointer;
+		while(counter > 0){
+			int maxRead = (int)(counter > crcBuffer.length? crcBuffer.length : counter);
+			fa.read(crcBuffer, 0, maxRead);
+			crc.update(crcBuffer, 0, maxRead);
+			counter -= maxRead;
+		}
+		
+		return crc.getValue();
+	}
+	
 	public void writeLong(long value) throws IOException {
 		fa.writeLong(value);
 	}

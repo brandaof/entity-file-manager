@@ -32,6 +32,8 @@ public class RecoveryTransactionLogImp
 	
 	protected Lock lock;
 	
+	protected boolean forceReload;
+	
 	public RecoveryTransactionLogImp(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		this.transactionFileCreator = new TransactionFileCreator(name, path);
 		this.limitFileLength        = MIN_FILELOG_LENGTH;
@@ -42,6 +44,14 @@ public class RecoveryTransactionLogImp
 		this.lock                   = new ReentrantLock();
 	}
 
+	public void setForceReload(boolean value) {
+		this.forceReload = value;
+	}
+
+	public boolean isForceReload() {
+		return forceReload;
+	}
+	
 	public void setLimitFileLength(long value) throws TransactionException {
 		
 		if(value < MIN_FILELOG_LENGTH){
@@ -233,7 +243,12 @@ public class RecoveryTransactionLogImp
 				transactionFile.load();
 				
 				if(transactionFile.getError() != null){
-					throw new TransactionException("transaction file error: " + txf.getName(), transactionFile.getError());
+					if(forceReload){
+						transactionFile.cutLog();
+					}
+					else{
+						throw new TransactionException("transaction file error: " + txf.getName(), transactionFile.getError());
+					}
 				}
 				
 				while(transactionFile.hasMoreElements()){

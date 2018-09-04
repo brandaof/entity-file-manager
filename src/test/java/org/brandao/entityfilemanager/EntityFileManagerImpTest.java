@@ -37,6 +37,8 @@ public class EntityFileManagerImpTest extends TestCase{
 		TransactionLog tl                         = new TransactionLogImp("binlog", txPath, tm);
 		EntityFileTransactionFactory eftf         = new AsyncEntityFileTransactionFactory(rtl);
 		
+		rtl.setForceReload(true);
+		
 		tm.setTransactionLog(tl);
 		tm.setRecoveryTransactionLog(rtl);
 		tm.setEntityFileTransactionFactory(eftf);
