@@ -1,7 +1,7 @@
 ﻿# Entity file manager
-Permite registrar entidades em arquivos estruturados que possuem suporte transacional.
+Entity file manager é um recurso que permite persistir entidades em arquivos estruturados. Ele foi desenvolvido com a finalidade de dar suporte à persistência de dados no BRCache. Ele basicamente é composto pelas classes EntityFileManager, EntityFile, EntityFileAccess e EntityFileTransactionManager.
 
-Como usar:
+## Como usar
 
 1.  Criar a implementação do EntityFileDataHandler;
 2.  Criar o header do arquivo;
