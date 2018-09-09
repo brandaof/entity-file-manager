@@ -30,7 +30,7 @@ public class AsyncRecoveryTransactionLog
 	
 	private Thread confirmTransactionThread;
 	
-	private long timeFlush = TimeUnit.SECONDS.toMillis(1);
+	private long timeFlush = TimeUnit.SECONDS.toMillis(0);
 	
 	private long lastFlush;
 	
@@ -65,7 +65,6 @@ public class AsyncRecoveryTransactionLog
 			
 			ceft.setRepository(transactionFile);
 			transactionFile.add(ceft);
-			ceft.setRecoveredTransaction(true);
 			transactionInProgress++;
 		}
 		catch(Throwable e){
@@ -89,7 +88,6 @@ public class AsyncRecoveryTransactionLog
 				if(transactionInProgress == 0 && (System.currentTimeMillis() - lastFlush) > timeFlush){
 					createNewFileTransactionLog();
 					lastFlush = System.currentTimeMillis();
-					flushVirutalEntityFileAccess();
 				}
 			}
 			catch(Throwable e){
@@ -108,25 +106,6 @@ public class AsyncRecoveryTransactionLog
 		confirmTransactionTask.transactionFiles.put(f);
 	}
 
-	private void flushVirutalEntityFileAccess() throws IOException{
-		lock.lock();
-		try{
-			for(AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
-				Lock lock = afvefa.getLock();
-				lock.lock();
-				try{
-					afvefa.tryResync();
-				}
-				finally{
-					lock.unlock();
-				}
-			}
-		}
-		finally{
-			lock.unlock();
-		}
-	}
-	
 	public void close() throws TransactionException{
 		confirmTransactionThread.interrupt();
 		
@@ -173,6 +152,7 @@ public class AsyncRecoveryTransactionLog
 			run = true;
 			while(failTransactionFileLog == null){
 				try{
+					flushVirutalEntityFileAccess();
 					execute();
 				}
 				catch(Throwable e){
@@ -183,8 +163,12 @@ public class AsyncRecoveryTransactionLog
 		}
 		
 		private void execute() throws Throwable {
-			File file = transactionFiles.take();
+			File file = transactionFiles.poll(1, TimeUnit.SECONDS);
 
+			if(file == null){
+				return;
+			}
+			
 			FileAccess fa = null;
 			try{
 				fa              = new FileAccess(file);
@@ -217,6 +201,27 @@ public class AsyncRecoveryTransactionLog
 				throw new TransactionException(e);
 			}
 			
+		}
+		
+		private void flushVirutalEntityFileAccess() throws IOException{
+			lock.lock();
+			try{
+				if(transactionFiles.isEmpty() && transactionInProgress == 0){
+					for(AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
+						Lock lock = afvefa.getLock();
+						lock.lock();
+						try{
+							afvefa.tryResync();
+						}
+						finally{
+							lock.unlock();
+						}
+					}
+				}
+			}
+			finally{
+				lock.unlock();
+			}
 		}
 	
 	}
