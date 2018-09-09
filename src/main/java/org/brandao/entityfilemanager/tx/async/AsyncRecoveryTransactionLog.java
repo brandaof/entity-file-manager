@@ -30,7 +30,7 @@ public class AsyncRecoveryTransactionLog
 	
 	private Thread confirmTransactionThread;
 	
-	private long timeFlush = TimeUnit.SECONDS.toMillis(0);
+	private long timeFlush = TimeUnit.SECONDS.toMillis(60);
 	
 	private long lastFlush;
 	
@@ -206,7 +206,7 @@ public class AsyncRecoveryTransactionLog
 		private void flushVirutalEntityFileAccess() throws IOException{
 			lock.lock();
 			try{
-				if(transactionFiles.isEmpty() && transactionInProgress == 0){
+				if(transactionFiles.isEmpty() && transactionInProgress == 0 && transactionFile.isEmpty()){
 					for(AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
 						Lock lock = afvefa.getLock();
 						lock.lock();

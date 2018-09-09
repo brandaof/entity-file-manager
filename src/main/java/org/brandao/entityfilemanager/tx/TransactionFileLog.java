@@ -60,6 +60,10 @@ public class TransactionFileLog
 		fa.close();
 	}
 
+	public boolean isEmpty() throws IOException{
+		return fa.length() == 0;
+	}
+	
 	public void load() throws IOException{
 
 		fa.seek(0);
