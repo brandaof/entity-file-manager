@@ -56,7 +56,7 @@ public class PointerManager<T,R,H> {
 	}
 	
 	public void release(){
-		for(Long p: this.pointers){
+		for(Long p: pointers){
 			this.lockProvider.unlock(this.data, p);
 		}
 	}

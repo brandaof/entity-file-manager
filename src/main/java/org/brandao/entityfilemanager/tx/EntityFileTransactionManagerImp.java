@@ -25,6 +25,8 @@ public class EntityFileTransactionManagerImp
 	
 	public static final long DEFAULT_TIMEOUT = 5*60*1000;
 	
+	private boolean consistent;
+	
 	private long transactionIDCounter;
 	
 	private Lock txIDLock;
@@ -54,6 +56,7 @@ public class EntityFileTransactionManagerImp
 		this.transactionLog               = null;
 		this.enabledTransactionLog        = false;
 		this.entityFileTransactionFactory = null;
+		this.consistent                   = true;
 	}
 	
 	private long getNextTransactionID() {
@@ -157,6 +160,7 @@ public class EntityFileTransactionManagerImp
 		ConfigurableEntityFileTransaction tx = (ConfigurableEntityFileTransaction)transaction;
 		
 		if(tx.isCommited() || tx.isRolledBack() || tx.isClosed() || !tx.isStarted()){
+			this.transactions.remove(tx.getTransactionID());
 			return;
 		}
 		
@@ -184,6 +188,10 @@ public class EntityFileTransactionManagerImp
 
 	public void commitTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException {
 		
+		if(!consistent){
+			throw new TransactionException("transaction not consistent: need reload");
+		}
+		
 		if(transaction.isDirty()){
 			throw new TransactionException("transaction rollback is needed");
 		}
@@ -206,55 +214,71 @@ public class EntityFileTransactionManagerImp
 		
 		
 		try{
-			
 			if(transaction.isEmpty()){
-				transaction.setCommited(true);
-				transaction.setRolledBack(false);
-				return;
+				confirmEmptyTransaction(transaction);
 			}
-			
-			//obtém os arquivos envolvidos na transação
-			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
-					transaction.getTransactionFiles();
-			Collection<TransactionEntity<?,?>> transactionEntity = transactionFiles.values();
-			
-			//marca o início do rollback
-			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
-
-			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction, false);
-			
-			//executa o commit
-			this.executeCommit(transaction, transactionEntity);
-			
-			//atualiza o status da transação para finalizada.
-			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_COMMITED);
-			
-			//Registra a transação no log de transações
-			this.logTransaction(transaction);
-			
-			//fecha os arquivos usados na transação
-			this.close(transaction, transactionEntity);
-			
-			//apaga os dados da transação.
-			this.confirmTransactionInformation(transaction);
-
-			//libera os bloqueios
-			this.releaseLocks(transaction, transactionEntity);
-
-			//atualiza o status da transação
-			transaction.setCommited(true);
-			transaction.setRolledBack(false);
-			
+			else{
+				confirmTransaction(transaction);
+			}
+			closeTransaction(transaction);
 		}
 		catch(TransactionException e){
 			throw e;
 		}		
 		catch(Throwable e){
 			throw new TransactionException(e);
-		}		
+		}
 	}
 
+	private void confirmEmptyTransaction(ConfigurableEntityFileTransaction transaction){
+		transaction.setCommited(true);
+		transaction.setRolledBack(false);
+	}
+	
+	private void confirmTransaction(
+			ConfigurableEntityFileTransaction transaction) throws Throwable{
+		
+		//obtém os arquivos envolvidos na transação
+		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
+				transaction.getTransactionFiles();
+		Collection<TransactionEntity<?,?>> transactionEntity = transactionFiles.values();
+		
+		//marca o início do commit
+		updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_STARTED_COMMIT);
+
+		//salva a transação em mídia persistente para possível recuperação pós-falha.
+		registerTransactionInformation(transaction, false);
+		
+		try{
+			//executa o commit
+			executeCommit(transaction, transactionEntity);
+			
+			//atualiza o status da transação para finalizada.
+			updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_COMMITED);
+			
+			//Registra a transação no log de transações
+			logTransaction(transaction);
+			
+			//fecha os arquivos usados na transação
+			close(transaction, transactionEntity);
+			
+			//apaga os dados da transação.
+			confirmTransactionInformation(transaction);
+	
+			//libera os bloqueios
+			releaseLocks(transaction, transactionEntity);
+	
+			//atualiza o status da transação
+			transaction.setCommited(true);
+			transaction.setRolledBack(false);
+		}
+		catch(Throwable e){
+			consistent = false;
+			throw e;
+		}
+		
+	}
+	
 	private void executeCommit(ConfigurableEntityFileTransaction transaction, 
 			Collection<TransactionEntity<?,?>> transactionEntity) throws IOException, TransactionException{
 		
@@ -266,7 +290,9 @@ public class EntityFileTransactionManagerImp
 	
 	public void rollbackTransaction(ConfigurableEntityFileTransaction transaction) throws TransactionException {
 		
-		//verifica o status atual da transação
+		if(!consistent){
+			throw new TransactionException("transaction not consistent: need reload");
+		}
 		
 		if(transaction.isClosed()){
 			throw new TransactionException("transaction has been closed");
@@ -285,24 +311,42 @@ public class EntityFileTransactionManagerImp
 		}
 		
 		try{
-			
 			if(transaction.isEmpty()){
-				transaction.setCommited(false);
-				transaction.setRolledBack(true);
-				return;
+				cancelEmptyTransaction(transaction);
 			}
-			
-			//obtém os arquivos envolvidos na transação
-			Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
-					transaction.getTransactionFiles();
-			Collection<TransactionEntity<?,?>> transactionEntity = transactionFiles.values();
-			
-			//marca o início do rollback
-			this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
-			
-			//salva a transação em mídia persistente para possível recuperação pós-falha.
-			this.registerTransactionInformation(transaction, false);
-			
+			else{
+				cancelTransaction(transaction);
+			}
+			closeTransaction(transaction);
+		}
+		catch(TransactionException e){
+			throw e;
+		}
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
+	}
+	
+	private void cancelEmptyTransaction(ConfigurableEntityFileTransaction transaction){
+		transaction.setCommited(false);
+		transaction.setRolledBack(true);
+	}
+
+	private void cancelTransaction(
+			ConfigurableEntityFileTransaction transaction) throws Throwable{
+		
+		//obtém os arquivos envolvidos na transação
+		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
+				transaction.getTransactionFiles();
+		Collection<TransactionEntity<?,?>> transactionEntity = transactionFiles.values();
+		
+		//marca o início do rollback
+		this.updateTransactionStatus(transaction, transactionEntity, EntityFileTransaction.TRANSACTION_STARTED_ROLLBACK);
+		
+		//salva a transação em mídia persistente para possível recuperação pós-falha.
+		this.registerTransactionInformation(transaction, false);
+		
+		try{
 			//executa o rollback
 			this.executeRollback(transaction, transactionEntity);
 			
@@ -311,7 +355,7 @@ public class EntityFileTransactionManagerImp
 			
 			//Registra a transação no log de transações
 			this.logTransaction(transaction);
-
+	
 			//fecha os arquivos usados na transação
 			this.close(transaction, transactionEntity);
 			
@@ -325,11 +369,9 @@ public class EntityFileTransactionManagerImp
 			transaction.setCommited(false);
 			transaction.setRolledBack(true);
 		}
-		catch(TransactionException e){
-			throw e;
-		}
 		catch(Throwable e){
-			throw new TransactionException(e);
+			consistent = false;
+			throw e;
 		}
 	}
 	
