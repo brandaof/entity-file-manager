@@ -65,6 +65,7 @@ public class AsyncRecoveryTransactionLog
 			
 			ceft.setRepository(transactionFile);
 			transactionFile.add(ceft);
+			ceft.setRecoveredTransaction(true);
 			transactionInProgress++;
 		}
 		catch(Throwable e){

@@ -29,6 +29,8 @@ public interface ConfigurableEntityFileTransaction extends EntityFileTransaction
 	void setRepository(TransactionFileLog value);
 
 	TransactionFileLog getRepository();
+
+	void setRecoveredTransaction(boolean value);
 	
 	boolean isRecoveredTransaction();
 	

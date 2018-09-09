@@ -347,6 +347,10 @@ public abstract class AbstractEntityFileTransaction
 		this.dirty = value;
 	}
 
+	public void setRecoveredTransaction(boolean value){
+		this.recoveredTransaction = value;
+	}
+	
 	public boolean isRecoveredTransaction(){
 		return this.recoveredTransaction;
 	}
