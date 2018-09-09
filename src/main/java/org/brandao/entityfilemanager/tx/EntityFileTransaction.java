@@ -44,6 +44,8 @@ public interface EntityFileTransaction extends Serializable{
 	<T,R,H> T select(long id, boolean lock, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 
 	<T,R,H> T[] select(long[] id, boolean lock, EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
+
+	<T,R,H> long length(EntityFileAccess<T, R, H> entityFileAccess) throws EntityFileException;
 	
 	void setTimeout(long value);
 	

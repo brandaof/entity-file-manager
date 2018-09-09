@@ -16,7 +16,7 @@ import org.brandao.entityfilemanager.tx.readcommited.ReadCommitedTransactionalEn
 public class AsyncEntityFileTransactionFactory 
 	implements EntityFileTransactionFactory{
 
-	private ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
+	private ConcurrentMap<EntityFileAccess<?,?,?>, AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
 	
 	public AsyncEntityFileTransactionFactory(AsyncRecoveryTransactionLog asyncRecoveryTransactionLog){
 		this.efam = asyncRecoveryTransactionLog.getEntityFileAccessMapping();
@@ -31,17 +31,17 @@ public class AsyncEntityFileTransactionFactory
 			throw new TransactionException("transaction not supported: " + transactionIsolation);
 		}
 		
-		AutoFlushVirutalEntityFileAccess<T,R,H> afvefa = 
-				(AutoFlushVirutalEntityFileAccess<T, R, H>) efam.get(entityFile);
+		AsyncAutoFlushVirutalEntityFileAccess<T,R,H> afvefa = 
+				(AsyncAutoFlushVirutalEntityFileAccess<T, R, H>) efam.get(entityFile);
 		
 		try{
 			if(afvefa == null){
 				synchronized (efam) {
 					afvefa = 
-							(AutoFlushVirutalEntityFileAccess<T, R, H>) efam.get(entityFile);
+							(AsyncAutoFlushVirutalEntityFileAccess<T, R, H>) efam.get(entityFile);
 					
 					if(afvefa == null){
-						afvefa = new AutoFlushVirutalEntityFileAccess<T, R, H>(entityFile);
+						afvefa = new AsyncAutoFlushVirutalEntityFileAccess<T, R, H>(entityFile);
 						afvefa.createNewFile();
 						efam.putIfAbsent(entityFile, afvefa);
 					}
@@ -49,7 +49,7 @@ public class AsyncEntityFileTransactionFactory
 			}
 			
 			TransactionEntityFileAccess<T, R, H> txFile =
-					new TransientTransactionEntityFileAccess<T, R, H>(
+					new AsyncTransactionEntityFileAccess<T, R, H>(
 							afvefa, 
 							new File(entityFile.getAbsolutePath() + "_" + Long.toString(transactionID, Character.MAX_RADIX)), 
 							transactionID, 

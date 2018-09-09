@@ -235,6 +235,15 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		
 	}
 	
+	public long length() throws EntityFileException{
+		try{
+			return tx.length();
+		}
+		catch(Throwable e){
+			throw new EntityFileException(e);
+		}
+	}
+	
 	public void begin() throws TransactionException{
 		try{
 			byte status = this.tx.getTransactionStatus();
@@ -288,9 +297,6 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		catch(Throwable e){
 			throw new TransactionException(e);
 		}
-		finally{
-			this.pointerManager.release();
-		}
 	}
 	
 	public void rollback() throws TransactionException{
@@ -328,12 +334,12 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		catch(Throwable e){
 			throw new TransactionException(e);
 		}
-		finally{
-			this.pointerManager.release();
-		}
-		
 	}
 
+	public void releaseLocks(){
+		this.pointerManager.release();
+	}
+	
 	public long getNextFreePointer(boolean batch) throws IOException{
 		return this.data.length();
 	}

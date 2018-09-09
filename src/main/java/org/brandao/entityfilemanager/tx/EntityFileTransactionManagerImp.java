@@ -233,11 +233,19 @@ public class EntityFileTransactionManagerImp
 			//Registra a transação no log de transações
 			this.logTransaction(transaction);
 			
+			//fecha os arquivos usados na transação
+			this.close(transaction, transactionEntity);
+			
 			//apaga os dados da transação.
 			this.confirmTransactionInformation(transaction);
-			
+
+			//libera os bloqueios
+			this.releaseLocks(transaction, transactionEntity);
+
+			//atualiza o status da transação
 			transaction.setCommited(true);
 			transaction.setRolledBack(false);
+			
 		}
 		catch(TransactionException e){
 			throw e;
@@ -252,8 +260,6 @@ public class EntityFileTransactionManagerImp
 		
 		for(TransactionEntity<?,?> txFile: transactionEntity){
 			txFile.commit();
-			txFile.close();
-			txFile.delete();
 		}
 		
 	}
@@ -305,10 +311,17 @@ public class EntityFileTransactionManagerImp
 			
 			//Registra a transação no log de transações
 			this.logTransaction(transaction);
+
+			//fecha os arquivos usados na transação
+			this.close(transaction, transactionEntity);
 			
 			//apaga os dados da transação.
 			this.confirmTransactionInformation(transaction);
 			
+			//libera os bloqueios
+			this.releaseLocks(transaction, transactionEntity);
+			
+			//atualiza o status da transação
 			transaction.setCommited(false);
 			transaction.setRolledBack(true);
 		}
@@ -325,8 +338,25 @@ public class EntityFileTransactionManagerImp
 		
 		for(TransactionEntity<?,?> txFile: transactionEntity){
 			txFile.rollback();
+		}
+		
+	}
+
+	protected void close(ConfigurableEntityFileTransaction transaction, 
+			Collection<TransactionEntity<?,?>> transactionEntity) throws IOException, TransactionException{
+		
+		for(TransactionEntity<?,?> txFile: transactionEntity){
 			txFile.close();
 			txFile.delete();
+		}
+		
+	}
+	
+	protected void releaseLocks(ConfigurableEntityFileTransaction transaction, 
+			Collection<TransactionEntity<?,?>> transactionEntity) throws IOException, TransactionException{
+		
+		for(TransactionEntity<?,?> txFile: transactionEntity){
+			txFile.releaseLocks();
 		}
 		
 	}

@@ -205,6 +205,9 @@ public class EntityFileManagerImp
 			return tx.select(id, lock, entityFileAccess);
 		}
 		
+		public long length(){
+			return tx.length(entityFileAccess);
+		}
 	}
 
 }

@@ -249,6 +249,20 @@ public abstract class AbstractEntityFileTransaction
 		return tei.select(id, lock);
 	}
 	
+	public <T, R, H> long length(EntityFileAccess<T, R, H> entityFileAccess)
+			throws EntityFileException {
+		try{
+			TransactionEntity<T,R> tei = this.getManagedEntityFile(entityFileAccess);
+			return tei.length();
+		}
+		catch(Throwable e){
+			this.dirty = true;
+			throw e instanceof EntityFileException? 
+					(EntityFileException)e : 
+					new EntityFileException(e);
+		}
+	}
+	
 	/* private methods */
 	
 	@SuppressWarnings("unchecked")

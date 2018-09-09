@@ -22,4 +22,6 @@ public interface EntityFile<T> {
 
 	T[] select(long[] id, boolean lock) throws EntityFileException;
 	
+	long length() throws EntityFileException;
+	
 }

@@ -6,6 +6,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -21,7 +22,7 @@ public class AsyncRecoveryTransactionLog
 	extends RecoveryTransactionLogImp 
 	implements RecoveryTransactionLog{
 
-	private ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
+	private ConcurrentMap<EntityFileAccess<?,?,?>, AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?>> efam;
 	
 	private ConfirmTransactionTask confirmTransactionTask;
 	
@@ -29,12 +30,16 @@ public class AsyncRecoveryTransactionLog
 	
 	private Thread confirmTransactionThread;
 	
+	private long timeFlush = TimeUnit.SECONDS.toMillis(1);
+	
+	private long lastFlush;
+	
 	public AsyncRecoveryTransactionLog(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		super(name, path, eftmc);
 		this.transactionInProgress  = 0;
 		this.confirmTransactionTask = new ConfirmTransactionTask();
-		this.efam                   = new ConcurrentHashMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?,?,?>>();
-		
+		this.efam                   = new ConcurrentHashMap<EntityFileAccess<?,?,?>, AsyncAutoFlushVirutalEntityFileAccess<?,?,?>>();
+		this.lastFlush              = System.currentTimeMillis();
 		this.confirmTransactionThread = 
 				new Thread(
 						null,
@@ -44,7 +49,7 @@ public class AsyncRecoveryTransactionLog
 		this.confirmTransactionThread.start();
 	}
 
-	public ConcurrentMap<EntityFileAccess<?,?,?>, AutoFlushVirutalEntityFileAccess<?, ?, ?>> getEntityFileAccessMapping(){
+	public ConcurrentMap<EntityFileAccess<?,?,?>, AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?>> getEntityFileAccessMapping(){
 		return efam;
 	}
 	
@@ -80,8 +85,10 @@ public class AsyncRecoveryTransactionLog
 			transactionInProgress--;
 			
 			try{
-				if(transactionInProgress == 0){
+				if(transactionInProgress == 0 && (System.currentTimeMillis() - lastFlush) > timeFlush){
 					createNewFileTransactionLog();
+					lastFlush = System.currentTimeMillis();
+					flushVirutalEntityFileAccess();
 				}
 			}
 			catch(Throwable e){
@@ -100,6 +107,25 @@ public class AsyncRecoveryTransactionLog
 		confirmTransactionTask.transactionFiles.put(f);
 	}
 
+	private void flushVirutalEntityFileAccess() throws IOException{
+		lock.lock();
+		try{
+			for(AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
+				Lock lock = afvefa.getLock();
+				lock.lock();
+				try{
+					afvefa.tryResync();
+				}
+				finally{
+					lock.unlock();
+				}
+			}
+		}
+		finally{
+			lock.unlock();
+		}
+	}
+	
 	public void close() throws TransactionException{
 		confirmTransactionThread.interrupt();
 		
@@ -120,6 +146,14 @@ public class AsyncRecoveryTransactionLog
 		
 	}
 	
+	public long getTimeFlush() {
+		return timeFlush;
+	}
+
+	public void setTimeFlush(long timeFlush) {
+		this.timeFlush = timeFlush;
+	}
+
 	private class ConfirmTransactionTask implements Runnable{
 
 		public BlockingQueue<File> transactionFiles;
@@ -138,7 +172,6 @@ public class AsyncRecoveryTransactionLog
 			run = true;
 			while(failTransactionFileLog == null){
 				try{
-					flushVirutalEntityFileAccess();
 					execute();
 				}
 				catch(Throwable e){
@@ -146,28 +179,6 @@ public class AsyncRecoveryTransactionLog
 				}
 			}
 			run = false;
-		}
-		
-		private void flushVirutalEntityFileAccess() throws IOException{
-			lock.lock();
-			try{
-				if(transactionFiles.isEmpty() && transactionInProgress == 0){
-					for(AutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
-						Lock lock = afvefa.getLock();
-						lock.lock();
-						try{
-							afvefa.resync();
-						}
-						finally{
-							lock.unlock();
-						}
-					}
-					
-				}
-			}
-			finally{
-				lock.unlock();
-			}
 		}
 		
 		private void execute() throws Throwable {

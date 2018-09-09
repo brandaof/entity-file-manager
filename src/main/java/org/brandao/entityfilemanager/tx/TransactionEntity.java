@@ -28,4 +28,6 @@ public interface TransactionEntity<T, R>
 	
 	void delete() throws IOException;
 	
+	void releaseLocks();
+	
 }
