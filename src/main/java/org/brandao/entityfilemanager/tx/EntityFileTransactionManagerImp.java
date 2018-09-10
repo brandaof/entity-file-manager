@@ -232,9 +232,18 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 
-	private void confirmEmptyTransaction(ConfigurableEntityFileTransaction transaction){
+	private void confirmEmptyTransaction(
+			ConfigurableEntityFileTransaction transaction) throws IOException, TransactionException{
+		
+		//obtém os arquivos envolvidos na transação
+		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
+				transaction.getTransactionFiles();
+		Collection<TransactionEntity<?,?>> transactionEntity = transactionFiles.values();
+		
 		transaction.setCommited(true);
 		transaction.setRolledBack(false);
+		
+		releaseLocks(transaction, transactionEntity);
 	}
 	
 	private void confirmTransaction(
@@ -325,9 +334,17 @@ public class EntityFileTransactionManagerImp
 		}
 	}
 	
-	private void cancelEmptyTransaction(ConfigurableEntityFileTransaction transaction){
+	private void cancelEmptyTransaction(ConfigurableEntityFileTransaction transaction
+			) throws IOException, TransactionException{
+		//obtém os arquivos envolvidos na transação
+		Map<EntityFileAccess<?,?,?>, TransactionEntity<?,?>> transactionFiles =
+				transaction.getTransactionFiles();
+		Collection<TransactionEntity<?,?>> transactionEntity = transactionFiles.values();
+		
 		transaction.setCommited(false);
 		transaction.setRolledBack(true);
+		
+		releaseLocks(transaction, transactionEntity);
 	}
 
 	private void cancelTransaction(

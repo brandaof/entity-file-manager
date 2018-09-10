@@ -62,6 +62,13 @@ public interface EntityFileAccess<T, R, H> {
 	
 	long length() throws IOException;
 	
+	/**
+	 * Define o novo tamanho do arquivo. 
+	 * Para aumentar o arquivo, são inseridos registros vazios.
+	 * @param value Tamanho.
+	 * @throws IOException Lançado se ocorrer alguma falha ao tentar aumentar o 
+	 * tamanho do arquivo.
+	 */
 	void setLength(long value) throws IOException;
 	
 	boolean exists();

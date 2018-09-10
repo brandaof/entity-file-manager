@@ -263,6 +263,7 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 	}
 	
 	public void commit() throws TransactionException{
+		tx.getLock().lock();
 		try{
 			if(!this.tx.isStarted()){
 				return;
@@ -297,9 +298,13 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		catch(Throwable e){
 			throw new TransactionException(e);
 		}
+		finally{
+			tx.getLock().unlock();
+		}
 	}
 	
 	public void rollback() throws TransactionException{
+		tx.getLock().lock();
 		try{
 			if(!this.tx.isStarted()){
 				return;
@@ -333,6 +338,9 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
+		}
+		finally{
+			tx.getLock().unlock();
 		}
 	}
 

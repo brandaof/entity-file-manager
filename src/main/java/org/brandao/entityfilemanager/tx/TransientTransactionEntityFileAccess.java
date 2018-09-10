@@ -24,6 +24,7 @@ public class TransientTransactionEntityFileAccess<T, R, H>
 		this.offset = 0;
 		this.length = 0;
 		this.values = new HashMap<Long, T>();
+		this.lock   = e.getLock();
 	}
 
 	/* transaction methods */

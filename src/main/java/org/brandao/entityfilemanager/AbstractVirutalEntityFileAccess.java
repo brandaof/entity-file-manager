@@ -71,7 +71,7 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	}
 	
 	public Lock getLock() {
-		return virtual.getLock();
+		return parent.getLock();
 	}
 	
 	public File getAbsoluteFile() {
@@ -88,6 +88,9 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	
 	public void createNewFile() throws IOException {
 		virtual.createNewFile();
+		//cria o registro para o mapeamento nulo
+		virtual.seek(0);
+		virtual.write(null);
 	}
 	
 	public void open() throws IOException {
@@ -253,6 +256,9 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 	}
 	
 	public void setLength(long value) throws IOException {
+		for(long i=virtualLength;i<value;i++){
+			addVirutalOffset(i, 0);
+		}
 		virtualLength = value;
 	}
 	
@@ -289,16 +295,16 @@ public abstract class AbstractVirutalEntityFileAccess<T, R, H>
 		notManagedID.len   = 0;
 		
 		Long realOffset;
-		long localOffset;
+		long virutalOffset;
 		
 		for(int i=0;i<len;i++){
 			
-			localOffset = id + i;
-			realOffset  = getOffset(localOffset);
+			virutalOffset = id + i;
+			realOffset    = getOffset(virutalOffset);
 			
 			if(realOffset == null){
 				notManagedID.map[notManagedID.len  ] = i; 
-				notManagedID.ids[notManagedID.len++] = localOffset;
+				notManagedID.ids[notManagedID.len++] = virutalOffset;
 			}
 			else{
 				managedID.map[managedID.len  ] = i; 

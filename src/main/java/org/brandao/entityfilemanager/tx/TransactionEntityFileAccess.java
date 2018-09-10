@@ -21,9 +21,10 @@ public class TransactionEntityFileAccess<T, R, H>
 				new EntityFileTransactionDataHandler<T,R,H>(e.getEntityFileDataHandler())
 		);
 		
-		this.parent = e;
+		this.parent                 = e;
 		this.transactionDataHandler = (EntityFileTransactionDataHandler<T,R,H>)super.dataHandler;
-		this.metadata = new TransactionHeader<H>(e.getMetadata());
+		this.metadata               = new TransactionHeader<H>(e.getMetadata());
+		this.lock                   = e.getLock();
 	}
 
 	public void setTransactionStatus(byte value) throws IOException{

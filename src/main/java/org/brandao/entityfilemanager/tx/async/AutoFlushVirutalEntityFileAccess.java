@@ -1,8 +1,8 @@
 package org.brandao.entityfilemanager.tx.async;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.brandao.entityfilemanager.AbstractVirutalEntityFileAccess;
 import org.brandao.entityfilemanager.EntityFileAccess;
@@ -10,11 +10,11 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 public class AutoFlushVirutalEntityFileAccess<T, R, H>
 	extends AbstractVirutalEntityFileAccess<T, R, H>{
 
-	private Map<Long,Long> map;
+	private ConcurrentMap<Long,Long> map;
 	
 	public AutoFlushVirutalEntityFileAccess(EntityFileAccess<T, R, H> e) throws IOException {
 		super(e);
-		this.map = new HashMap<Long, Long>();
+		this.map = new ConcurrentHashMap<Long, Long>();
 	}
 	
 	@Override
