@@ -170,8 +170,7 @@ public class AsyncRecoveryTransactionLog
 		private void flushVirutalEntityFileAccess() throws IOException{
 			lock.lock();
 			try{
-				//if(transactionFiles.isEmpty() && transactionInProgress == 0 && transactionFile.isEmpty()){
-				if(transactionInProgress == 0){
+				if(transactionFiles.isEmpty() && transactionInProgress == 0 && transactionFile.isEmpty()){
 					for(AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
 						Lock lock = afvefa.getLock();
 						lock.lock();

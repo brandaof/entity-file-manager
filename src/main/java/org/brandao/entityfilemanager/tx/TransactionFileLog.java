@@ -61,7 +61,7 @@ public class TransactionFileLog
 	}
 
 	public boolean isEmpty() throws IOException{
-		return fa.length() == 0;
+		return lastPointer == 0;
 	}
 	
 	public void load() throws IOException{
