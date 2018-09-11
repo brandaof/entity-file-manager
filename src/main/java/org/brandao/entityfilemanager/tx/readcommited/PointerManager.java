@@ -11,6 +11,7 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 import org.brandao.entityfilemanager.LockProvider;
 import org.brandao.entityfilemanager.tx.EmptyLockProvider;
 import org.brandao.entityfilemanager.tx.TransactionEntityFileAccess;
+import org.brandao.entityfilemanager.tx.TransactionException;
 
 public class PointerManager<T,R,H> {
 
@@ -31,24 +32,29 @@ public class PointerManager<T,R,H> {
 		this.timeout      = timeout;
 	}
 
-	public void managerPointer(long id) throws IOException{
+	public void managerPointer(long id) throws IOException, TransactionException{
 		
-		if(!this.pointers.contains(id)){
-			this.lockProvider.tryLock(this.data, id, this.timeout, TimeUnit.SECONDS);
-			this.pointers.add(id);
+		if(!pointers.contains(id)){
+			if(!lockProvider.tryLock(this.data, id, this.timeout, TimeUnit.SECONDS)){
+				throw new TransactionException("failed to acquire registry lock: " + id);
+			}
+				
+			pointers.add(id);
 		}
 		
 	}
 	
-	public void managerPointer(long[] id) throws IOException{
+	public void managerPointer(long[] id) throws IOException, TransactionException{
 		
 		for(int i=0;i<id.length;i++){
 			
 			long r = id[i];
 			
-			if(!this.pointers.contains(r)){
-				this.lockProvider.tryLock(this.data, r, this.timeout, TimeUnit.SECONDS);
-				this.pointers.add(r);
+			if(!pointers.contains(r)){
+				if(!lockProvider.tryLock(this.data, r, this.timeout, TimeUnit.SECONDS)){
+					throw new TransactionException("failed to acquire registry lock: " + r);
+				}
+				pointers.add(r);
 			}
 			
 		}

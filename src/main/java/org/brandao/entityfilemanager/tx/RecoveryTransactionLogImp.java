@@ -3,9 +3,7 @@ package org.brandao.entityfilemanager.tx;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -22,8 +20,6 @@ public class RecoveryTransactionLogImp
 
 	protected TransactionFileCreator transactionFileCreator;
 	
-	protected Map<TransactionFileLog, LinkedHashSet<Long>> transactions;
-	
 	protected TransactionReader reader;
 	
 	protected TransactionWritter writter;
@@ -34,14 +30,24 @@ public class RecoveryTransactionLogImp
 	
 	protected boolean forceReload;
 	
+	protected boolean closed;
+	
+	protected long transactionInProgress;
+	
+	protected long timeFlush = TimeUnit.SECONDS.toMillis(60);
+	
+	protected long lastFlush;
+	
 	public RecoveryTransactionLogImp(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		this.transactionFileCreator = new TransactionFileCreator(name, path);
 		this.limitFileLength        = MIN_FILELOG_LENGTH;
-		this.transactions           = new HashMap<TransactionFileLog, LinkedHashSet<Long>>();
 		this.reader                 = new TransactionReader();
 		this.writter                = new TransactionWritter();
 		this.eftmc                  = eftmc;
 		this.lock                   = new ReentrantLock();
+		this.closed                 = true;
+		this.transactionInProgress  = 0;
+		this.lastFlush              = System.currentTimeMillis();
 	}
 
 	public void setForceReload(boolean value) {
@@ -67,6 +73,12 @@ public class RecoveryTransactionLogImp
 
 	public void close() throws TransactionException{
 		try{
+			closed = true;
+			
+			while(transactionInProgress != 0){
+				Thread.sleep(100);
+			}
+			
 			if(transactionFile != null){
 				transactionFile.close();
 			}
@@ -79,23 +91,20 @@ public class RecoveryTransactionLogImp
 	public void registerTransaction(ConfigurableEntityFileTransaction ceft)
 			throws TransactionException {
 		
+		if(closed){
+			throw new TransactionException("transaction closed");
+		}
+		
 		lock.lock();
 		try{
+			//Cria um novo arquivo de log se for atingido o tamanho máximo
 			if(transactionFile.getFilelength() > this.limitFileLength){
 				createNewFileTransactionLog();
 			}
 			
 			ceft.setRepository(transactionFile);
 			transactionFile.add(ceft);
-			
-			LinkedHashSet<Long> txSet = transactions.get(ceft.getRepository());
-			
-			if(txSet == null){
-				txSet = new LinkedHashSet<Long>();
-				transactions.put(transactionFile, txSet);
-			}
-			
-			txSet.add(ceft.getTransactionID());
+			transactionInProgress++;
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -110,32 +119,24 @@ public class RecoveryTransactionLogImp
 		
 		lock.lock();
 		try{
-			LinkedHashSet<Long> txSet = transactions.get(ceft.getRepository());
+			//Cria um novo arquivo de log quando não existir transações abertas 
+			//forçando a atualização dos arquivos envolvidos. 
+			transactionInProgress--;
 			
-			if(txSet == null){
-				throw new TransactionException("transaction not found: " + ceft.getTransactionID());
+			try{
+				if(transactionInProgress == 0 && (System.currentTimeMillis() - lastFlush) > timeFlush){
+					createNewFileTransactionLog();
+					lastFlush = System.currentTimeMillis();
+				}
 			}
-			
-			txSet.remove(ceft.getTransactionID());
-			
-			if(txSet.isEmpty()){
-				try{
-					TransactionFileLog txFile = ceft.getRepository();
-					if(transactionFile == txFile){
-						txFile.reset();
-					}
-					else{
-						txFile.delete();
-					}
-				}
-				catch(Throwable e){
-					throw new TransactionException("Fail truncate recovery transaction log: " + ceft.getRepository());
-				}
+			catch(Throwable e){
+				throw new TransactionException(e);
 			}
 		}
 		finally{
 			lock.unlock();
 		}
+		
 	}
 	
 	protected void createNewFileTransactionLog() throws Throwable{
@@ -175,7 +176,6 @@ public class RecoveryTransactionLogImp
 				fa              = new FileAccess(txf);
 				transactionFile = new TransactionFileLog(fa, reader, writter, eftmc);
 				transactionFile.load();
-				return;
 			}
 			catch(Throwable e){
 				try{
@@ -219,6 +219,8 @@ public class RecoveryTransactionLogImp
 			}
 			
 		}
+		
+		closed = false;
 	}
 	
 	private void reloadTransactions(EntityFileTransactionManagerConfigurer eftmc

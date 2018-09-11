@@ -79,19 +79,17 @@ public class LockProviderImp
 	
 	private void lockObject(Object object) throws InterruptedException {
 		
+		Object lock = Thread.currentThread();
 		LockObject newLockObject = new LockObject();
 		newLockObject.setLocks(new LinkedBlockingQueue<Object>());
-		newLockObject.setCurrentLock(object);
-
-		Object lock = new Object();
+		newLockObject.setCurrentLock(lock);
+		
 		LockObject lockObject;
 		
 		synchronized(this) {
 			lockObject = 
-					this.entityFileAccessLock.putIfAbsent(
-							object, 
-							newLockObject
-					);
+					this.entityFileAccessLock
+						.putIfAbsent(object, newLockObject);
 			
 			if(lockObject == null){
 				return;
@@ -117,19 +115,17 @@ public class LockProviderImp
 	protected boolean lockObject(Object object, 
 			long unit, TimeUnit timeunit) throws InterruptedException {
 		
+		Object lock = new Object();
 		LockObject newLockObject = new LockObject();
 		newLockObject.setLocks(new LinkedBlockingQueue<Object>());
-		newLockObject.setCurrentLock(object);
+		newLockObject.setCurrentLock(lock);
 		
-		Object lock = new Object();
 		LockObject lockObject;
 		
 		synchronized(this) {
 			lockObject = 
-					this.entityFileAccessLock.putIfAbsent(
-							object, 
-							newLockObject
-					);
+					this.entityFileAccessLock
+						.putIfAbsent(object, newLockObject);
 			
 			if(lockObject == null){
 				return true;
@@ -171,19 +167,20 @@ public class LockProviderImp
 					this.entityFileAccessLock.get(object);
 			
 			if(lockObject == null){
-				return;
+				throw new IllegalStateException();
 			}
 			
 			next = lockObject.getLocks().poll();
 			
 			if(next == null){
-				this.entityFileAccessLock.remove(object, lockObject);
+				this.entityFileAccessLock.remove(object);
 				return;
 			}
 			
 			lockObject.setCurrentLock(next);
+			
 		}
-		
+
 		synchronized(next){
 			next.notifyAll();
 		}

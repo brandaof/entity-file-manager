@@ -26,78 +26,21 @@ public class AsyncRecoveryTransactionLog
 	
 	private ConfirmTransactionTask confirmTransactionTask;
 	
-	private long transactionInProgress;
-	
 	private Thread confirmTransactionThread;
-	
-	private long timeFlush = TimeUnit.SECONDS.toMillis(60);
-	
-	private long lastFlush;
 	
 	public AsyncRecoveryTransactionLog(String name, File path, EntityFileTransactionManagerConfigurer eftmc){
 		super(name, path, eftmc);
-		this.transactionInProgress  = 0;
 		this.confirmTransactionTask = new ConfirmTransactionTask();
 		this.efam                   = new ConcurrentHashMap<EntityFileAccess<?,?,?>, AsyncAutoFlushVirutalEntityFileAccess<?,?,?>>();
-		this.lastFlush              = System.currentTimeMillis();
 		this.confirmTransactionThread = 
 				new Thread(
 						null,
 						this.confirmTransactionTask,
 						"Async recovery transaction log confirmation task");
-		
-		this.confirmTransactionThread.start();
 	}
 
 	public ConcurrentMap<EntityFileAccess<?,?,?>, AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?>> getEntityFileAccessMapping(){
 		return efam;
-	}
-	
-	public void registerTransaction(ConfigurableEntityFileTransaction ceft)
-			throws TransactionException {
-		
-		lock.lock();
-		try{
-			//Cria um novo arquivo de log se for atingido o tamanho máximo
-			if(transactionFile.getFilelength() > this.limitFileLength){
-				createNewFileTransactionLog();
-			}
-			
-			ceft.setRepository(transactionFile);
-			transactionFile.add(ceft);
-			transactionInProgress++;
-		}
-		catch(Throwable e){
-			throw new TransactionException(e);
-		}
-		finally{
-			lock.unlock();
-		}
-	}
-
-	public void deleteTransaction(ConfigurableEntityFileTransaction ceft)
-			throws TransactionException {
-		
-		lock.lock();
-		try{
-			//Cria um novo arquivo de log quando não existir transações abertas 
-			//forçando a atualização dos arquivos envolvidos. 
-			transactionInProgress--;
-			
-			try{
-				if(transactionInProgress == 0 && (System.currentTimeMillis() - lastFlush) > timeFlush){
-					createNewFileTransactionLog();
-					lastFlush = System.currentTimeMillis();
-				}
-			}
-			catch(Throwable e){
-				throw new TransactionException(e);
-			}
-		}
-		finally{
-			lock.unlock();
-		}
-		
 	}
 	
 	protected void createNewFileTransactionLog() throws Throwable{
@@ -106,23 +49,44 @@ public class AsyncRecoveryTransactionLog
 		confirmTransactionTask.transactionFiles.put(f);
 	}
 
+	public void open() throws TransactionException{
+		super.open();
+		this.confirmTransactionThread.start();
+	}
+	
 	public void close() throws TransactionException{
-		confirmTransactionThread.interrupt();
 		
-		while(confirmTransactionTask.run){
-			try{
+		super.close();
+		
+		try{
+			//coloca na fila de processamento o ultimo arquivo de log gerado
+			confirmTransactionTask.transactionFiles.put(transactionFile.getFile());
+			
+			//aguarda o fim do processamento dos arquivos
+			while(!confirmTransactionTask.transactionFiles.isEmpty() && confirmTransactionTask.failTransactionFileLog == null){
 				Thread.sleep(100);
 			}
-			catch(Throwable e){
-				throw new TransactionException(e);
+			
+			//termina o processo que confirma as transações
+			confirmTransactionThread.interrupt();
+			
+			//aguarda o término do processo
+			while(confirmTransactionTask.run){
+				Thread.sleep(100);
+			}
+			
+			//verifica se o erro é InterruptedException, indicando o encerramento do processo.
+			if(!(confirmTransactionTask.failTransactionFileLog instanceof InterruptedException)){
+				//se for encontrada outra exceção, ela será lançada.
+				throw new TransactionException(confirmTransactionTask.failTransactionFileLog);
 			}
 		}
-		
-		if(!(confirmTransactionTask.failTransactionFileLog instanceof InterruptedException)){
-			throw new TransactionException(confirmTransactionTask.failTransactionFileLog);
+		catch(TransactionException e){
+			throw e;
 		}
-
-		super.close();
+		catch(Throwable e){
+			throw new TransactionException(e);
+		}
 		
 	}
 	
@@ -171,7 +135,7 @@ public class AsyncRecoveryTransactionLog
 			
 			FileAccess fa = null;
 			try{
-				fa              = new FileAccess(file);
+				fa                     = new FileAccess(file);
 				TransactionFileLog tfl = new TransactionFileLog(fa, reader, writter, eftmc);
 				tfl.load();
 				
@@ -206,7 +170,8 @@ public class AsyncRecoveryTransactionLog
 		private void flushVirutalEntityFileAccess() throws IOException{
 			lock.lock();
 			try{
-				if(transactionFiles.isEmpty() && transactionInProgress == 0 && transactionFile.isEmpty()){
+				//if(transactionFiles.isEmpty() && transactionInProgress == 0 && transactionFile.isEmpty()){
+				if(transactionInProgress == 0){
 					for(AsyncAutoFlushVirutalEntityFileAccess<?, ?, ?> afvefa: efam.values()){
 						Lock lock = afvefa.getLock();
 						lock.lock();

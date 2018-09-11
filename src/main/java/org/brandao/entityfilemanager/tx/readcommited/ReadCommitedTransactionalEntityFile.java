@@ -374,6 +374,9 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			
 			this.pointerManager.managerPointer(id);
 		}
+		catch(TransactionException e){
+			throw new IOException(e.getMessage(), e);
+		}
 		finally{
 			lock.unlock();
 		}
@@ -418,9 +421,12 @@ public class ReadCommitedTransactionalEntityFile<T, R, H>
 			data.flush();
 			
 			for(int i=0;i<max;i++){
-				this.pointerManager.managerPointer(id + i);
+				pointerManager.managerPointer(id + i);
 			}
 
+		}
+		catch(TransactionException e){
+			throw new IOException(e.getMessage(), e);
 		}
 		finally{
 			lock.unlock();
