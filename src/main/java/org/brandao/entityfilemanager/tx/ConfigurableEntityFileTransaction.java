@@ -28,6 +28,8 @@ public interface ConfigurableEntityFileTransaction extends EntityFileTransaction
 	
 	void setRepository(TransactionFileLog value);
 
+	void setRegistered(boolean value);
+	
 	TransactionFileLog getRepository();
 
 	void setRecoveredTransaction(boolean value);
@@ -39,6 +41,8 @@ public interface ConfigurableEntityFileTransaction extends EntityFileTransaction
 	boolean isStarted();
 
 	boolean isEmpty() throws IOException;
+	
+	boolean isRegistered();
 	
 	long getTransactionID();
 	

@@ -105,6 +105,7 @@ public class RecoveryTransactionLogImp
 			ceft.setRepository(transactionFile);
 			transactionFile.add(ceft);
 			transactionInProgress++;
+			ceft.setRegistered(true);
 		}
 		catch(Throwable e){
 			throw new TransactionException(e);
@@ -119,8 +120,13 @@ public class RecoveryTransactionLogImp
 		
 		lock.lock();
 		try{
+			//Se a transação não foi registrada, não precisa ser removida.
+			if(!ceft.isRegistered()){
+				return;
+			}
+			
 			//Cria um novo arquivo de log quando não existir transações abertas 
-			//forçando a atualização dos arquivos envolvidos. 
+			//forçando a atualização dos arquivos envolvidos.
 			transactionInProgress--;
 			
 			try{

@@ -15,12 +15,13 @@ import junit.framework.TestCase;
 import org.brandao.entityfilemanager.helper.Entity;
 import org.brandao.entityfilemanager.helper.EntityEntityFileAccess;
 import org.brandao.entityfilemanager.tx.EntityFileTransaction;
+import org.brandao.entityfilemanager.tx.EntityFileTransactionFactoryImp;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerConfigurer;
 import org.brandao.entityfilemanager.tx.EntityFileTransactionManagerImp;
+import org.brandao.entityfilemanager.tx.RecoveryTransactionLog;
+import org.brandao.entityfilemanager.tx.RecoveryTransactionLogImp;
 import org.brandao.entityfilemanager.tx.TransactionException;
 import org.brandao.entityfilemanager.tx.TransactionLogImp;
-import org.brandao.entityfilemanager.tx.async.AsyncEntityFileTransactionFactory;
-import org.brandao.entityfilemanager.tx.async.AsyncRecoveryTransactionLog;
 
 public class EntityFileManagerImpTest extends TestCase{
 
@@ -33,9 +34,9 @@ public class EntityFileManagerImpTest extends TestCase{
 		EntityFileManagerConfigurer efm           = new EntityFileManagerImp();
 		LockProvider lp                           = new LockProviderImp();
 		EntityFileTransactionManagerConfigurer tm = new EntityFileTransactionManagerImp();
-		AsyncRecoveryTransactionLog rtl           = new AsyncRecoveryTransactionLog("recovery", txPath, tm);
+		RecoveryTransactionLog rtl                = new RecoveryTransactionLogImp("recovery", txPath, tm);//new AsyncRecoveryTransactionLog("recovery", txPath, tm);
 		TransactionLog tl                         = new TransactionLogImp("binlog", txPath, tm);
-		EntityFileTransactionFactory eftf         = new AsyncEntityFileTransactionFactory(rtl);
+		EntityFileTransactionFactory eftf         = new EntityFileTransactionFactoryImp();//AsyncEntityFileTransactionFactory(rtl);
 		
 		rtl.setForceReload(true);
 		

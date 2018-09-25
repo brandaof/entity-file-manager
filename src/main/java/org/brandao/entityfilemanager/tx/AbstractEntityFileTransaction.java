@@ -33,6 +33,8 @@ public abstract class AbstractEntityFileTransaction
 	protected boolean closed;
 	
 	protected long timeout;
+
+	protected boolean registered;
 	
 	protected byte transactionIsolation;
 	
@@ -58,6 +60,7 @@ public abstract class AbstractEntityFileTransaction
 		this.started                      = started;
 		this.status                       = status;
 		this.dirty                        = false;
+		this.registered                   = false;
 	}
 
 	public void setTimeout(long value) {
@@ -357,6 +360,14 @@ public abstract class AbstractEntityFileTransaction
 	
 	public byte getTransactionIsolation() {
 		return this.transactionIsolation;
+	}
+
+	public void setRegistered(boolean value) {
+		registered = value;
+	}
+
+	public boolean isRegistered() {
+		return registered;
 	}
 	
 	protected void finalize() throws Throwable{
