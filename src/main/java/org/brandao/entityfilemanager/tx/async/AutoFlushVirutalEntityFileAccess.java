@@ -10,6 +10,7 @@ import org.brandao.entityfilemanager.EntityFileAccess;
 public class AutoFlushVirutalEntityFileAccess<T, R, H>
 	extends AbstractVirutalEntityFileAccess<T, R, H>{
 
+	//TODO: pode causar out of memory
 	private ConcurrentMap<Long,Long> map;
 	
 	public AutoFlushVirutalEntityFileAccess(EntityFileAccess<T, R, H> e) throws IOException {

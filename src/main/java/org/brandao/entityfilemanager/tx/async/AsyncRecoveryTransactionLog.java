@@ -18,6 +18,7 @@ import org.brandao.entityfilemanager.tx.RecoveryTransactionLogImp;
 import org.brandao.entityfilemanager.tx.TransactionException;
 import org.brandao.entityfilemanager.tx.TransactionFileLog;
 
+//TODO: falta suporte ao truncat
 public class AsyncRecoveryTransactionLog
 	extends RecoveryTransactionLogImp 
 	implements RecoveryTransactionLog{
