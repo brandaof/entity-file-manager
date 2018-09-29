@@ -143,6 +143,16 @@ public class EntityFileManagerImp
 	public void truncate(String name) throws EntityFileManagerException {
 		try{
 			EntityFileAccess<?,?,?> entity = this.entities.get(name);
+			
+			if(entity.length() == 0) {
+				return;
+			}
+			
+			if(entity.exists()) {
+				entity.close();
+				entity.delete();
+			}
+			
 			entity.createNewFile();
 		}
 		catch(Throwable e){
