@@ -98,9 +98,9 @@ public class RecoveryTransactionLogImp
 		lock.lock();
 		try{
 			//Cria um novo arquivo de log se for atingido o tamanho máximo
-			if(transactionFile.getFilelength() > this.limitFileLength){
-				createNewFileTransactionLog();
-			}
+			//if(transactionFile.getFilelength() > this.limitFileLength){
+			//	createNewFileTransactionLog();
+			//}
 			
 			ceft.setRepository(transactionFile);
 			transactionFile.add(ceft);
@@ -130,10 +130,15 @@ public class RecoveryTransactionLogImp
 			transactionInProgress--;
 			
 			try{
-				if(transactionInProgress == 0 && (System.currentTimeMillis() - lastFlush) > timeFlush){
+				boolean createNewFile = 
+						(transactionFile.getFilelength() > limitFileLength) ||
+						(System.currentTimeMillis() - lastFlush) > timeFlush;
+						
+				if(transactionInProgress == 0 && createNewFile){
 					createNewFileTransactionLog();
 					lastFlush = System.currentTimeMillis();
 				}
+				
 			}
 			catch(Throwable e){
 				throw new TransactionException(e);
