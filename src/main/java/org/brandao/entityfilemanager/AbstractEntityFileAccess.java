@@ -99,6 +99,7 @@ public class AbstractEntityFileAccess<T, R, H>
 		
 		this.fileAccess = new FileAccess(file);
 		this.writter    = new FileAccessDataWritter(fileAccess);
+		this.reader     = new FileAccessDataReader(fileAccess);
 		this.readHeader();
 		this.fileAccess.seek(dataHandler.getFirstPointer() + dataHandler.getFirstRecord());
 		this.length = 
